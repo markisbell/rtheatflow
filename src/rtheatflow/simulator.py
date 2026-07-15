@@ -26,7 +26,7 @@ from .config import Settings, get_settings
 from .heating_curve import HeatingCurve, from_config
 from .net_inputs import NetInputs
 from .network_builder import KELVIN, ProfileArrays, build_network
-from .sensors import _r
+from .sensors import MeasurementSet, _r
 from .weather import WeatherModel
 
 log = logging.getLogger(__name__)
@@ -157,6 +157,10 @@ class Simulator:
                 zip(self.index.pipes_supply, self.index.pipes_return)):
             self._pipe_trench[int(ps)] = (t, "s")
             self._pipe_trench[int(pr)] = (t, "r")
+
+        # measurable layer (SPEC §8a interim rule): exists from M2 with the
+        # default preset all_consumers + plant SCADA; CRUD/fidelity in M5
+        self.measurements = MeasurementSet()
 
         self._last_payload: dict | None = None  # last converged _collect()
 
@@ -322,11 +326,14 @@ class Simulator:
         q_feed_plant_w = mdot_plant * cp_plant * (
             float(rc.t_outlet_k) - float(rc.t_from_k))
 
-        # --- secondary feed-ins carry negative qext_w: negate, never sum raw ---
+        # --- secondary feed-ins carry negative qext_w: negate, never sum raw.
+        # NB: res_heat_exchanger has NO qext_w column at runtime (0.14.0 —
+        # verified M2; §10.1 "branch cols" only). qext_w is a fixed input
+        # setpoint, so the component table is the authoritative source. ---
         q_secondary_w = 0.0
         if len(idx.heat_exchangers):
-            hx_q = net.res_heat_exchanger.loc[
-                idx.heat_exchangers, "qext_w"].to_numpy()
+            hx_q = net.heat_exchanger.loc[
+                idx.heat_exchangers, "qext_w"].to_numpy(dtype=float)
             q_secondary_w = float(-hx_q[hx_q < 0].sum())
         q_feed_in_w = q_feed_plant_w + q_secondary_w
 
@@ -387,7 +394,8 @@ class Simulator:
                     "pump_el_kw": _r(pump_el_w / 1000.0),
                 })
             elif meta["kind"] == "heat_exchanger":
-                q = float(net.res_heat_exchanger.at[meta["element"], "qext_w"])
+                # input setpoint — res_heat_exchanger has no qext_w column
+                q = float(net.heat_exchanger.at[meta["element"], "qext_w"])
                 entry["q_kw"] = _r(-q / 1000.0)  # feed-in positive on the wire
             else:  # pump_mass
                 rm = net.res_circ_pump_mass.loc[meta["element"]]
@@ -411,7 +419,7 @@ class Simulator:
             "mdot_plant_kg_per_s": _r(mdot_plant),
             "balance_err_kw": _r(balance_err_w / 1000.0),
         }
-        return {
+        payload = {
             "junctions": junctions,
             "pipes": pipes,
             "consumers": consumers,
@@ -420,3 +428,71 @@ class Simulator:
             "weather": self._weather_dict(tick),
             "controls": self._controls_dict(),
         }
+        # observed layer (SPEC §8a): projection of the truth payload onto the
+        # sensored elements — every frame carries measurements/observed_summary
+        payload["measurements"], payload["observed_summary"] = \
+            self.measurements.observe(payload)
+        return payload
+
+    # -- runtime equipment CRUD (SPEC §4.4 pattern; minimal M2 subset) ---------
+    #
+    # Full equipment CRUD ships in M4. M2 provides the minimal functional
+    # add/remove for a heat_exchanger secondary that the §12 M2 error-code
+    # acceptance requires: direct net mutation (no rebuild), indices extended,
+    # init reset per §3.4 (topology CRUD), racing solves self-heal per §3.3.
+
+    def add_heat_exchanger(
+        self,
+        node: str,
+        qext_w: float,
+        inner_diameter_mm: float,
+        name: str | None = None,
+    ) -> dict:
+        """Place a secondary heat_exchanger feed-in at *node* (return→supply).
+
+        *qext_w* is the constant feed-in dispatch in W (positive on the API;
+        negated onto the element per the SPEC §3.1 convention). Returns the
+        producer meta dict. Raises ``KeyError`` for an unknown node.
+        """
+        idx, p = self.index, self.profiles
+        jr = idx.junction_return[node]  # KeyError -> unknown node (API: 400)
+        js = idx.junction_supply[node]
+        name = name or f"heat_exchanger_{node}"
+        dispatch = float(qext_w)
+        hx = pp.create_heat_exchanger(
+            self.net, from_junction=jr, to_junction=js,
+            qext_w=-dispatch,  # feed-in = negative qext_w (SPEC §3.1)
+            inner_diameter_mm=float(inner_diameter_mm), name=name)
+        # extend the dense dispatch profiles + index (row order = element order)
+        idx.heat_exchangers = np.append(idx.heat_exchangers, hx)
+        p.producer_qext_w = np.vstack(
+            [p.producer_qext_w, np.full((1, p.steps), dispatch)])
+        meta = {"kind": "heat_exchanger", "element": int(hx),
+                "node": node, "name": name}
+        idx.producer_meta.append(meta)
+        self._reset_initialization()  # topology CRUD → cold init (SPEC §3.4)
+        return meta
+
+    def remove_heat_exchanger(self, element: int) -> dict:
+        """Remove the heat_exchanger with pandapipes *element* index.
+
+        Returns the removed meta dict. Raises ``KeyError`` if no
+        heat_exchanger has that element index.
+        """
+        idx, p = self.index, self.profiles
+        pos_arr = np.nonzero(idx.heat_exchangers == int(element))[0]
+        if len(pos_arr) == 0:
+            raise KeyError(f"no heat_exchanger with element index {element}")
+        pos = int(pos_arr[0])
+        self.net.heat_exchanger.drop(index=int(element), inplace=True)
+        if "res_heat_exchanger" in self.net and len(self.net.res_heat_exchanger):
+            self.net.res_heat_exchanger.drop(
+                index=int(element), inplace=True, errors="ignore")
+        idx.heat_exchangers = np.delete(idx.heat_exchangers, pos)
+        p.producer_qext_w = np.delete(p.producer_qext_w, pos, axis=0)
+        meta = next(m for m in idx.producer_meta
+                    if m["kind"] == "heat_exchanger"
+                    and int(m["element"]) == int(element))
+        idx.producer_meta.remove(meta)
+        self._reset_initialization()  # topology CRUD → cold init (SPEC §3.4)
+        return meta
