@@ -272,7 +272,7 @@ All equipment CRUD follows the blueprint pattern: mutate the live net (indices r
 
 - Space heating per building via **demandlib** (`pip install demandlib`, oemof):
   `demandlib.bdew.HeatBuilding(index, temperature=..., shlp_type="EFH"|"MFH"|..., building_class=1..11, wind_class=..., annual_heat_demand=..., ...).get_bdew_profile()` — hourly, sigmoid h(T), DHW implicit. For 15-min resolution and explicit DHW morning peaks: the VDI 4655 module (`demandlib.vdi.Region`).
-- **Pre-generate to `data/profiles/`** at the profile resolution (15 min), **interpolate to the 1-min tick** at load time (staircase or linear — pick one, document it). Profile rows become pandapipes elements (same "profiles-as-definitions" pattern as the blueprint: consumer row order = element index).
+- **Pre-generate to `data/profiles/`** at the profile resolution (15 min), **interpolate to the 1-min tick** at load time (staircase — chosen in M1, documented in `network_builder.py`). Profile rows become pandapipes elements (same "profiles-as-definitions" pattern as the blueprint: consumer row order = element index).
 - **Store every consumer profile split into two arrays: `q_sh_w` (space heating) and `q_dhw_w` (domestic hot water).** VDI 4655 gives the split natively (`Q_Heiz` vs `Q_TWW`); for BDEW profiles split at generation time using the loadgen `dhw_share` parameter (DHW is implicit in the BDEW curve). The split is what makes the override math below well-defined.
 - The live weather knob (§4.1) needs demand to respond instantly → scale **only the space-heating part** with the degree-hour factor `f(T) = max(0, T_room − T)/(T_room − T_design)`:
   - if `f(T_profile) ≥ ε` (ε = 0.05): `q̇_sh(t) = q̇_sh_profile(t) · f(T_override)/f(T_profile)`
@@ -310,8 +310,8 @@ The blueprint feeds everything through five validated JSON documents; importers 
 |---|---|
 | `network_structure.json` | `{name, junctions:[{name, kind:"node"\|"consumer"\|"plant"\|"cabinet", geo:[lat,lon], pn_bar}]}` — **one entry per trench node**; the builder auto-creates the supply/return junction *pair* per entry (suffix `_s`/`_r`), so topology files stay single-sided and human-editable |
 | `pipes.json` | `{pipes:[{from_node, to_node, length_km, std_type \| (inner_diameter_mm, u_w_per_m2k, k_mm), sections, geometry:[[lat,lon],...]}]}` — one entry per trench; builder creates the supply *and* return pipe |
-| `consumers.json` | `{resolution_minutes, steps, consumers:[{node, name?, q_sh_w:[steps], q_dhw_w:[steps], treturn_k:[steps] \| deltat_k, annual_kwh, q_design_w, t_supply_min_c=60, building?}]}` — profile rows **are** the heat_consumer elements; `q_sh_w`/`q_dhw_w` split per §4.5; `q_design_w` for the summer-override formula and marker sizing; `t_supply_min_c` for the UI supply-temperature warning (default 60 °C, DHW hygiene) |
-| `producers.json` | `{producers:[{node, kind:"slack"\|"heat_exchanger"\|"pump_mass", p_flow_bar?, plift_bar?, t_flow_k?, qext_w:[steps]?, inner_diameter_mm? (required for heat_exchanger), mdot_flow_kg_per_s? (required for pump_mass; scalar or [steps]), heating_curve?, dp_control?}]}` — exactly one `slack`; cross-validate kind-specific required fields |
+| `consumers.json` | `{resolution_minutes, steps, consumers:[{node, name?, q_sh_w:[steps], q_dhw_w:[steps], treturn_k:[steps] \| deltat_k \| controlled_mdot_kg_per_s, annual_kwh, q_design_w, t_supply_min_c=60, building?}]}` — profile rows **are** the heat_consumer elements; the partner to `qext_w` is any one of the three (per the §3.2 pairs; `controlled_mdot_kg_per_s` added in M1 — needed for mdot-mode consumers and the canonical bypass); `q_sh_w`/`q_dhw_w` split per §4.5; `q_design_w` for the summer-override formula and marker sizing; `t_supply_min_c` for the UI supply-temperature warning (default 60 °C, DHW hygiene) |
+| `producers.json` | `{producers:[{node, kind:"slack"\|"heat_exchanger"\|"pump_mass", p_flow_bar?, plift_bar?, t_flow_k?, qext_w:[steps]?, inner_diameter_mm? (required for heat_exchanger), mdot_flow_kg_per_s + p_flow_bar + t_flow_k (required for pump_mass; mdot scalar or [steps] — the create call needs all three, M1), heating_curve?, dp_control?}]}` — exactly one `slack`; cross-validate kind-specific required fields |
 | `weather.json` | `{resolution_minutes, steps, t_amb_c:[steps], t_ground_c:[steps]}` |
 
 Cross-validation: node refs valid, array lengths = `steps`, exactly one slack, every consumer node reachable from the slack, no dead-end live branches without bypass (§3.2 zero-flow rule).
@@ -361,7 +361,7 @@ class StepResult:
 
 Temperatures on the wire in **°C** (UI-facing; convert from Kelvin at `_collect()`, through `_r()`). Kelvin stays internal to pandapipes.
 
-**Configuration** (pydantic-settings, prefix `RTHEATFLOW_`, documented in `.env.example`): `DATA_DIR, NETWORK_LIBRARY, USER_NETWORKS_DIR, PROFILES_DIR, SCENARIOS_DIR, RECORDINGS_DIR, RECORD, CORS_ORIGINS, STEP_INTERVAL_SECONDS, STEPS_PER_DAY, AUTOSTART, HISTORY_SIZE, EXPOSE_GROUND_TRUTH, SOLVER_ITER (retry-ladder base, §3.3), TRANSIENT (experimental, default false, offline exporter only — §3.5), PUMP_ETA, DP_MIN_BAR, RETURN_TEMP_MARGIN_K, HOST, PORT, LOG_LEVEL`.
+**Configuration** (pydantic-settings, prefix `RTHEATFLOW_`, documented in `.env.example`): `DATA_DIR, NETWORK_LIBRARY, USER_NETWORKS_DIR, PROFILES_DIR, SCENARIOS_DIR, RECORDINGS_DIR, RECORD, CORS_ORIGINS, STEP_INTERVAL_SECONDS, STEPS_PER_DAY, AUTOSTART, HISTORY_SIZE, EXPOSE_GROUND_TRUTH, SOLVER_ITER (retry-ladder base, §3.3), TRANSIENT (experimental, default false, offline exporter only — §3.5), PUMP_ETA, DP_MIN_BAR, RETURN_TEMP_MARGIN_K, MIN_QEXT_W (zero-flow consumer floor, default 500 W — §3.2, added M1), HOST, PORT, LOG_LEVEL`.
 
 **Bulk exporter** (`exporter.py`): deep-copies the live Simulator, replays selected days offline (here `run_timeseries` or a plain loop is fine), output byte-compatible with live recordings, one export at a time (409).
 
@@ -487,7 +487,7 @@ Circ-pump conventions: `deltat_k = t_from − t_outlet` (negative when the plant
 
 ### 10.2 pipeflow options (defaults from source)
 
-`friction_model="nikuradse"` (`"colebrook"` available), `tol_p=tol_m=1e-5`, `tol_T=1e-3`, `max_iter_hyd/therm/bidirect=10` (or `iter=N` for all), `alpha=1` (damping), `nonlinear_method="constant"|"automatic"` (⚠️ `"automatic"` raises `ValueError` with `mode="bidirectional"` in 0.14.0 — verified; use fixed `alpha` damping instead), `ambient_temperature=293.15` (fallback for `text_k`), `use_numba=True`, `transient=False`, `dt=None`, `calc_compression_power=True`. Precedence: defaults < `pp.set_user_pf_options(net, ...)` < `pipeflow()` kwargs.
+`friction_model="nikuradse"` (`"colebrook"` available), `tol_p=tol_m=1e-5`, `tol_T=1e-3`, `max_iter_hyd/therm/bidirect=10` (or `iter=N` for all), `alpha=1` (damping), `nonlinear_method="constant"|"automatic"` (⚠️ `"automatic"` raises `ValueError` with `mode="bidirectional"` in 0.14.0 whenever the damping adaptation actually engages — verified on the hard schutterwald case, pinned in `tests/test_pandapipes_pins.py`; easy nets may pass by luck. Unusable either way — use fixed `alpha` damping), `ambient_temperature=293.15` (fallback for `text_k`), `use_numba=True`, `transient=False`, `dt=None`, `calc_compression_power=True`. Precedence: defaults < `pp.set_user_pf_options(net, ...)` < `pipeflow()` kwargs.
 
 ### 10.3 Time series / control machinery (offline exporter + reference)
 
