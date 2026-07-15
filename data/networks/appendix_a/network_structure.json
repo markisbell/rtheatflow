@@ -1,0 +1,41 @@
+{
+ "name": "appendix_a",
+ "junctions": [
+  {
+   "name": "n0",
+   "kind": "plant",
+   "geo": [
+    48.0,
+    7.8
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "n1",
+   "kind": "consumer",
+   "geo": [
+    48.0,
+    7.807
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "n2",
+   "kind": "consumer",
+   "geo": [
+    48.0,
+    7.811
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "n3",
+   "kind": "consumer",
+   "geo": [
+    48.0,
+    7.814
+   ],
+   "pn_bar": 6
+  }
+ ]
+}

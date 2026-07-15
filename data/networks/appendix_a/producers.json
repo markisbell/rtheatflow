@@ -1,0 +1,12 @@
+{
+ "producers": [
+  {
+   "node": "n0",
+   "name": "heating plant",
+   "kind": "slack",
+   "p_flow_bar": 6.0,
+   "plift_bar": 2.0,
+   "t_flow_k": 358.15
+  }
+ ]
+}
