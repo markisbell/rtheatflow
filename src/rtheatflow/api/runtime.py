@@ -129,7 +129,7 @@ def build_topology(network_id: str, sim: Simulator) -> dict:
         for i in range(len(idx.consumers))
     ]
     producers = [
-        {"id": int(m["element"]), "kind": m["kind"], "name": m["name"],
+        {"id": int(m["pid"]), "kind": m["kind"], "name": m["name"],
          "node": m["node"]}
         for m in idx.producer_meta
     ]

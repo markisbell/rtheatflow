@@ -80,5 +80,5 @@ limits (weather override out of range) · `500` internal failures only —
 | `GET` | `/producers` | Producer inventory |
 
 - **`POST /producer`** — M2: ``heat_exchanger`` placement only. 409 on a second pressure slack, 400 on missing kind-specific fields / unknown node / unknown kind.
-- **`DELETE /producer/{producer_id}`** — M2: removes a ``heat_exchanger``. The pressure slack is not removable (409 — the loop needs its one slack); anything else is 404.
+- **`DELETE /producer/{producer_id}`** — M2: removes a ``heat_exchanger``. The pressure slack is not removable (409 — the loop needs its one slack); anything else is 404. ``producer_id`` is the platform-unique id reported by ``GET /producers`` and the frame's ``producers`` list.
 - **`GET /producers`** — All producers with their current configuration (live table values).

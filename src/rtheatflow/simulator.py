@@ -383,7 +383,8 @@ class Simulator:
         ]
         producers = []
         for meta in idx.producer_meta:
-            entry = {"id": int(meta["element"]), "kind": meta["kind"],
+            # wire id = platform-unique pid, never the per-kind element index
+            entry = {"id": int(meta["pid"]), "kind": meta["kind"],
                      "name": meta["name"], "node": meta["node"]}
             if meta["kind"] == "slack":
                 entry.update({
@@ -467,8 +468,8 @@ class Simulator:
         idx.heat_exchangers = np.append(idx.heat_exchangers, hx)
         p.producer_qext_w = np.vstack(
             [p.producer_qext_w, np.full((1, p.steps), dispatch)])
-        meta = {"kind": "heat_exchanger", "element": int(hx),
-                "node": node, "name": name}
+        meta = {"pid": idx.next_pid(), "kind": "heat_exchanger",
+                "element": int(hx), "node": node, "name": name}
         idx.producer_meta.append(meta)
         self._reset_initialization()  # topology CRUD → cold init (SPEC §3.4)
         return meta

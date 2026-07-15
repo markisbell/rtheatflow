@@ -55,7 +55,8 @@ def _producer_list(app: App) -> list[dict]:
     net, idx = sim.net, sim.index
     out = []
     for meta in idx.producer_meta:
-        entry = {"id": int(meta["element"]), "kind": meta["kind"],
+        # id = platform-unique pid; element indices collide across kinds
+        entry = {"id": int(meta["pid"]), "kind": meta["kind"],
                  "name": meta["name"], "node": meta["node"]}
         if meta["kind"] == "slack":
             row = net.circ_pump_pressure.loc[meta["element"]]
@@ -135,7 +136,7 @@ def add_producer(body: ProducerBody) -> dict:
         inner_diameter_mm=body.inner_diameter_mm, name=body.name)
     log.info("placed heat_exchanger %s at %s (%.0f W)",
              meta["name"], body.node, body.qext_w)
-    return {"added": {"id": int(meta["element"]), "kind": meta["kind"],
+    return {"added": {"id": int(meta["pid"]), "kind": meta["kind"],
                       "name": meta["name"], "node": meta["node"]},
             "producers": _producer_list(app)}
 
@@ -143,26 +144,31 @@ def add_producer(body: ProducerBody) -> dict:
 @router.delete("/producer/{producer_id}", summary="Remove a producer")
 def remove_producer(producer_id: int) -> dict:
     """M2: removes a ``heat_exchanger``. The pressure slack is not removable
-    (409 — the loop needs its one slack); anything else is 404."""
+    (409 — the loop needs its one slack); anything else is 404.
+
+    ``producer_id`` is the platform-unique id reported by ``GET /producers``
+    and the frame's ``producers`` list."""
     app = get_app()
     sim = app.sim
-    try:
-        meta = sim.remove_heat_exchanger(producer_id)
-    except KeyError:
-        slack_meta = next((m for m in sim.index.producer_meta
-                           if m["kind"] == "slack"
-                           and int(m["element"]) == int(producer_id)), None)
-        if slack_meta is not None:
-            raise HTTPException(
-                status_code=409,
-                detail="cannot remove the pressure slack — the network "
-                       "needs exactly one (SPEC §3.1); reconfigure or swap "
-                       "the network instead")
+    meta = next((m for m in sim.index.producer_meta
+                 if int(m["pid"]) == int(producer_id)), None)
+    if meta is None:
         raise HTTPException(
             status_code=404,
-            detail=f"no removable producer with id {producer_id} (M2 removes "
-                   "heat_exchanger secondaries; full CRUD ships in M4)")
+            detail=f"no producer with id {producer_id} (see GET /producers)")
+    if meta["kind"] == "slack":
+        raise HTTPException(
+            status_code=409,
+            detail="cannot remove the pressure slack — the network needs "
+                   "exactly one (SPEC §3.1); reconfigure or swap the "
+                   "network instead")
+    if meta["kind"] != "heat_exchanger":
+        raise HTTPException(
+            status_code=400,
+            detail=f"removing {meta['kind']!r} producers ships with the M4 "
+                   "equipment CRUD; M2 removes heat_exchanger secondaries")
+    sim.remove_heat_exchanger(meta["element"])
     log.info("removed heat_exchanger %s", meta["name"])
-    return {"removed": {"id": int(meta["element"]), "kind": meta["kind"],
+    return {"removed": {"id": int(meta["pid"]), "kind": meta["kind"],
                         "name": meta["name"], "node": meta["node"]},
             "producers": _producer_list(app)}
