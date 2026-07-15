@@ -100,8 +100,8 @@ def solve_with_retry(net, iter_base: int = 100) -> SolveOutcome:
     for tier, kwargs in enumerate(retry_attempts(iter_base), start=1):
         try:
             pipeflow(net, **kwargs)
-        except PipeflowNotConverged:
-            errors.append(f"tier {tier} {kwargs}: not converged")
+        except PipeflowNotConverged as exc:
+            errors.append(f"tier {tier} {kwargs}: not converged ({exc})")
             continue
         except Exception as exc:  # deliberate catch-all arm (SPEC §3.3)
             errors.append(f"tier {tier} {kwargs}: {type(exc).__name__}: {exc}")
