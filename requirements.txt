@@ -1,0 +1,15 @@
+# simulation core — 0.14.0 strictly pins pandapower==3.3.3; do not pin pandapower yourself
+pandapipes==0.14.0
+numpy>=1.24
+pandas>=2.0
+numba                     # pipeflow use_numba=True speedup (validated with 0.66)
+
+# backend (from M2 onward)
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+pydantic-settings>=2.2
+
+# profile generation (scripts/generate_profiles.py)
+demandlib>=0.2
+opendhw>=0.2.8

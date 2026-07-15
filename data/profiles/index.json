@@ -1,0 +1,53 @@
+{
+  "source": "demandlib VDI 4655 (TRY zone 4) + OpenDHW (DHWcalc method, dT=35 K), year 2023",
+  "generated": "2026-07-15T17:54:58+00:00",
+  "resolution_minutes": 15,
+  "steps": 35040,
+  "archetypes": [
+    {
+      "id": "EFH_ALT_4P",
+      "name": "EFH Bestand unsaniert, 4 Personen",
+      "house_type": "EFH",
+      "n_persons": 4,
+      "n_units": 1,
+      "annual_kwh": {
+        "space_heating": 18000.0,
+        "dhw_mean": 2328.8
+      },
+      "q_design_w": 8747.0,
+      "peak_dhw_w": 29200.5,
+      "n_variants_dhw": 3,
+      "file": "EFH_ALT_4P.json"
+    },
+    {
+      "id": "EFH_SAN_4P",
+      "name": "EFH saniert (KfW-Niveau), 4 Personen",
+      "house_type": "EFH",
+      "n_persons": 4,
+      "n_units": 1,
+      "annual_kwh": {
+        "space_heating": 9000.0,
+        "dhw_mean": 2328.1
+      },
+      "q_design_w": 4373.5,
+      "peak_dhw_w": 30188.2,
+      "n_variants_dhw": 3,
+      "file": "EFH_SAN_4P.json"
+    },
+    {
+      "id": "MFH_ALT_10WE",
+      "name": "MFH Bestand, 10 Wohneinheiten (25 Personen)",
+      "house_type": "MFH",
+      "n_persons": 25,
+      "n_units": 10,
+      "annual_kwh": {
+        "space_heating": 95000.0,
+        "dhw_mean": 14540.1
+      },
+      "q_design_w": 59942.9,
+      "peak_dhw_w": 38073.8,
+      "n_variants_dhw": 3,
+      "file": "MFH_ALT_10WE.json"
+    }
+  ]
+}

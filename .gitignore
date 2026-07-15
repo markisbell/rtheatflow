@@ -1,0 +1,23 @@
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+
+# env / secrets
+.env
+
+# runtime data (created by the app)
+data/recordings/
+data/user_networks/
+
+# node (ui/, later milestones)
+node_modules/
+
+# editors
+.vscode/
+.idea/
