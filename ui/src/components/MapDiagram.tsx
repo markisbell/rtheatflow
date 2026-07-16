@@ -35,11 +35,15 @@ interface Props {
   topo: Topology;
   latest: StepResult | null;
   layer: MapLayer;
+  /** the map-corner switch mirrors the Ansicht menu (shared lifted state) */
+  onLayer: (layer: MapLayer) => void;
   /** measured view: color only sensored elements, grey/dash the rest */
   observedOnly: boolean;
   /** supply-ramp anchor: the active heating curve's design temperature */
   tFlowDesign: number;
 }
+
+const LAYERS: MapLayer[] = ["supply", "return", "velocity", "dp"];
 
 const PLANT_COLOR = "#f2ae00"; // amber station marker (blueprint convention)
 
@@ -65,7 +69,7 @@ interface TrenchLive { s?: PipeState; r?: PipeState }
  *  only — never rebuilt). The unknown is styled as unknown: without a frame,
  *  or for unsensored elements in the measured view, elements render in the
  *  dedicated UNOBSERVED grey/dash — never in a healthy ramp color. */
-export default function MapDiagram({ topo, latest, layer, observedOnly, tFlowDesign }: Props) {
+export default function MapDiagram({ topo, latest, layer, onLayer, observedOnly, tFlowDesign }: Props) {
   const { t, i18n } = useTranslation();
   const elRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -225,8 +229,17 @@ export default function MapDiagram({ topo, latest, layer, observedOnly, tFlowDes
       }).addTo(map);
     }
 
-    if (allPts.length) map.fitBounds(L.latLngBounds(allPts).pad(0.08));
-    const timer = setTimeout(() => map.invalidateSize(), 80);
+    const fit = () => {
+      if (allPts.length) map.fitBounds(L.latLngBounds(allPts).pad(0.08));
+    };
+    fit();
+    // re-measure + re-fit once layout has settled: when the map mounts in
+    // the same commit that lays out the grid, the container can still be
+    // 0-sized at construction and fitBounds lands at world zoom
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+      fit();
+    }, 80);
 
     return () => {
       clearTimeout(timer);
@@ -341,6 +354,14 @@ export default function MapDiagram({ topo, latest, layer, observedOnly, tFlowDes
       <button className="map-basemap" onClick={() => setLight((v) => !v)}>
         {light ? t("map.dark") : t("map.light")}
       </button>
+      <div className="map-layers">
+        {LAYERS.map((l) => (
+          <button key={l} className={layer === l ? "on" : ""}
+                  title={t(`layer.${l}Title`)} onClick={() => onLayer(l)}>
+            {t(`layer.${l}`)}
+          </button>
+        ))}
+      </div>
       <div className="map-colorbars">
         {legend ? (
           <Colorbar gradient={legend.gradient} top={legend.top}

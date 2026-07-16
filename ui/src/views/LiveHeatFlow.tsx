@@ -11,9 +11,10 @@ import type { LiveView } from "../App";
  *  collapsible right sidebar + bottom transport bar. Values update from the
  *  WS stream (≤ 1 frame behind); the engine status is re-polled every 2 s
  *  and re-synced from every control verb's response. */
-export default function LiveHeatFlow({ topo, view }: {
+export default function LiveHeatFlow({ topo, view, onView }: {
   topo: Topology;
   view: LiveView;
+  onView: (patch: Partial<LiveView>) => void;
 }) {
   const { t } = useTranslation();
   const { layer, viewMode } = view;
@@ -83,6 +84,7 @@ export default function LiveHeatFlow({ topo, view }: {
     <div className="live" style={{ gridTemplateColumns: `1fr ${sideW}px` }}>
       <div className="diagram-wrap">
         <MapDiagram topo={topo} latest={latest} layer={layer}
+                    onLayer={(l) => onView({ layer: l })}
                     observedOnly={mode === "observed"} tFlowDesign={tFlowDesign} />
       </div>
 

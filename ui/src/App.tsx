@@ -67,7 +67,7 @@ export default function App() {
           <div className="empty">{t("live.failedNet")}<br />{topoErr}</div>
         )}
         {!topoErr && !topo && <div className="spinner">{t("live.loadingNet")}</div>}
-        {topo && <LiveHeatFlow topo={topo} view={live} />}
+        {topo && <LiveHeatFlow topo={topo} view={live} onView={patchLive} />}
       </main>
     </div>
   );

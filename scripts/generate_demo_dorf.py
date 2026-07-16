@@ -200,8 +200,9 @@ def main() -> None:
     t_room, t_design = CURVE["t_room_c"], CURVE["t_amb_design_c"]
     t_mean = t_room - f_mean * (t_room - t_design)
     hours = np.arange(STEPS) * RESOLUTION_MIN / 60.0
-    t_amb = t_mean - 2.5 * np.cos((hours - 14.0) / 24.0 * 2 * np.pi)
-    t_ground = 6.5 + 0.2 * np.sin((hours - 15.0) / 24.0 * 2 * np.pi)
+    # diurnal sinusoid: warmest at 14:00, coldest around 02:00
+    t_amb = t_mean + 2.5 * np.cos((hours - 14.0) / 24.0 * 2 * np.pi)
+    t_ground = 6.5 + 0.2 * np.cos((hours - 15.0) / 24.0 * 2 * np.pi)
     print(f"weather: mean {t_mean:.1f} degC "
           f"({t_amb.min():.1f} .. {t_amb.max():.1f})")
 
