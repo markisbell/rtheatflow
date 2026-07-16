@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "created": "2026-07-16T12:00:00",
+  "name": "Demo-Dorf 3G Winter",
+  "description": "Kalter Wintertag im Demo-Dorf als klassisches 3.-Generation-Netz (Heizkurve 110/70, hohe Rücklauftemperaturen), Schlechtpunktregelung auf 0,7 bar. Referenz für den Vergleich mit dem 4G-Szenario.",
+  "network_id": "demo_dorf",
+  "loadgen": {
+    "archetypes": null,
+    "mode": "round_robin",
+    "seed": 42,
+    "scale": 1.0,
+    "day_percentile": 0.9,
+    "jitter": true,
+    "dhw_variants": true,
+    "temperature_preset": "3G"
+  },
+  "heating_curve": null,
+  "dp_control": {
+    "mode": "controlled",
+    "setpoint_bar": 0.7,
+    "k": 0.5,
+    "max_step_bar": 0.05
+  },
+  "plant": {
+    "kind": "boiler",
+    "eta": 0.95
+  },
+  "weather_override": null,
+  "producers": [],
+  "storages": [],
+  "consumer_ops": [],
+  "measurements": {
+    "preset": "all_consumers"
+  },
+  "engine": {
+    "day": 0,
+    "step": 420,
+    "interval_seconds": 1.0
+  }
+}

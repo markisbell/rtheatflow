@@ -18,11 +18,24 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..config import Settings, get_settings
+from ..consumers import ArchetypeLibrary
 from ..data_loader import load_network
 from ..engine import RealtimeEngine
+from ..network_catalog import NetworkCatalog
 from ..simulator import Simulator
 from ..state import StateStore
-from . import control, core, plant, producers, runtime, weather
+from . import (
+    consumers,
+    control,
+    core,
+    networks,
+    plant,
+    producers,
+    runtime,
+    scenarios,
+    storage,
+    weather,
+)
 from .runtime import API_VERSION, App
 
 log = logging.getLogger(__name__)
@@ -45,6 +58,10 @@ def create_app(settings: Settings | None = None,
         sim = await asyncio.to_thread(Simulator, inputs, app_settings)
         store = StateStore(app_settings)
         engine = RealtimeEngine(sim, store, app_settings)
+        catalog = NetworkCatalog(
+            manifest=app_settings.network_library,
+            networks_dir=Path(app_settings.data_dir) / "networks")
+        library = ArchetypeLibrary(app_settings.profiles_dir)
         runtime.set_app(App(
             settings=app_settings,
             store=store,
@@ -53,6 +70,17 @@ def create_app(settings: Settings | None = None,
             network_dir=net_dir,
             topology=runtime.build_topology(net_dir.name, sim),
             loaded_at=time.time(),
+            catalog=catalog,
+            library=library,
+            active={
+                "network_id": net_dir.name,
+                "name": inputs.name,
+                "source": "default",
+                "loadgen": None,
+                "applied_at": time.time(),
+                "n_consumers": len(inputs.consumers.consumers),
+                "n_days": inputs.n_days,
+            },
         ))
         if app_settings.autostart:
             await engine.start()
@@ -86,6 +114,10 @@ def create_app(settings: Settings | None = None,
     fastapi_app.include_router(weather.router)
     fastapi_app.include_router(plant.router)
     fastapi_app.include_router(producers.router)
+    fastapi_app.include_router(storage.router)
+    fastapi_app.include_router(consumers.router)
+    fastapi_app.include_router(networks.router)
+    fastapi_app.include_router(scenarios.router)
     return fastapi_app
 
 

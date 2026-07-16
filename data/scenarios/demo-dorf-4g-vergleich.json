@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "created": "2026-07-16T12:00:00",
+  "name": "Demo-Dorf 4G Vergleich",
+  "description": "Dasselbe Dorf, derselbe Wintertag (Seed 42) als 4.-Generation-Netz: Heizkurve 70/65, niedrige Rücklauftemperaturen, Wärmepumpe (Erdreich) als Erzeuger — Verluste sinken, Massenstrom und COP-Effekt werden sichtbar. Direkt vergleichbar mit 'Demo-Dorf 3G Winter'.",
+  "network_id": "demo_dorf",
+  "loadgen": {
+    "archetypes": null,
+    "mode": "round_robin",
+    "seed": 42,
+    "scale": 1.0,
+    "day_percentile": 0.9,
+    "jitter": true,
+    "dhw_variants": true,
+    "temperature_preset": "4G"
+  },
+  "heating_curve": null,
+  "dp_control": {
+    "mode": "controlled",
+    "setpoint_bar": 0.7,
+    "k": 0.5,
+    "max_step_bar": 0.05
+  },
+  "plant": {
+    "kind": "heat_pump",
+    "eta_g": 0.5,
+    "t_cold_source": "t_ground"
+  },
+  "weather_override": null,
+  "producers": [],
+  "storages": [],
+  "consumer_ops": [],
+  "measurements": {
+    "preset": "all_consumers"
+  },
+  "engine": {
+    "day": 0,
+    "step": 420,
+    "interval_seconds": 1.0
+  }
+}

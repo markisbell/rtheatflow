@@ -10,6 +10,7 @@ import type {
   Topology,
 } from "../types";
 import type { MapLayer } from "../App";
+import type { MenuTarget } from "./ElementMenu";
 import {
   DP_MIN_BAR,
   RETURN_GRADIENT,
@@ -41,6 +42,10 @@ interface Props {
   observedOnly: boolean;
   /** supply-ramp anchor: the active heating curve's design temperature */
   tFlowDesign: number;
+  /** right-click context menu on elements/nodes (SPEC §8 grammar, M4) */
+  onMenu?: (target: MenuTarget) => void;
+  /** Ctrl-click pins an element details section (SPEC §8) */
+  onPin?: (target: MenuTarget) => void;
 }
 
 const LAYERS: MapLayer[] = ["supply", "return", "velocity", "dp"];
@@ -69,13 +74,16 @@ interface TrenchLive { s?: PipeState; r?: PipeState }
  *  only — never rebuilt). The unknown is styled as unknown: without a frame,
  *  or for unsensored elements in the measured view, elements render in the
  *  dedicated UNOBSERVED grey/dash — never in a healthy ramp color. */
-export default function MapDiagram({ topo, latest, layer, onLayer, observedOnly, tFlowDesign }: Props) {
+export default function MapDiagram({
+  topo, latest, layer, onLayer, observedOnly, tFlowDesign, onMenu, onPin,
+}: Props) {
   const { t, i18n } = useTranslation();
   const elRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tileRef = useRef<L.TileLayer | null>(null);
   const trenchRef = useRef<Map<number, L.Polyline>>(new Map());
   const consRef = useRef<Map<number, L.CircleMarker>>(new Map());
+  const equipRef = useRef<Map<string, L.Marker>>(new Map());
   const plantRef = useRef<L.CircleMarker | null>(null);
   const [light, setLight] = useState(true);
 
@@ -86,6 +94,26 @@ export default function MapDiagram({ topo, latest, layer, onLayer, observedOnly,
     observedOnly: boolean;
   }>({ latest: null, observedOnly: false });
   liveRef.current = { latest, observedOnly };
+  const cbRef = useRef<{ onMenu?: Props["onMenu"]; onPin?: Props["onPin"] }>({});
+  cbRef.current = { onMenu, onPin };
+
+  // right-click → ElementMenu; Ctrl-click → pinned section (SPEC §8)
+  const wireInteractions = (
+    lyr: L.Layer, target: Omit<MenuTarget, "x" | "y">,
+  ) => {
+    lyr.on("contextmenu", (e: L.LeafletMouseEvent) => {
+      L.DomEvent.stop(e);
+      const oe = e.originalEvent;
+      cbRef.current.onMenu?.({ ...target, x: oe.clientX, y: oe.clientY });
+    });
+    lyr.on("click", (e: L.LeafletMouseEvent) => {
+      if (!e.originalEvent.ctrlKey) return; // plain click keeps the popup
+      L.DomEvent.stop(e);
+      (lyr as L.Marker).closePopup?.();
+      const oe = e.originalEvent;
+      cbRef.current.onPin?.({ ...target, x: oe.clientX, y: oe.clientY });
+    });
+  };
 
   // ---- live-data lookups ----------------------------------------------------
 
@@ -193,11 +221,38 @@ export default function MapDiagram({ topo, latest, layer, onLayer, observedOnly,
       trenchRef.current.set(tr.id, pl);
     }
 
+    // plain trench nodes (small, always visible): the placement handles —
+    // right-click opens the §8 node → add producer/storage/bypass/consumer
+    for (const n of topo.nodes) {
+      if (n.kind === "consumer" || n.kind === "plant") continue;
+      const nm = L.circleMarker(n.geo, {
+        radius: 3.5, color: "#5b6472", weight: 1,
+        fillColor: "#39424f", fillOpacity: 0.9,
+      }).addTo(map);
+      nm.bindTooltip(t("tip.node", { name: n.name }));
+      wireInteractions(nm, {
+        kind: "node", id: n.name, name: n.name, node: n.name,
+      });
+    }
+
     consRef.current.clear();
     for (const c of topo.consumers) {
       const p = nodeGeo.get(c.node);
       if (!p) continue;
       allPts.push(p);
+      if (c.kind === "bypass") {
+        // §3.2 Netzschluss-Bypass: emoji marker, not a demand circle
+        const bm = L.marker(p, {
+          icon: L.divIcon({ className: "equip-icon", html: "🔀",
+                            iconAnchor: [7, 7] }),
+        }).addTo(map);
+        bm.bindTooltip(t("tip.bypass", { name: c.name }));
+        wireInteractions(bm, {
+          kind: "consumer", id: c.id, name: c.name, node: c.node,
+          consumerKind: "bypass",
+        });
+        continue;
+      }
       const cm = L.circleMarker(p, {
         radius: consumerRadius(c.q_design_w),
         color: TILES[light ? "light" : "dark"].stroke,
@@ -207,6 +262,10 @@ export default function MapDiagram({ topo, latest, layer, onLayer, observedOnly,
       }).addTo(map);
       cm.bindTooltip(t("tip.consumer", { name: c.name }));
       cm.bindPopup(() => consumerPopup(c), { autoPan: false });
+      wireInteractions(cm, {
+        kind: "consumer", id: c.id, name: c.name, node: c.node,
+        consumerKind: "consumer",
+      });
       consRef.current.set(c.id, cm);
     }
 
@@ -221,6 +280,10 @@ export default function MapDiagram({ topo, latest, layer, onLayer, observedOnly,
       }).addTo(map);
       cm.bindTooltip(t("tip.plant", { name: plant.name }));
       cm.bindPopup(() => plantPopup(), { autoPan: false });
+      wireInteractions(cm, {
+        kind: "producer", id: plant.id, name: plant.name, node: plant.node,
+        producerKind: "slack",
+      });
       plantRef.current = cm;
       // decorative equipment glyph (never intercepts clicks)
       L.marker(plantPos, {
@@ -246,9 +309,61 @@ export default function MapDiagram({ topo, latest, layer, onLayer, observedOnly,
       map.remove();
       mapRef.current = null;
       tileRef.current = null;
+      equipRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topo, i18n.language]); // rebuild (incl. tooltips) on language change
+
+  // ---- live equipment markers (M4): placed producers & storages come and
+  // go at runtime — driven from the frame's inventory, diffed per frame ----
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const nodeGeo = new Map<string, [number, number]>(
+      topo.nodes.map((n) => [n.name, n.geo]));
+    interface Want {
+      emoji: string; pos: [number, number]; title: string;
+      anchor: [number, number]; target: Omit<MenuTarget, "x" | "y">;
+    }
+    const want = new Map<string, Want>();
+    for (const p of latest?.producers ?? []) {
+      if (p.kind === "slack") continue;
+      const pos = nodeGeo.get(p.node);
+      if (!pos) continue;
+      want.set(`p${p.id}`, {
+        emoji: p.kind === "heat_exchanger" ? "☀️" : "⚙️", pos, title: p.name,
+        anchor: p.kind === "heat_exchanger" ? [22, 10] : [22, 26],
+        target: { kind: "producer", id: p.id, name: p.name, node: p.node,
+                  producerKind: p.kind },
+      });
+    }
+    for (const s of latest?.storages ?? []) {
+      const pos = nodeGeo.get(s.node);
+      if (!pos) continue;
+      want.set(`s${s.id}`, {
+        emoji: "🛢️", pos, title: s.name, anchor: [-8, 10],
+        target: { kind: "storage", id: s.id, name: s.name, node: s.node },
+      });
+    }
+    for (const [key, mk] of equipRef.current) {
+      if (!want.has(key)) {
+        map.removeLayer(mk);
+        equipRef.current.delete(key);
+      }
+    }
+    for (const [key, w] of want) {
+      if (equipRef.current.has(key)) continue;
+      const mk = L.marker(w.pos, {
+        icon: L.divIcon({ className: "equip-icon", html: w.emoji,
+                          iconAnchor: w.anchor }),
+      }).addTo(map);
+      mk.bindTooltip(w.title);
+      wireInteractions(mk, w.target);
+      equipRef.current.set(key, mk);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latest, topo]);
 
   // ---- basemap (light/dark) --------------------------------------------------
 

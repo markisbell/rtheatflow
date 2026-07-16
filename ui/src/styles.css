@@ -160,6 +160,85 @@ button.ghost {
 .note { font-size: 0.75rem; color: var(--warn); }
 .spinner { color: var(--muted); padding: 1rem; }
 
+/* ---- element context menu (SPEC §8 interaction grammar, M4) ---- */
+.menu-overlay { position: fixed; inset: 0; z-index: 1290; }
+.el-menu {
+  position: fixed; z-index: 1300; min-width: 215px; max-width: 280px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55); padding: 6px;
+  display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem;
+}
+.el-menu .menu-title {
+  font-weight: 700; font-size: 0.8rem; padding: 5px 9px 4px;
+  border-bottom: 1px solid var(--border); margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.el-menu .menu-item {
+  display: flex; align-items: center; gap: 8px; text-align: left;
+  background: transparent; color: var(--text); border: none; cursor: pointer;
+  padding: 6px 9px; border-radius: 6px; font-size: 0.85rem;
+}
+.el-menu .menu-item:hover { background: var(--panel-2); }
+.el-menu .menu-hdr { color: var(--muted); font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 9px 2px; }
+
+/* equipment emoji markers (interactive — unlike the decorative plant icon) */
+.equip-icon { font-size: 15px; line-height: 1; white-space: nowrap;
+  cursor: pointer; text-shadow: 0 0 2px #fff, 0 0 2px #fff; }
+
+/* small numeric config inputs in sections */
+.num-input {
+  width: 74px; font-size: 0.78rem; background: var(--panel-2);
+  color: var(--text); border: 1px solid var(--border); border-radius: 4px;
+  padding: 1px 4px; text-align: right;
+}
+.field { margin: 0.45rem 0; display: flex; flex-direction: column; gap: 3px; }
+.field > label { font-size: 0.8rem; }
+.field select, .field input[type="number"] {
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 3px 6px; font-size: 0.82rem; max-width: 220px;
+}
+
+/* storage SoC bar */
+.soc-bar { height: 9px; border: 1px solid var(--border); border-radius: 5px;
+  overflow: hidden; background: var(--panel-2); margin: 6px 0 2px; }
+.soc-fill { height: 100%; background: linear-gradient(90deg, #7fd1ff, #22c55e); }
+
+/* ---- NetzStudio (3-column workflow, SPEC §8) ---- */
+.netzstudio {
+  display: grid; grid-template-columns: 265px 320px 1fr; height: 100%;
+  overflow: hidden;
+}
+.netzstudio h3 { margin: 0 0 0.6rem; font-size: 0.85rem; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--muted); }
+.ns-list { border-right: 1px solid var(--border); padding: 0.9rem; overflow: auto;
+  background: var(--panel); }
+.ns-hdr { color: var(--muted); font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; margin: 0.6rem 0 0.25rem; }
+.ns-row { padding: 7px 9px; border: 1px solid transparent; border-radius: 8px;
+  cursor: pointer; }
+.ns-row:hover { background: var(--panel-2); }
+.ns-row.sel { background: var(--panel-2); border-color: var(--accent-2); }
+.ns-row .title { font-size: 0.85rem; font-weight: 600; }
+.ns-row .sub { font-size: 0.72rem; color: var(--muted); display: flex; gap: 5px;
+  align-items: center; flex-wrap: wrap; }
+.ns-row .tag { border: 1px solid var(--border); border-radius: 999px;
+  padding: 0 6px; font-size: 0.66rem; }
+.ns-config { border-right: 1px solid var(--border); padding: 0.9rem;
+  overflow: auto; }
+.ns-preview { padding: 0.9rem; overflow: auto; }
+.ns-chart { max-width: 720px; margin-top: 0.5rem; }
+.arch-list { display: flex; flex-direction: column; gap: 2px; }
+.arch-row { display: flex; align-items: center; gap: 7px; font-size: 0.8rem;
+  padding: 3px 2px; }
+.kpis { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.kpis.col { flex-direction: column; }
+.kpi { background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 0.45rem 0.7rem; min-width: 86px; }
+.kpi .v { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi .k { font-size: 0.68rem; color: var(--muted); }
+
 /* Leaflet popup, dark-panel look */
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
   background: var(--panel); color: var(--text);

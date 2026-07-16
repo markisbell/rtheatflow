@@ -15,30 +15,50 @@ from rtheatflow.api import create_app
 from rtheatflow.api.runtime import API_VERSION
 
 # ---------------------------------------------------------------------------
-# THE M2 SURFACE. Deliberately exhaustive and alphabetical — change the API,
-# change this list, consciously. (SPEC §7; /dpcontrol, storage, consumers,
-# sensors, networks, scenarios, recording arrive in M4/M5/M6.)
+# THE M4 SURFACE. Deliberately exhaustive and alphabetical — change the API,
+# change this list, consciously. (SPEC §7; sensors/measurements arrive M5,
+# recording/export + /networks/import arrive M6, profiles/estimation M7.)
 # ---------------------------------------------------------------------------
 EXPECTED = {
+    ("DELETE", "/consumer/{consumer_id}"),
     ("DELETE", "/producer/{producer_id}"),
+    ("DELETE", "/scenarios/{sid}"),
+    ("DELETE", "/storage/{storage_id}"),
     ("DELETE", "/weather/override"),
     ("GET", "/"),
+    ("GET", "/config/active"),
+    ("GET", "/dpcontrol"),
     ("GET", "/health"),
     ("GET", "/heatingcurve"),
     ("GET", "/history"),
+    ("GET", "/loadgen/archetypes"),
     ("GET", "/network"),
+    ("GET", "/networks"),
+    ("GET", "/networks/{network_id}"),
     ("GET", "/producers"),
+    ("GET", "/scenarios"),
     ("GET", "/state"),
     ("GET", "/status"),
+    ("GET", "/storages"),
     ("GET", "/weather"),
+    ("POST", "/bypass"),
+    ("POST", "/config/apply"),
+    ("POST", "/consumer"),
     ("POST", "/control/interval"),
     ("POST", "/control/pause"),
     ("POST", "/control/resume"),
     ("POST", "/control/seek"),
     ("POST", "/control/seekday"),
     ("POST", "/control/start"),
+    ("POST", "/dpcontrol"),
     ("POST", "/heatingcurve"),
+    ("POST", "/loadgen/assign"),
     ("POST", "/producer"),
+    ("POST", "/producer/{producer_id}/config"),
+    ("POST", "/scenarios"),
+    ("POST", "/scenarios/{sid}/load"),
+    ("POST", "/storage"),
+    ("POST", "/storage/{storage_id}/config"),
     ("PUT", "/weather/override"),
     ("WS", "/ws"),
 }
@@ -76,7 +96,7 @@ def test_route_inventory_is_pinned():
 
 
 def test_api_version_reported():
-    assert API_VERSION == "0.2.0"
+    assert API_VERSION == "0.4.0"
     app = create_app(make_settings())
     assert app.version == API_VERSION
 

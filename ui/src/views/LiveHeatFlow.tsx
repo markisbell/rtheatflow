@@ -1,37 +1,69 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api";
-import type { EngineStatus, Topology } from "../types";
+import type { ArchetypeInfo, EngineStatus, Topology } from "../types";
 import { useStepStream } from "../useStepStream";
 import MapDiagram from "../components/MapDiagram";
 import OverviewSection from "../components/OverviewSection";
+import WorstPointSection from "../components/WorstPointSection";
+import HeatingCurveSection from "../components/HeatingCurveSection";
+import WeatherSection from "../components/WeatherSection";
+import ElementMenu, { type MenuAction, type MenuTarget } from "../components/ElementMenu";
+import PinnedSection, { type PinTarget } from "../components/EquipmentControls";
 import type { LiveView } from "../App";
+
+const TRACE_LEN = 240; // worst-point Δp frames kept for the trace
 
 /** The live map view (blueprint LivePowerFlow port, DH domain): map +
  *  collapsible right sidebar + bottom transport bar. Values update from the
  *  WS stream (≤ 1 frame behind); the engine status is re-polled every 2 s
- *  and re-synced from every control verb's response. */
-export default function LiveHeatFlow({ topo, view, onView }: {
+ *  and re-synced from every control verb's response. M4 adds the §8
+ *  interaction grammar: right-click context menu (place/remove equipment),
+ *  Ctrl-click pins element sections. */
+export default function LiveHeatFlow({ topo, view, onView, onTopoChange }: {
   topo: Topology;
   view: LiveView;
   onView: (patch: Partial<LiveView>) => void;
+  /** equipment CRUD changed the inventory — App refetches /network */
+  onTopoChange: () => void;
 }) {
   const { t } = useTranslation();
   const { layer, viewMode } = view;
   const [status, setStatus] = useState<EngineStatus | null>(null);
   const [ovOpen, setOvOpen] = useState(true);
+  const [wpOpen, setWpOpen] = useState(true);
+  const [hcOpen, setHcOpen] = useState(false);
+  const [wxOpen, setWxOpen] = useState(false);
   const [stepSeconds, setStepSeconds] = useState(1); // wall-clock s per sim minute
   const [sideW, setSideW] = useState(320);
+  const [menu, setMenu] = useState<MenuTarget | null>(null);
+  const [pins, setPins] = useState<PinTarget[]>([]);
+  const [archetypes, setArchetypes] = useState<ArchetypeInfo[]>([]);
+  const [dpTrace, setDpTrace] = useState<number[]>([]);
   const intervalInit = useRef(false);
+  const lastStamp = useRef<string>("");
 
   const { latest, status: wsStatus } = useStepStream(true);
 
   const loadStatus = () => api.status().then(setStatus).catch(() => {});
   useEffect(() => {
     loadStatus();
+    api.archetypes().then((r) => setArchetypes(r.archetypes)).catch(() => {});
     const iv = setInterval(loadStatus, 2000);
     return () => clearInterval(iv);
   }, []);
+
+  // worst-point Δp trace (observed layer — what the controller sees)
+  useEffect(() => {
+    if (!latest) return;
+    const stamp = `${latest.day}:${latest.step}`;
+    if (stamp === lastStamp.current) return;
+    lastStamp.current = stamp;
+    const dp = latest.controls?.dp_control?.dp_worst_observed_bar
+      ?? latest.observed_summary?.dp_worst_bar;
+    if (dp == null) return;
+    setDpTrace((tr) => [...tr.slice(-(TRACE_LEN - 1)), dp]);
+  }, [latest]);
 
   // adopt the engine's current tick interval once, then it's user-driven
   useEffect(() => {
@@ -49,6 +81,65 @@ export default function LiveHeatFlow({ topo, view, onView }: {
   const changeInterval = async (s: number) => {
     setStepSeconds(s);
     setStatus(await api.stepInterval(s));
+  };
+
+  // ---- ElementMenu action dispatcher (M4 equipment CRUD) ----
+  const runMenuAction = (a: MenuAction) => {
+    if (!menu) return;
+    const node = menu.node;
+    const done = () => onTopoChange();
+    const fail = (e: unknown) => window.alert(String(e));
+    switch (a.type) {
+      case "addHx":
+        api.addProducer({ node, kind: "heat_exchanger",
+                          qext_w: 20000, inner_diameter_mm: 50 })
+          .then(done, fail);
+        break;
+      case "addPump":
+        api.addProducer({ node, kind: "pump_mass",
+                          mdot_flow_kg_per_s: 0.1, t_flow_k: 348.15 })
+          .then(done, fail);
+        break;
+      case "addStorage":
+        api.addStorage({ node, capacity_kwh: 100, power_kw: 50 })
+          .then(done, fail);
+        break;
+      case "addBypass":
+        api.addBypass(node).then(done, fail);
+        break;
+      case "addConsumer":
+        api.addConsumer(a.archetype
+          ? { node, archetype: a.archetype }
+          : { node, q_kw: a.qKw ?? 20 }).then(done, fail);
+        break;
+      case "removeConsumer":
+        api.removeConsumer(menu.id as number).then(done, fail);
+        break;
+      case "removeProducer":
+        api.removeProducer(menu.id as number).then(done, fail);
+        break;
+      case "removeStorage":
+        api.removeStorage(menu.id as number).then(done, fail);
+        break;
+      case "storageMode":
+        api.configStorage(menu.id as number, { mode: a.mode })
+          .then(() => {}, fail);
+        break;
+      case "plantKind":
+        api.configProducer(menu.id as number, {
+          plant_kind: a.kind,
+          ...(a.tColdSource ? { t_cold_source: a.tColdSource } : {}),
+        }).then(() => {}, fail);
+        break;
+    }
+  };
+
+  const pinTarget = (m: MenuTarget) => {
+    if (m.kind === "node") return;
+    setPins((ps) => ps.some((p) => p.kind === m.kind && p.id === m.id)
+      ? ps
+      : [...ps, { kind: m.kind as PinTarget["kind"],
+                  id: m.id as number, name: m.name }]);
   };
 
   const step = latest?.step ?? status?.step ?? 0;
@@ -85,8 +176,17 @@ export default function LiveHeatFlow({ topo, view, onView }: {
       <div className="diagram-wrap">
         <MapDiagram topo={topo} latest={latest} layer={layer}
                     onLayer={(l) => onView({ layer: l })}
-                    observedOnly={mode === "observed"} tFlowDesign={tFlowDesign} />
+                    observedOnly={mode === "observed"} tFlowDesign={tFlowDesign}
+                    onMenu={setMenu}
+                    onPin={(m) => pinTarget(m)} />
       </div>
+
+      {menu && (
+        <ElementMenu target={menu} archetypes={archetypes}
+                     onAction={runMenuAction}
+                     onPin={() => pinTarget(menu)}
+                     onClose={() => setMenu(null)} />
+      )}
 
       <aside className="side">
         <div className="side-resizer" onMouseDown={startResize} />
@@ -118,6 +218,22 @@ export default function LiveHeatFlow({ topo, view, onView }: {
                          solverStatus={latest?.solver_status}
                          solveMs={latest?.solve_ms ?? null}
                          canReveal={canReveal} />
+
+        <WorstPointSection open={wpOpen} onToggle={() => setWpOpen((v) => !v)}
+                           latest={latest} trace={dpTrace} />
+
+        <HeatingCurveSection open={hcOpen} onToggle={() => setHcOpen((v) => !v)}
+                             latest={latest} />
+
+        <WeatherSection open={wxOpen} onToggle={() => setWxOpen((v) => !v)}
+                        latest={latest} />
+
+        {pins.map((pin) => (
+          <PinnedSection key={`${pin.kind}:${pin.id}`} pin={pin} latest={latest}
+                         onClose={() => setPins((ps) => ps.filter(
+                           (p) => !(p.kind === pin.kind && p.id === pin.id)))}
+                         onChanged={onTopoChange} />
+        ))}
 
         <p className="muted" style={{ fontSize: "0.72rem", marginTop: "0.5rem" }}>
           {t("live.selectHint")}

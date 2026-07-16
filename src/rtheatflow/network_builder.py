@@ -78,6 +78,8 @@ class NetIndex:
     heat_exchangers: np.ndarray
     pump_mass: np.ndarray
     producer_meta: list[dict] = field(default_factory=list)
+    # per-consumer kind: "consumer" | "bypass" (runtime bypasses, M4)
+    consumer_kinds: list[str] = field(default_factory=list)
 
     def next_pid(self) -> int:
         return 1 + max((int(m["pid"]) for m in self.producer_meta), default=-1)
@@ -204,14 +206,17 @@ def build_network(
             qext_w=qext0, name=name, **kwargs)
         consumer_idx.append(hc)
 
-    # zero-flow guard: floor the total demand (SPEC §3.2)
+    # zero-flow guard: floor the total demand (SPEC §3.2). mdot-pair rows
+    # (bypasses, mdot-mode consumers) have a fixed flow — no singularity
+    # risk — and keep their configured standby qext (e.g. the 100 W bypass).
     qext = q_sh + q_dhw
-    n_floored = int(np.count_nonzero(qext < min_qext_w))
+    floor = np.where(mdot_mask, 0.0, min_qext_w)[:, None]
+    n_floored = int(np.count_nonzero(qext < floor))
     if n_floored:
         log.warning(
             "zero-flow guard: flooring %d consumer profile values below %.0f W "
             "(SPEC §3.2 minimum-flow policy)", n_floored, min_qext_w)
-    qext = np.maximum(qext, min_qext_w)
+    qext = np.maximum(qext, floor)
 
     # --- producers ---
     slack_idx = -1
@@ -264,6 +269,7 @@ def build_network(
         consumers=np.asarray(consumer_idx, dtype=np.int64),
         consumer_names=[c.name or f"consumer_{c.node}" for c in consumers],
         consumer_nodes=[c.node for c in consumers],
+        consumer_kinds=["consumer"] * len(consumers),
         treturn_mask=treturn_mask,
         deltat_mask=deltat_mask,
         mdot_mask=mdot_mask,
