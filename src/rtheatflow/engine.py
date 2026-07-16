@@ -15,6 +15,7 @@ import asyncio
 import logging
 
 from .config import Settings, get_settings
+from .estimator import EstimationConfig
 from .net_inputs import NetInputs
 from .simulator import Simulator
 from .state import StateStore
@@ -44,6 +45,10 @@ class RealtimeEngine:
         self._running = asyncio.Event()
         self._stopped = False
         self._task: asyncio.Task | None = None
+        # estimation policy (M7): held here so it survives grid swaps —
+        # blueprint semantics (the policy is an operator setting, the
+        # observer instance is per-Simulator run-state)
+        self.est_config: EstimationConfig | None = None
 
     # -- lifecycle -----------------------------------------------------------
 
@@ -85,6 +90,12 @@ class RealtimeEngine:
     def set_interval(self, seconds: float) -> None:
         self.interval = max(MIN_INTERVAL_S, float(seconds))
 
+    def set_est_config(self, cfg: EstimationConfig) -> None:
+        """Install the estimation policy on the live Simulator and keep it
+        for every future ``reconfigure`` (grid swap / scenario load)."""
+        self.est_config = cfg
+        self.sim.set_est_config(cfg)
+
     async def reconfigure(self, inputs: NetInputs) -> None:
         """Grid swap: build a new Simulator off-thread, reset store & clock.
 
@@ -100,6 +111,8 @@ class RealtimeEngine:
         was_running = self.running
         await self.stop()          # drains the in-flight step, if any
         sim = await asyncio.to_thread(Simulator, inputs, self.settings)
+        if self.est_config is not None:
+            sim.set_est_config(self.est_config)  # policy survives the swap
         self.sim = sim
         self.store.reset()
         self.step = 0

@@ -1,4 +1,5 @@
-"""Sensor placement endpoints (SPEC §7 Sensors row, §8a — M5).
+"""Sensor placement endpoints (SPEC §7 Sensors row, §8a — M5) and the
+estimation policy (M7).
 
 The measurable layer's CRUD: heat meters (Wärmemengenzähler) at consumer
 substations, T/p sensors at trench nodes, the bulk fidelity mode
@@ -6,8 +7,13 @@ substations, T/p sensors at trench nodes, the bulk fidelity mode
 fresh placement payload (placement + coverage), so the UI panel and the map
 markers re-sync from the response — the blueprint convention.
 
+``GET/POST /estimation/config`` configures the M7 forward observer (the
+Schätzung layer): enabled (default on), the prior basis for unmetered
+consumers, and the wall-clock throttle factor. The policy is an operator
+setting — it survives grid swaps (held on the engine, blueprint semantics).
+
 Error discipline (SPEC §7): 404 unknown element / no device to remove,
-422 invalid mode/preset (pydantic ``Literal``).
+422 invalid mode/preset/basis (pydantic ``Literal``/bounds).
 """
 from __future__ import annotations
 
@@ -15,8 +21,9 @@ import logging
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from ..estimator import EstimationConfig
 from .runtime import App, get_app
 
 log = logging.getLogger(__name__)
@@ -114,3 +121,58 @@ def set_preset(body: PresetBody) -> dict:
     app.sim.measurements.apply_preset(body.preset)
     log.info("measurement preset -> %s", body.preset)
     return _placement(app)
+
+
+# ---------------------------------------------------------------------------
+# Estimation policy (SPEC §8a, M7): the forward observer's knobs
+# ---------------------------------------------------------------------------
+
+class EstimationBody(BaseModel):
+    """Partial update of the estimation policy (422 outside the bounds)."""
+
+    enabled: bool | None = None
+    prior_basis: Literal["archetype", "design"] | None = Field(
+        default=None,
+        description="what unmetered consumers are assumed to do: the "
+                    "archetype's expected profile, or the crude "
+                    "q_design·f(T_amb) degree-hour prior")
+    throttle_factor: float | None = Field(
+        default=None, ge=0.0, le=20.0,
+        description="wall-clock self-throttle: a new estimate only after "
+                    "throttle_factor × its own runtime has elapsed")
+
+
+def _estimation_payload(app: App) -> dict:
+    cfg = app.sim.est_config
+    obs = app.sim._observer
+    return {
+        **cfg.as_dict(),
+        "seq": obs.seq if obs is not None else 0,
+        "last_solve_ms": obs._ms if obs is not None else None,
+    }
+
+
+@router.get("/estimation/config", summary="Estimation policy")
+def get_estimation_config() -> dict:
+    """The forward observer's policy (enabled / prior basis / throttle) plus
+    the current estimate sequence number and runtime."""
+    return _estimation_payload(get_app())
+
+
+@router.post("/estimation/config", summary="Configure the estimation")
+def set_estimation_config(body: EstimationBody) -> dict:
+    """Partial update. The policy survives grid swaps and scenario loads
+    (held on the engine); changing it drops the observer's twin — the next
+    converged step rebuilds it with fresh priors."""
+    app = get_app()
+    cur = app.sim.est_config
+    cfg = EstimationConfig(
+        enabled=cur.enabled if body.enabled is None else bool(body.enabled),
+        prior_basis=(cur.prior_basis if body.prior_basis is None
+                     else body.prior_basis),
+        throttle_factor=(cur.throttle_factor if body.throttle_factor is None
+                         else float(body.throttle_factor)),
+    )
+    app.engine.set_est_config(cfg)
+    log.info("estimation config -> %s", cfg)
+    return _estimation_payload(app)

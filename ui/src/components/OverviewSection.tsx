@@ -8,6 +8,7 @@ import Section, { Stat } from "./Section";
 import { dpColor, fmt } from "../scales";
 import type {
   Controls,
+  EstimatedState,
   HeatingCurveParams,
   ObservedSummary,
   StepSummary,
@@ -30,11 +31,12 @@ export function curveSetpoint(
 
 export default function OverviewSection({
   open, onToggle, mode, summary, observed, weather, controls,
-  solverStatus, solveMs, canReveal,
+  solverStatus, solveMs, canReveal, est, estAgeMin,
 }: {
   open: boolean;
   onToggle: () => void;
-  mode: "truth" | "observed";
+  mode: "truth" | "observed" | "est";
+  /** In est mode this is the SPLICED estimated summary (LiveHeatFlow). */
   summary: StepSummary | undefined;
   observed: ObservedSummary | null | undefined;
   weather: WeatherState | undefined;
@@ -42,9 +44,11 @@ export default function OverviewSection({
   solverStatus: string | undefined;
   solveMs: number | null;
   canReveal: boolean;
+  est?: EstimatedState | null;
+  estAgeMin?: number | null;
 }) {
   const { t } = useTranslation();
-  const reveal = mode === "truth" && !!summary;
+  const reveal = (mode === "truth" || mode === "est") && !!summary;
   const s = summary;
   const os = observed;
   const setpoint = curveSetpoint(controls?.heating_curve, weather?.t_amb_c);
@@ -63,7 +67,9 @@ export default function OverviewSection({
   return (
     <Section title={t("ov.heading")} open={open} onToggle={onToggle}>
       <div className="muted" style={{ fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
-        {reveal ? <>👁 {t("ov.groundTruth")}</> : <>📟 {t("ov.observedCaption")}</>}
+        {mode === "est" ? <>🧮 {t("ov.estCaption")}</>
+          : reveal ? <>👁 {t("ov.groundTruth")}</>
+          : <>📟 {t("ov.observedCaption")}</>}
       </div>
       {reveal && s ? (
         <>
@@ -102,6 +108,30 @@ export default function OverviewSection({
                 color={dpColor(os?.dp_worst_bar)} />
           <Stat label={t("ov.coverage")}
                 value={os ? `${os.n_metered}/${os.n_consumers}` : "—"} />
+        </>
+      )}
+      {mode === "est" && est && (
+        <>
+          <div className="muted" style={{ fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.05em", margin: "6px 0 2px" }}>
+            🧮 {t("ov.estQuality")}
+          </div>
+          <Stat label={t("ov.estAge")}
+                value={estAgeMin != null && estAgeMin > 0
+                  ? t("ov.estAgeMin", { min: estAgeMin, seq: est.seq })
+                  : t("ov.estAgeNow", { seq: est.seq })} />
+          <Stat label={t("ov.estErrTr")}
+                value={est.error.max_dt_return_k != null
+                  ? `${fmt(est.error.max_dt_return_k, 2)} K` : t("ov.na")} />
+          <Stat label={t("ov.estErrMdot")}
+                value={est.error.max_dmdot_kg_per_s != null
+                  ? `${fmt(est.error.max_dmdot_kg_per_s, 3)} kg/s` : t("ov.na")} />
+          <Stat label={t("ov.estErrDp")}
+                value={est.error.max_ddp_bar != null
+                  ? `${fmt(est.error.max_ddp_bar, 3)} bar` : t("ov.na")} />
+          <Stat label={t("ov.estSolve")} value={`${fmt(est.solve_ms, 1)} ms`} />
+          <div className="muted" style={{ fontSize: "0.68rem", marginTop: 4 }}>
+            {t("ov.estNote")}
+          </div>
         </>
       )}
       <Stat label={t("ov.weather")}

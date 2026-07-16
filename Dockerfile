@@ -19,6 +19,7 @@ RUN pip install -r requirements.txt
 COPY pyproject.toml .
 COPY src/ ./src/
 COPY scripts/ ./scripts/
+COPY docs/ ./docs/
 
 # The committed dataset (networks, profiles, scenarios) ships in the image —
 # the container runs standalone; mount ./data to persist recordings/imports.

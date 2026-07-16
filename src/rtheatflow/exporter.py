@@ -21,8 +21,13 @@ load produces (storages at SoC 0, cold initialization, fresh measurement
 windows, a controlled pump released to its file-defined lift) — and then
 controllers really regulate (closed loop), storages really integrate across
 day boundaries, standard-mode meters really cold-start. The replay is
-**quasi-static** like the live loop; the experimental transient flag
-(SPEC §3.5) is M7 scope.
+**quasi-static** like the live loop by default; ``RTHEATFLOW_TRANSIENT=true``
+(SPEC §3.5, experimental, exporter-only) switches the replay to pandapipes'
+transient thermal mode via per-step chaining (``transient=True`` with an
+explicit ``dt`` and a monotonic ``simulation_time_step`` — exactly what
+``run_timeseries`` does internally, proven bit-identical in
+``tests/test_transient_m7.py``), with automatic per-step quasi-static
+fallback and a ``transient_fallback`` marker in the pack metadata.
 
 One export at a time (the API maps a second start to 409); progress is
 polled via ``status()`` (steps done/total, ETA) and a run can be cancelled
@@ -60,7 +65,8 @@ class BulkExporter:
         if self._state.get("active"):
             raise RuntimeError("a bulk export is already running")
         rec = Recorder(self.root)
-        meta = {**meta, "export": {"days": days}}
+        transient = bool(sim_copy.settings.transient)
+        meta = {**meta, "export": {"days": days, "transient": transient}}
         rec.start(meta, name=name or f"export-{len(days)}-tage")
         spd = int(sim_copy.settings.steps_per_day)
         self._state = {
@@ -111,6 +117,17 @@ class BulkExporter:
         # strict mode the export pack carries no ground truth either (this is
         # what makes live vs export byte-compatibility hold in both modes)
         store = StateStore(sim.settings)
+        # experimental transient replay (SPEC §3.5, RTHEATFLOW_TRANSIENT):
+        # per-step chaining with an explicit dt and a monotonic step counter
+        # — the exact mechanism run_timeseries uses internally (proven
+        # bit-identical in tests/test_transient_m7.py). Any step whose
+        # transient tiers fail falls back to the quasi-static ladder
+        # automatically (never a crash) and is counted for the
+        # `transient_fallback` metadata marker.
+        transient = bool(sim.settings.transient)
+        dt_s = 86400.0 / float(sim.settings.steps_per_day)
+        fallback_steps = 0
+        step_counter = 0
         try:
             self.prepare_replay(sim, first_day=days[0] if days else 0)
             spd = int(sim.settings.steps_per_day)
@@ -120,7 +137,12 @@ class BulkExporter:
                     if self._cancel.is_set():
                         self._state["cancelled"] = True
                         raise _Cancelled()
-                    rec.record(store.frame(sim.run_step(t, d)))
+                    ctx = ({"dt": dt_s, "step": step_counter}
+                           if transient else None)
+                    rec.record(store.frame(sim.run_step(t, d, solve_ctx=ctx)))
+                    if transient and sim.last_transient is not True:
+                        fallback_steps += 1
+                    step_counter += 1
                     self._state["steps_done"] += 1
         except _Cancelled:
             log.info("bulk export cancelled after %d steps",
@@ -129,11 +151,14 @@ class BulkExporter:
             log.exception("bulk export failed")
             self._state["error"] = f"{type(exc).__name__}: {exc}"
         finally:
-            rec._meta = {**rec._meta,
-                         "export": {**rec._meta.get("export", {}),
-                                    "cancelled": self._state.get("cancelled", False),
-                                    "error": self._state.get("error"),
-                                    "duration_seconds": round(time.time() - t0, 1)}}
+            export_meta = {**rec._meta.get("export", {}),
+                           "cancelled": self._state.get("cancelled", False),
+                           "error": self._state.get("error"),
+                           "duration_seconds": round(time.time() - t0, 1)}
+            if transient:
+                export_meta["transient_fallback"] = fallback_steps > 0
+                export_meta["transient_fallback_steps"] = fallback_steps
+            rec._meta = {**rec._meta, "export": export_meta}
             rec.stop()
             self._state["active"] = False
             log.info("bulk export finished: %d steps in %.1f s",
@@ -158,11 +183,17 @@ class BulkExporter:
           controllers); a **fixed** pump keeps the user's setting (config);
         * storages start at SoC 0 (the M4 scenario-load convention);
         * measurement windows fresh (standard-mode meters cold-start
-          honestly), last-payload/blind-spot cleared.
+          honestly), last-payload/blind-spot cleared;
+        * estimation disabled on the replay copy (M7): packs never record
+          the estimated layer (its refresh cadence is wall-clock-throttled —
+          machine timing, not physics), so running the observer would only
+          burn replay time. The blueprint's ``estimate`` export flag guarded
+          the same cost; ours is simply always off for replays.
 
         Public on purpose: the live-vs-export byte-compatibility test starts
         its live recording from this same normalized state.
         """
+        from dataclasses import replace
         tick0 = sim._tick(0, first_day)
         idx = sim.index
         if sim.heating_curve is not None:
@@ -180,6 +211,7 @@ class BulkExporter:
         sim.measurements._reset_windows()
         sim._last_payload = None
         sim._blind_spot = None
+        sim.set_est_config(replace(sim.est_config, enabled=False))
         sim._reset_initialization()
 
 

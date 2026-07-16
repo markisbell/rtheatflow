@@ -206,6 +206,9 @@ function MenuBar({ live, onLive, tab, onTab, onApplied }: {
         ))}
       </Menu>
       <Menu id="help" label={t("mbar.help")} open={open} onToggle={toggle}>
+        <a className="mi" href="/api/manual" target="_blank" rel="noreferrer">
+          📘 {t("mbar.manual")}
+        </a>
         <a className="mi" href="/api/docs" target="_blank" rel="noreferrer">
           📖 {t("mbar.apiDocs")}
         </a>
@@ -237,7 +240,9 @@ function MenuBar({ live, onLive, tab, onTab, onApplied }: {
                 onClick={() => onLive({ viewMode: "observed" })}>
           📟 {t("mbar.segObserved")}
         </button>
-        <button disabled title={t("mbar.estM7")}>
+        <button className={live.viewMode === "est" ? "on" : ""}
+                title={t("mbar.sightEst")}
+                onClick={() => onLive({ viewMode: "est" })}>
           🧮 {t("mbar.segEst")}
         </button>
       </div>

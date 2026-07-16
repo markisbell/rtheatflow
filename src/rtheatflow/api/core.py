@@ -1,4 +1,5 @@
-"""Core endpoints (SPEC §7): monitor, health, status, network, state, history, WS.
+"""Core endpoints (SPEC §7): monitor, health, status, network, state,
+history, manual, WS.
 
 Error-code discipline (blueprint): ``/state`` is **404 before the first
 solve** — and *only* then. A non-converged solve still publishes a frame
@@ -6,10 +7,13 @@ solve** — and *only* then. A non-converged solve still publishes a frame
 """
 from __future__ import annotations
 
+import html as _html
 import logging
+import re
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 
 from .runtime import get_app, status_payload
 
@@ -66,6 +70,179 @@ def history(
     """The most recent frames (oldest first), through the same projection
     path as ``/state``. Bounded by ``RTHEATFLOW_HISTORY_SIZE``."""
     return get_app().store.history_frames(limit)
+
+
+# ---------------------------------------------------------------------------
+# GET /manual — the German Benutzerhandbuch (SPEC §2/§7), rendered as HTML.
+# The manual is authored in-repo as Markdown (docs/Benutzerhandbuch.md); the
+# renderer below covers exactly the subset the manual uses (headings, lists,
+# tables, fenced code, bold/italic/inline code, links, blockquotes, rules) —
+# deliberately no third-party markdown dependency for one static document.
+# ---------------------------------------------------------------------------
+
+_MANUAL_PATH = Path(__file__).resolve().parents[3] / "docs" / "Benutzerhandbuch.md"
+
+_INLINE_RULES = (
+    (re.compile(r"`([^`]+)`"), r"<code>\1</code>"),
+    (re.compile(r"\*\*([^*]+)\*\*"), r"<strong>\1</strong>"),
+    (re.compile(r"(?<!\*)\*([^*\s][^*]*)\*(?!\*)"), r"<em>\1</em>"),
+    (re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)"), r'<a href="\2">\1</a>'),
+)
+
+
+def _inline(text: str) -> str:
+    out = _html.escape(text, quote=False)
+    for rx, repl in _INLINE_RULES:
+        out = rx.sub(repl, out)
+    return out
+
+
+def render_markdown(md: str) -> str:
+    """Markdown-subset → HTML body (line-based, no recursion)."""
+    out: list[str] = []
+    lines = md.replace("\r\n", "\n").split("\n")
+    i, n = 0, len(lines)
+    para: list[str] = []
+    in_list: str | None = None   # "ul" | "ol"
+
+    def flush_para():
+        if para:
+            out.append(f"<p>{_inline(' '.join(para))}</p>")
+            para.clear()
+
+    def close_list():
+        nonlocal in_list
+        if in_list:
+            out.append(f"</{in_list}>")
+            in_list = None
+
+    while i < n:
+        line = lines[i]
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            flush_para()
+            close_list()
+            i += 1
+            code: list[str] = []
+            while i < n and not lines[i].strip().startswith("```"):
+                code.append(lines[i])
+                i += 1
+            out.append("<pre><code>"
+                       + _html.escape("\n".join(code)) + "</code></pre>")
+            i += 1
+            continue
+        m = re.match(r"^(#{1,4})\s+(.*)$", stripped)
+        if m:
+            flush_para()
+            close_list()
+            level = len(m.group(1))
+            out.append(f"<h{level}>{_inline(m.group(2))}</h{level}>")
+            i += 1
+            continue
+        if stripped in ("---", "***"):
+            flush_para()
+            close_list()
+            out.append("<hr>")
+            i += 1
+            continue
+        if stripped.startswith("|") and stripped.endswith("|"):
+            flush_para()
+            close_list()
+            rows: list[list[str]] = []
+            while i < n and lines[i].strip().startswith("|"):
+                cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+                if not all(re.fullmatch(r":?-{2,}:?", c) for c in cells):
+                    rows.append(cells)
+                i += 1
+            if rows:
+                out.append("<table><thead><tr>"
+                           + "".join(f"<th>{_inline(c)}</th>" for c in rows[0])
+                           + "</tr></thead><tbody>")
+                for r in rows[1:]:
+                    out.append("<tr>" + "".join(
+                        f"<td>{_inline(c)}</td>" for c in r) + "</tr>")
+                out.append("</tbody></table>")
+            continue
+        if stripped.startswith("> "):
+            flush_para()
+            close_list()
+            quote: list[str] = []
+            while i < n and lines[i].strip().startswith("> "):
+                quote.append(lines[i].strip()[2:])
+                i += 1
+            out.append(f"<blockquote><p>{_inline(' '.join(quote))}</p></blockquote>")
+            continue
+        m = re.match(r"^[-*]\s+(.*)$", stripped)
+        if m:
+            flush_para()
+            if in_list != "ul":
+                close_list()
+                out.append("<ul>")
+                in_list = "ul"
+            out.append(f"<li>{_inline(m.group(1))}</li>")
+            i += 1
+            continue
+        m = re.match(r"^\d+\.\s+(.*)$", stripped)
+        if m:
+            flush_para()
+            if in_list != "ol":
+                close_list()
+                out.append("<ol>")
+                in_list = "ol"
+            out.append(f"<li>{_inline(m.group(1))}</li>")
+            i += 1
+            continue
+        if not stripped:
+            flush_para()
+            close_list()
+            i += 1
+            continue
+        para.append(stripped)
+        i += 1
+    flush_para()
+    close_list()
+    return "\n".join(out)
+
+
+_MANUAL_CSS = """
+  body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 46rem;
+         padding: 0 1rem; background: #fff; color: #1c2530; line-height: 1.55; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #14181d; color: #e6e9ec; }
+    a { color: #6cb2ff; } code, pre { background: #1d232b; }
+    th, td { border-color: #39424f; } blockquote { border-color: #39424f; }
+  }
+  h1 { font-size: 1.6rem; border-bottom: 2px solid #d8dde3; padding-bottom: .3rem; }
+  h2 { font-size: 1.25rem; margin-top: 2rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.4rem; }
+  code { background: #f0f2f5; padding: .1em .3em; border-radius: .25em;
+         font-size: .9em; }
+  pre { background: #f0f2f5; padding: .7em; border-radius: .4em; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; margin: 1em 0; width: 100%; }
+  th, td { border: 1px solid #d8dde3; padding: .35em .6em; text-align: left;
+           font-size: .92em; }
+  blockquote { border-left: 4px solid #d8dde3; margin: 1em 0; padding: .1em 1em;
+               opacity: .9; }
+"""
+
+
+@router.get("/manual", summary="Benutzerhandbuch (German user manual)")
+def manual(format: str = Query(default="html", pattern="^(html|md)$")):
+    """The German user manual, rendered as HTML (``?format=md`` for the raw
+    Markdown source). Authored in ``docs/Benutzerhandbuch.md``."""
+    if not _MANUAL_PATH.is_file():
+        raise HTTPException(404, "Benutzerhandbuch not found "
+                                 "(docs/Benutzerhandbuch.md missing)")
+    md = _MANUAL_PATH.read_text(encoding="utf-8")
+    if format == "md":
+        return PlainTextResponse(md, media_type="text/markdown; charset=utf-8")
+    return HTMLResponse(
+        "<!DOCTYPE html><html lang=\"de\"><head><meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        "<title>rtheatflow — Benutzerhandbuch</title>"
+        f"<style>{_MANUAL_CSS}</style></head><body>"
+        f"{render_markdown(md)}</body></html>")
 
 
 @router.websocket("/ws")

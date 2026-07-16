@@ -15,8 +15,9 @@ from rtheatflow.api import create_app
 from rtheatflow.api.runtime import API_VERSION
 
 # ---------------------------------------------------------------------------
-# THE M6 SURFACE. Deliberately exhaustive and alphabetical — change the API,
-# change this list, consciously. (SPEC §7; profiles/estimation arrive M7.)
+# THE M7 SURFACE. Deliberately exhaustive and alphabetical — change the API,
+# change this list, consciously. (SPEC §7; per-element /profiles sweeps are
+# the one §7 row deliberately not shipped — documented in CLAUDE.md M7.)
 # ---------------------------------------------------------------------------
 EXPECTED = {
     ("DELETE", "/consumer/{consumer_id}"),
@@ -34,10 +35,12 @@ EXPECTED = {
     ("GET", "/recordings/{rid}/download"),
     ("GET", "/config/active"),
     ("GET", "/dpcontrol"),
+    ("GET", "/estimation/config"),
     ("GET", "/health"),
     ("GET", "/heatingcurve"),
     ("GET", "/history"),
     ("GET", "/loadgen/archetypes"),
+    ("GET", "/manual"),
     ("GET", "/measurements"),
     ("GET", "/network"),
     ("GET", "/networks"),
@@ -58,6 +61,7 @@ EXPECTED = {
     ("POST", "/control/seekday"),
     ("POST", "/control/start"),
     ("POST", "/dpcontrol"),
+    ("POST", "/estimation/config"),
     ("POST", "/export/cancel"),
     ("POST", "/export/days"),
     ("POST", "/heatingcurve"),
@@ -112,7 +116,7 @@ def test_route_inventory_is_pinned():
 
 
 def test_api_version_reported():
-    assert API_VERSION == "0.6.0"
+    assert API_VERSION == "0.7.0"
     app = create_app(make_settings())
     assert app.version == API_VERSION
 

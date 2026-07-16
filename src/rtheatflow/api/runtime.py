@@ -25,7 +25,7 @@ from ..state import StateStore
 
 #: API contract version, reported by /health and /status and stamped into the
 #: generated docs/API.md. Bump with every milestone that changes the surface.
-API_VERSION = "0.6.0"
+API_VERSION = "0.7.0"
 
 # The network loaded at startup is ``settings.default_network``
 # (``RTHEATFLOW_DEFAULT_NETWORK``, default ``demo_dorf``); the M4 catalog
@@ -115,6 +115,7 @@ def recording_meta(app: App | None = None) -> dict:
                           if sim.heating_curve is not None else None),
         "dp_control": sim.dp_control.params(),
         "plant": sim.plant.params(),
+        "estimation": sim.est_config.as_dict(),
         "engine": status_payload(app),
         "expose_ground_truth": bool(app.settings.expose_ground_truth),
     }

@@ -1,7 +1,7 @@
 # rtheatflow API reference
 
 > **Generated** by `scripts/gen_api_doc.py` — do not edit by hand.
-> API version **0.6.0** · interactive docs at `/docs` (Swagger) when the
+> API version **0.7.0** · interactive docs at `/docs` (Swagger) when the
 > backend runs · default bind `127.0.0.1:8000`, no auth (teaching tool).
 
 The single wire format is the projected `StepResult` (SPEC §6): `/state`,
@@ -25,6 +25,7 @@ limits (weather override out of range) · `500` internal failures only —
 | `GET` | `/` | Built-in HTML live monitor |
 | `GET` | `/health` | Liveness probe |
 | `GET` | `/history` | Recent frames |
+| `GET` | `/manual` | Benutzerhandbuch (German user manual) |
 | `GET` | `/network` | Static topology |
 | `GET` | `/state` | Latest solved frame |
 | `GET` | `/status` | Engine status |
@@ -33,6 +34,7 @@ limits (weather override out of range) · `500` internal failures only —
 - **`GET /`** — Minimal self-contained live monitor fed by ``WS /ws`` (blueprint style).
 - **`GET /health`** — Cheap liveness check for launchers/containers (no engine access).
 - **`GET /history`** — The most recent frames (oldest first), through the same projection path as ``/state``. Bounded by ``RTHEATFLOW_HISTORY_SIZE``.
+- **`GET /manual`** — The German user manual, rendered as HTML (``?format=md`` for the raw Markdown source). Authored in ``docs/Benutzerhandbuch.md``.
 - **`GET /network`** — Active network topology: nodes, trenches (shared supply/return geometry + per-side pipe element ids), consumers, producers. Rebuilt per request — equipment CRUD (M4) changes the consumer/producer inventory live.
 - **`GET /state`** — The latest StepResult wire frame (projected). **404 before the first solve**; a failed solve still yields a frame with ``converged=false``.
 - **`GET /status`** — Engine clock, run state, interval, active network, latest-frame digest.
@@ -118,6 +120,8 @@ limits (weather override out of range) · `500` internal failures only —
 
 | Method | Path | Summary |
 |---|---|---|
+| `GET` | `/estimation/config` | Estimation policy |
+| `POST` | `/estimation/config` | Configure the estimation |
 | `GET` | `/measurements` | Sensor placement + coverage |
 | `DELETE` | `/measurements/consumer/{consumer_id}` | Remove a heat meter |
 | `POST` | `/measurements/consumer/{consumer_id}` | Place a heat meter |
@@ -126,6 +130,8 @@ limits (weather override out of range) · `500` internal failures only —
 | `POST` | `/measurements/node/{node_id}` | Place a T/p sensor |
 | `POST` | `/measurements/preset` | Apply a placement preset |
 
+- **`GET /estimation/config`** — The forward observer's policy (enabled / prior basis / throttle) plus the current estimate sequence number and runtime.
+- **`POST /estimation/config`** — Partial update. The policy survives grid swaps and scenario loads (held on the engine); changing it drops the observer's twin — the next converged step rebuilds it with fresh priors.
 - **`GET /measurements`** — Which consumers carry a heat meter, which nodes a T/p sensor, the fidelity mode, and coverage fractions per element class. Plant SCADA is always measured (real plants are) and does not appear as a placement.
 - **`POST /measurements/consumer/{consumer_id}`** — Install a Wärmemengenzähler at the consumer substation. In standard mode the new meter starts cold: readings stay null until its first 15-minute window closes (SPEC §8a).
 - **`POST /measurements/mode`** — Bulk fidelity switch for every placed device: ``full`` = every channel every step; ``standard`` = 15-min-window means aligned to simulated time, null until the first window closes (honest cold start — the window state resets on every switch). Plant SCADA stays live either way.

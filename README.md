@@ -2,7 +2,7 @@
 
 Realtime pandapipes district-heating simulator — supply/return hydraulics + thermal state on a live map, three-layer observability (reality / measured / estimated). Sibling of [rtpowerflow](https://github.com/markisbell/rtpowerflow) (netzsim), translated from electricity to heat.
 
-**Status: M6 (ops) complete.** Headless core, REST/WebSocket API (58 routes), Leaflet UI (DE/EN), equipment & scenarios, measurement layer, session recording → CSV, offline bulk export, InfluxDB/Grafana stack, Docker Compose, CI → GHCR. The estimation layer (M7) is next. [SPEC.md](SPEC.md) is the binding build specification; [CLAUDE.md](CLAUDE.md) is the development log.
+**Status: M7 complete — all milestones shipped.** Headless core, REST/WebSocket API (61 routes), Leaflet UI (DE/EN), equipment & scenarios, measurement layer, **estimation layer** (forward-simulation observer with honesty tripwires), session recording → CSV, offline bulk export (opt-in experimental transient replay), InfluxDB/Grafana stack, Docker Compose, CI → GHCR, [architecture docs](docs/ARCHITECTURE.md) and a German [Benutzerhandbuch](docs/Benutzerhandbuch.md) served at `/manual`. [SPEC.md](SPEC.md) is the binding build specification; [CLAUDE.md](CLAUDE.md) is the development log.
 
 ## Run it
 
@@ -48,7 +48,7 @@ set PYTHONPATH=src
 cd ui && npm run dev
 ```
 
-Tests: `pytest -q` (backend, 134), `cd ui && npm run build && npx vitest run` (tsc strict + 20 unit tests).
+Tests: `pytest -q` (backend, 154), `cd ui && npm run build && npx vitest run` (tsc strict + 20 unit tests).
 
 ## What is where
 
@@ -56,8 +56,10 @@ Tests: `pytest -q` (backend, 134), `cd ui && npm run build && npx vitest run` (t
 |---|---|
 | [SPEC.md](SPEC.md) | The complete build specification: architecture cloned from netzsim, runtime-verified pandapipes 0.14.0 API reference, data contract, wire format, API surface, milestones |
 | [CLAUDE.md](CLAUDE.md) | Development log & agent handoff (per-milestone build notes, verified pins, deviations) |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture incl. the quasi-static/transient honesty statement and the forward-observer design |
+| [docs/Benutzerhandbuch.md](docs/Benutzerhandbuch.md) | German user manual (served live at `GET /manual`) |
 | [docs/API.md](docs/API.md) | Generated API reference (`scripts/gen_api_doc.py`, pinned by test) |
-| `src/rtheatflow/` | Backend: five-file data contract, build-once network builder, retry-ladder solver, RealtimeEngine, StateStore, controllers (heating curve, Schlechtpunkt-Δp), equipment CRUD, measurement layer, recorder + bulk exporter, scenario recipes |
+| `src/rtheatflow/` | Backend: five-file data contract, build-once network builder, retry-ladder solver, RealtimeEngine, StateStore, controllers (heating curve, Schlechtpunkt-Δp), equipment CRUD, measurement layer, forward-observer estimation, recorder + bulk exporter, scenario recipes |
 | `ui/` | React 18 + TypeScript strict + Vite + raw Leaflet, i18next DE/EN |
 | `visualization/` | InfluxDB collector + file-provisioned Grafana dashboard |
 | `data/` | Demo networks (`demo_dorf`, `appendix_a`), archetype profile cache, reference scenarios; runtime dirs `data/recordings/`, `data/user_networks/` (gitignored) |

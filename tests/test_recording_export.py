@@ -274,12 +274,13 @@ def test_recording_metadata_recipe(tmp_path):
         client.post("/recording/stop")
         meta = json.loads(
             (tmp_path / rid / "metadata.json").read_text("utf-8"))
-    assert meta["rtheatflow_version"] == "0.6.0"
+    assert meta["rtheatflow_version"] == "0.7.0"
     assert meta["network"]["network_id"] == "appendix_a"
     assert meta["measurements"]["preset"] == "all_consumers"
     assert "mode" in meta["measurements"]
     assert "setpoint_bar" in meta["dp_control"]
     assert "kind" in meta["plant"]
+    assert meta["estimation"]["enabled"] is True  # M7 policy in the recipe
     assert "interval_seconds" in meta["engine"]
     assert meta["expose_ground_truth"] is True
     assert meta["steps_recorded"] == 0

@@ -25,6 +25,7 @@ from pandapipes.pf.pipeflow_setup import PipeflowNotConverged
 from .config import Settings, get_settings
 from .consumers import ConsumerProfile
 from .dp_control import DpController
+from .estimator import EstimationConfig, ForwardObserver
 from .heating_curve import HeatingCurve, from_config
 from .net_inputs import NetInputs
 from .network_builder import KELVIN, ProfileArrays, build_network
@@ -95,13 +96,34 @@ class SolveOutcome:
     tier: int             # 1-based tier that converged; 0 if none
     solve_ms: float
     error: str | None = None
+    transient: bool = False   # a transient tier converged (M7 exporter flag)
 
 
-def solve_with_retry(net, iter_base: int = 100) -> SolveOutcome:
-    """Run the retry ladder on *net*. Never raises for non-convergence."""
+def solve_with_retry(net, iter_base: int = 100,
+                     transient_ctx: dict | None = None) -> SolveOutcome:
+    """Run the retry ladder on *net*. Never raises for non-convergence.
+
+    *transient_ctx* (SPEC §3.5, offline exporter only): ``{"dt": <simulated
+    seconds per step>, "step": <monotonic step counter>}`` prepends two
+    transient bidirectional tiers. Per-step chaining is the SAME mechanism
+    ``run_timeseries`` uses internally (it calls ``pipeflow`` per step with
+    ``transient=True, dt=..., simulation_time_step=i`` and relies on
+    ``net["_pit"]`` persisting between calls) — proven bit-identical against
+    ``run_timeseries`` in ``tests/test_transient_m7.py``. ``dt`` is always
+    passed explicitly (``dt=None`` crashes the numba path, issue #787);
+    ``simulation_time_step=0`` starts the chain cold. If every transient
+    tier fails, the quasi-static ladder below is the automatic fallback
+    (§3.5) — the outcome then reports ``transient=False``.
+    """
     t0 = time.perf_counter()
     errors: list[str] = []
-    for tier, kwargs in enumerate(retry_attempts(iter_base), start=1):
+    attempts = retry_attempts(iter_base)
+    if transient_ctx is not None:
+        base = dict(mode="bidirectional", iter=int(iter_base), transient=True,
+                    dt=float(transient_ctx["dt"]),
+                    simulation_time_step=int(transient_ctx["step"]))
+        attempts = [base, {**base, "alpha": 0.5}] + attempts
+    for tier, kwargs in enumerate(attempts, start=1):
         try:
             pipeflow(net, **kwargs)
         except PipeflowNotConverged as exc:
@@ -111,8 +133,9 @@ def solve_with_retry(net, iter_base: int = 100) -> SolveOutcome:
             errors.append(f"tier {tier} {kwargs}: {type(exc).__name__}: {exc}")
             continue
         ms = (time.perf_counter() - t0) * 1000.0
+        transient = bool(kwargs.get("transient", False))
         if kwargs["mode"] == "bidirectional":
-            return SolveOutcome(True, "ok", tier, ms)
+            return SolveOutcome(True, "ok", tier, ms, transient=transient)
         return SolveOutcome(
             True, "degraded", tier, ms,
             error="sequential fallback: temperature set points not honored")
@@ -120,6 +143,161 @@ def solve_with_retry(net, iter_base: int = 100) -> SolveOutcome:
     err = "; ".join(errors) or "no solver tier attempted"
     log.warning("all retry-ladder tiers failed: %s", err)
     return SolveOutcome(False, "failed", 0, ms, error=err)
+
+
+# ---------------------------------------------------------------------------
+# Physics collection (SPEC §3.6) — shared by the Simulator's truth payload
+# and the M7 forward observer's twin (estimator.py): one set of formulas
+# (direction-aware losses, mdot·c̄p·ΔT feed-in), never two.
+# ---------------------------------------------------------------------------
+
+def collect_physics(net, idx, fluid, pipe_trench: dict,
+                    pump_eta: float, storages) -> dict:
+    """The four ground-truth wire keys + aux values from a SOLVED *net*.
+
+    Returns ``{junctions, pipes, consumers, summary, aux}`` where ``aux``
+    carries ``q_feed_plant_w`` / ``pump_el_w`` / ``q_pump_mass_w`` /
+    ``worst_pos`` for the caller's producers block and blind-spot flag.
+    *storages* is the live storage list (charge/discharge element ids +
+    active mode — identical element indices in the twin by construction).
+    """
+    rj, rp, rhc = net.res_junction, net.res_pipe, net.res_heat_consumer
+    rc = net.res_circ_pump_pressure.loc[idx.slack]
+
+    # --- per-pipe heat loss [W], direction-aware (SPEC §3.6) ---
+    # inlet = upstream node temp (t_from if mdot >= 0 else t_to); outlet =
+    # the branch's own t_outlet_k (before junction mixing), never t_to_k.
+    mdot_pipe = rp.mdot_from_kg_per_s.values
+    fwd = mdot_pipe >= 0
+    t_in = np.where(fwd, rp.t_from_k.values, rp.t_to_k.values)
+    cp_pipe = fluid.get_heat_capacity((t_in + rp.t_outlet_k.values) / 2)
+    q_loss_w = np.abs(mdot_pipe) * cp_pipe * (t_in - rp.t_outlet_k.values)
+    q_loss_total_w = float(q_loss_w.sum())
+
+    # --- plant feed-in [W] = mdot · cp̄ · ΔT (SPEC §3.6) — NOT the raw
+    # res_circ_pump_pressure.qext_w column (enthalpy form, ~+4.7 %) ---
+    mdot_plant = float(abs(rc.mdot_from_kg_per_s))
+    t_mean = (float(rc.t_outlet_k) + float(rc.t_from_k)) / 2
+    cp_plant = float(fluid.get_heat_capacity(np.array([t_mean]))[0])
+    q_feed_plant_w = mdot_plant * cp_plant * (
+        float(rc.t_outlet_k) - float(rc.t_from_k))
+
+    # --- secondary feed-ins carry negative qext_w: negate, never sum raw.
+    # NB: res_heat_exchanger has NO qext_w column at runtime (0.14.0 —
+    # verified M2; §10.1 "branch cols" only). qext_w is a fixed input
+    # setpoint, so the component table is the authoritative source. ---
+    q_secondary_w = 0.0
+    if len(idx.heat_exchangers):
+        hx_q = net.heat_exchanger.loc[
+            idx.heat_exchangers, "qext_w"].to_numpy(dtype=float)
+        q_secondary_w = float(-hx_q[hx_q < 0].sum())
+
+    # --- storage branches (SPEC §4.4): the charge branch always draws
+    # from the net (charging power, or the §3.2 idle standby — a standing
+    # loss); an in-service discharge pump feeds in like a producer. ---
+    q_charge_w = 0.0
+    q_discharge_w = 0.0
+    for s in storages:
+        q_charge_w += float(net.heat_consumer.at[
+            s.charge_element, "qext_w"])
+        if s.active == "discharge" and bool(net.circ_pump_mass.at[
+                s.discharge_element, "in_service"]):
+            rm = net.res_circ_pump_mass.loc[s.discharge_element]
+            t_mean = (float(rm.t_outlet_k) + float(rm.t_from_k)) / 2
+            cp_s = float(fluid.get_heat_capacity(np.array([t_mean]))[0])
+            q_discharge_w += abs(float(rm.mdot_from_kg_per_s)) * cp_s * (
+                float(rm.t_outlet_k) - float(rm.t_from_k))
+
+    # pump_mass producers feed like the plant: mdot·cp·(t_out − t_in)
+    # (realized, from the result table — the M2 fixture had none, so
+    # they only enter the balance since their M4 placement CRUD)
+    q_pump_mass_w: dict[int, float] = {}
+    for el in idx.pump_mass:
+        rm = net.res_circ_pump_mass.loc[int(el)]
+        t_mean = (float(rm.t_outlet_k) + float(rm.t_from_k)) / 2
+        cp_pm = float(fluid.get_heat_capacity(np.array([t_mean]))[0])
+        q_pump_mass_w[int(el)] = abs(float(rm.mdot_from_kg_per_s)) * \
+            cp_pm * (float(rm.t_outlet_k) - float(rm.t_from_k))
+
+    q_feed_in_w = (q_feed_plant_w + q_secondary_w + q_discharge_w
+                   + float(sum(q_pump_mass_w.values())))
+
+    # consumers only — storage charge branches are heat_consumer rows
+    # too but belong to the storage bucket, never to the demand KPI
+    rhc_c = rhc.loc[idx.consumers]
+    q_demand_w = float(rhc_c.qext_w.sum())
+    balance_err_w = q_feed_in_w - (
+        q_demand_w + q_loss_total_w + q_charge_w)
+    loss_pct = 100.0 * q_loss_total_w / q_feed_in_w if q_feed_in_w else None
+
+    # --- worst-point Δp + argmin (SPEC §3.6) ---
+    dp_cons = (rhc_c.p_from_bar - rhc_c.p_to_bar).to_numpy()
+    worst_pos = int(np.argmin(dp_cons))
+    dp_worst_bar = float(dp_cons[worst_pos])
+    worst_consumer = idx.consumer_names[worst_pos]
+
+    # --- pump electric power (SPEC §3.6): P_hyd = V̇·Δp, P_el = P_hyd/η ---
+    dp_pump_pa = (float(rc.p_to_bar) - float(rc.p_from_bar)) * 1e5
+    p_hyd_w = abs(float(rc.vdot_m3_per_s)) * abs(dp_pump_pa)
+    pump_el_w = p_hyd_w / pump_eta
+
+    # --- wire payload: temperatures in °C, everything through _r() ---
+    junctions = [
+        {"id": int(i), "name": idx.junction_names[i],
+         "side": idx.junction_sides[i],
+         "p_bar": _r(rj.p_bar.iloc[i]), "t_c": _r(rj.t_k.iloc[i] - KELVIN)}
+        for i in range(len(rj))
+    ]
+    pipes = []
+    for i in range(len(rp)):
+        trench, side = pipe_trench.get(int(net.pipe.index[i]), (-1, "?"))
+        pipes.append({
+            "id": int(net.pipe.index[i]), "trench": trench, "side": side,
+            "mdot_kg_per_s": _r(rp.mdot_from_kg_per_s.iloc[i]),
+            "v_m_per_s": _r(rp.v_mean_m_per_s.iloc[i]),
+            "t_from_c": _r(rp.t_from_k.iloc[i] - KELVIN),
+            "t_to_c": _r(rp.t_to_k.iloc[i] - KELVIN),
+            "q_loss_kw": _r(q_loss_w[i] / 1000.0),
+            "dp_bar": _r(rp.p_from_bar.iloc[i] - rp.p_to_bar.iloc[i]),
+        })
+    consumers = [
+        {"id": int(idx.consumers[i]), "name": idx.consumer_names[i],
+         "node": idx.consumer_nodes[i],
+         "kind": (idx.consumer_kinds[i] if idx.consumer_kinds
+                  else "consumer"),
+         "q_kw": _r(rhc_c.qext_w.iloc[i] / 1000.0),
+         "mdot_kg_per_s": _r(rhc_c.mdot_from_kg_per_s.iloc[i]),
+         "t_supply_c": _r(rhc_c.t_from_k.iloc[i] - KELVIN),
+         "t_return_c": _r(rhc_c.t_outlet_k.iloc[i] - KELVIN),
+         "dp_bar": _r(dp_cons[i])}
+        for i in range(len(idx.consumers))
+    ]
+    summary = {
+        "q_feed_kw": _r(q_feed_in_w / 1000.0),
+        "q_demand_kw": _r(q_demand_w / 1000.0),
+        "q_loss_kw": _r(q_loss_total_w / 1000.0),
+        "loss_pct": _r(loss_pct, 3),
+        "pump_el_kw": _r(pump_el_w / 1000.0),
+        "dp_worst_bar": _r(dp_worst_bar),
+        "worst_consumer": worst_consumer,
+        "t_flow_plant_c": _r(rc.t_outlet_k - KELVIN),
+        "t_return_plant_c": _r(rc.t_from_k - KELVIN),
+        "mdot_plant_kg_per_s": _r(mdot_plant),
+        "q_storage_kw": _r((q_charge_w - q_discharge_w) / 1000.0),
+        "balance_err_kw": _r(balance_err_w / 1000.0),
+    }
+    return {
+        "junctions": junctions,
+        "pipes": pipes,
+        "consumers": consumers,
+        "summary": summary,
+        "aux": {
+            "q_feed_plant_w": q_feed_plant_w,
+            "pump_el_w": pump_el_w,
+            "q_pump_mass_w": q_pump_mass_w,
+            "worst_pos": worst_pos,
+        },
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -195,6 +373,33 @@ class Simulator:
             WINDOW_MINUTES * self.settings.steps_per_day / 1440.0))
         self.measurements = MeasurementSet(
             window_steps=window_steps, context=self._measurement_context)
+
+        # estimation layer (SPEC §8a, M7): forward-simulation observer,
+        # created lazily on the first converged step (deep-copies the net).
+        # The engine re-applies a held config across grid swaps.
+        self.est_config = EstimationConfig()
+        self._observer: ForwardObserver | None = None
+        #: whether the last solve converged on a transient tier (M7 §3.5);
+        #: None = the last run was not a transient-context run
+        self.last_transient: bool | None = None
+
+    # -- estimation layer (SPEC §8a, M7) ---------------------------------------
+
+    def set_est_config(self, cfg: EstimationConfig) -> None:
+        """Install a new estimation policy; the observer (twin + priors +
+        stale estimate) is dropped and rebuilt lazily."""
+        self.est_config = cfg
+        self._observer = None
+
+    def _maybe_estimate(self, payload: dict, tick: int,
+                        step: int, day: int) -> dict | None:
+        """Blueprint pattern: refresh throttled, last estimate attached."""
+        if not self.est_config.enabled:
+            self._observer = None
+            return None
+        if self._observer is None:
+            self._observer = ForwardObserver(self, self.est_config)
+        return self._observer.maybe_estimate(payload, tick, step, day)
 
     # -- measurement layer (SPEC §8a, M5) -------------------------------------
 
@@ -315,8 +520,15 @@ class Simulator:
 
     # -- the step ------------------------------------------------------------
 
-    def run_step(self, step: int, day: int) -> StepResult:
-        """One simulation step. Never raises for non-convergence (SPEC §3.3)."""
+    def run_step(self, step: int, day: int,
+                 solve_ctx: dict | None = None) -> StepResult:
+        """One simulation step. Never raises for non-convergence (SPEC §3.3).
+
+        *solve_ctx* is the exporter-only transient context (SPEC §3.5):
+        ``{"dt": seconds, "step": monotonic counter}`` — the live engine
+        never passes it. ``self.last_transient`` reports whether a transient
+        tier actually converged (None = not a transient run).
+        """
         tick = self._tick(step, day)
         apply_error: str | None = None
         try:
@@ -327,9 +539,12 @@ class Simulator:
                         apply_error)
 
         if apply_error is None:
-            outcome = solve_with_retry(self.net, self.settings.solver_iter)
+            outcome = solve_with_retry(self.net, self.settings.solver_iter,
+                                       transient_ctx=solve_ctx)
         else:
             outcome = SolveOutcome(False, "failed", 0, 0.0, error=apply_error)
+        self.last_transient = (bool(outcome.transient)
+                               if solve_ctx is not None else None)
 
         if outcome.converged:
             try:
@@ -365,6 +580,14 @@ class Simulator:
             self._reset_initialization()
             payload = self._reused_payload(tick)
 
+        # estimation layer (SPEC §8a, M7): refresh on converged frames
+        # (throttled/rastered inside); failed frames carry the last estimate
+        # stale — consistent with the reused truth/measurement state above.
+        if outcome.converged:
+            estimated = self._maybe_estimate(payload, tick, step, day)
+        else:
+            estimated = self._observer.last if self._observer else None
+
         return StepResult(
             step=int(step),
             day=int(day),
@@ -374,6 +597,7 @@ class Simulator:
             solve_ms=_r(outcome.solve_ms, 3) or 0.0,
             timestamp=time.time(),
             error=outcome.error,
+            estimated=estimated,
             **payload,
         )
 
@@ -457,118 +681,23 @@ class Simulator:
 
     def _collect(self, tick: int) -> dict:
         net, idx = self.net, self.index
-        fluid = self._fluid
-        rj, rp, rhc = net.res_junction, net.res_pipe, net.res_heat_consumer
         rc = net.res_circ_pump_pressure.loc[idx.slack]
 
-        # --- per-pipe heat loss [W], direction-aware (SPEC §3.6) ---
-        # inlet = upstream node temp (t_from if mdot >= 0 else t_to); outlet =
-        # the branch's own t_outlet_k (before junction mixing), never t_to_k.
-        mdot_pipe = rp.mdot_from_kg_per_s.values
-        fwd = mdot_pipe >= 0
-        t_in = np.where(fwd, rp.t_from_k.values, rp.t_to_k.values)
-        cp_pipe = fluid.get_heat_capacity((t_in + rp.t_outlet_k.values) / 2)
-        q_loss_w = np.abs(mdot_pipe) * cp_pipe * (t_in - rp.t_outlet_k.values)
-        q_loss_total_w = float(q_loss_w.sum())
+        # the four ground-truth wire keys + physics aux — shared with the M7
+        # forward observer (estimator.py) so twin and truth use literally the
+        # same formulas (direction-aware losses, mdot·c̄p·ΔT feed, §3.6)
+        physics = collect_physics(net, idx, self._fluid, self._pipe_trench,
+                                  self.settings.pump_eta, self.storages)
+        junctions = physics["junctions"]
+        pipes = physics["pipes"]
+        consumers = physics["consumers"]
+        summary = physics["summary"]
+        aux = physics["aux"]
+        q_feed_plant_w = aux["q_feed_plant_w"]
+        pump_el_w = aux["pump_el_w"]
+        q_pump_mass_w = aux["q_pump_mass_w"]
+        worst_pos = aux["worst_pos"]
 
-        # --- plant feed-in [W] = mdot · cp̄ · ΔT (SPEC §3.6) — NOT the raw
-        # res_circ_pump_pressure.qext_w column (enthalpy form, ~+4.7 %) ---
-        mdot_plant = float(abs(rc.mdot_from_kg_per_s))
-        t_mean = (float(rc.t_outlet_k) + float(rc.t_from_k)) / 2
-        cp_plant = float(fluid.get_heat_capacity(np.array([t_mean]))[0])
-        q_feed_plant_w = mdot_plant * cp_plant * (
-            float(rc.t_outlet_k) - float(rc.t_from_k))
-
-        # --- secondary feed-ins carry negative qext_w: negate, never sum raw.
-        # NB: res_heat_exchanger has NO qext_w column at runtime (0.14.0 —
-        # verified M2; §10.1 "branch cols" only). qext_w is a fixed input
-        # setpoint, so the component table is the authoritative source. ---
-        q_secondary_w = 0.0
-        if len(idx.heat_exchangers):
-            hx_q = net.heat_exchanger.loc[
-                idx.heat_exchangers, "qext_w"].to_numpy(dtype=float)
-            q_secondary_w = float(-hx_q[hx_q < 0].sum())
-
-        # --- storage branches (SPEC §4.4): the charge branch always draws
-        # from the net (charging power, or the §3.2 idle standby — a standing
-        # loss); an in-service discharge pump feeds in like a producer. ---
-        q_charge_w = 0.0
-        q_discharge_w = 0.0
-        for s in self.storages:
-            q_charge_w += float(net.heat_consumer.at[
-                s.charge_element, "qext_w"])
-            if s.active == "discharge" and bool(net.circ_pump_mass.at[
-                    s.discharge_element, "in_service"]):
-                rm = net.res_circ_pump_mass.loc[s.discharge_element]
-                t_mean = (float(rm.t_outlet_k) + float(rm.t_from_k)) / 2
-                cp_s = float(fluid.get_heat_capacity(np.array([t_mean]))[0])
-                q_discharge_w += abs(float(rm.mdot_from_kg_per_s)) * cp_s * (
-                    float(rm.t_outlet_k) - float(rm.t_from_k))
-
-        # pump_mass producers feed like the plant: mdot·cp·(t_out − t_in)
-        # (realized, from the result table — the M2 fixture had none, so
-        # they only enter the balance since their M4 placement CRUD)
-        q_pump_mass_w: dict[int, float] = {}
-        for el in idx.pump_mass:
-            rm = net.res_circ_pump_mass.loc[int(el)]
-            t_mean = (float(rm.t_outlet_k) + float(rm.t_from_k)) / 2
-            cp_pm = float(fluid.get_heat_capacity(np.array([t_mean]))[0])
-            q_pump_mass_w[int(el)] = abs(float(rm.mdot_from_kg_per_s)) * \
-                cp_pm * (float(rm.t_outlet_k) - float(rm.t_from_k))
-
-        q_feed_in_w = (q_feed_plant_w + q_secondary_w + q_discharge_w
-                       + float(sum(q_pump_mass_w.values())))
-
-        # consumers only — storage charge branches are heat_consumer rows
-        # too but belong to the storage bucket, never to the demand KPI
-        rhc_c = rhc.loc[idx.consumers]
-        q_demand_w = float(rhc_c.qext_w.sum())
-        balance_err_w = q_feed_in_w - (
-            q_demand_w + q_loss_total_w + q_charge_w)
-        loss_pct = 100.0 * q_loss_total_w / q_feed_in_w if q_feed_in_w else None
-
-        # --- worst-point Δp + argmin (SPEC §3.6) ---
-        dp_cons = (rhc_c.p_from_bar - rhc_c.p_to_bar).to_numpy()
-        worst_pos = int(np.argmin(dp_cons))
-        dp_worst_bar = float(dp_cons[worst_pos])
-        worst_consumer = idx.consumer_names[worst_pos]
-
-        # --- pump electric power (SPEC §3.6): P_hyd = V̇·Δp, P_el = P_hyd/η ---
-        dp_pump_pa = (float(rc.p_to_bar) - float(rc.p_from_bar)) * 1e5
-        p_hyd_w = abs(float(rc.vdot_m3_per_s)) * abs(dp_pump_pa)
-        pump_el_w = p_hyd_w / self.settings.pump_eta
-
-        # --- wire payload: temperatures in °C, everything through _r() ---
-        junctions = [
-            {"id": int(i), "name": idx.junction_names[i],
-             "side": idx.junction_sides[i],
-             "p_bar": _r(rj.p_bar.iloc[i]), "t_c": _r(rj.t_k.iloc[i] - KELVIN)}
-            for i in range(len(rj))
-        ]
-        pipes = []
-        for i in range(len(rp)):
-            trench, side = self._pipe_trench.get(int(net.pipe.index[i]), (-1, "?"))
-            pipes.append({
-                "id": int(net.pipe.index[i]), "trench": trench, "side": side,
-                "mdot_kg_per_s": _r(rp.mdot_from_kg_per_s.iloc[i]),
-                "v_m_per_s": _r(rp.v_mean_m_per_s.iloc[i]),
-                "t_from_c": _r(rp.t_from_k.iloc[i] - KELVIN),
-                "t_to_c": _r(rp.t_to_k.iloc[i] - KELVIN),
-                "q_loss_kw": _r(q_loss_w[i] / 1000.0),
-                "dp_bar": _r(rp.p_from_bar.iloc[i] - rp.p_to_bar.iloc[i]),
-            })
-        consumers = [
-            {"id": int(idx.consumers[i]), "name": idx.consumer_names[i],
-             "node": idx.consumer_nodes[i],
-             "kind": (idx.consumer_kinds[i] if idx.consumer_kinds
-                      else "consumer"),
-             "q_kw": _r(rhc_c.qext_w.iloc[i] / 1000.0),
-             "mdot_kg_per_s": _r(rhc_c.mdot_from_kg_per_s.iloc[i]),
-             "t_supply_c": _r(rhc_c.t_from_k.iloc[i] - KELVIN),
-             "t_return_c": _r(rhc_c.t_outlet_k.iloc[i] - KELVIN),
-             "dp_bar": _r(dp_cons[i])}
-            for i in range(len(idx.consumers))
-        ]
         t_amb_now = self.weather.t_amb(tick)
         t_ground_now = self.weather.t_ground(tick)
         producers = []
@@ -613,20 +742,6 @@ class Simulator:
             for s in self.storages
         ]
 
-        summary = {
-            "q_feed_kw": _r(q_feed_in_w / 1000.0),
-            "q_demand_kw": _r(q_demand_w / 1000.0),
-            "q_loss_kw": _r(q_loss_total_w / 1000.0),
-            "loss_pct": _r(loss_pct, 3),
-            "pump_el_kw": _r(pump_el_w / 1000.0),
-            "dp_worst_bar": _r(dp_worst_bar),
-            "worst_consumer": worst_consumer,
-            "t_flow_plant_c": _r(rc.t_outlet_k - KELVIN),
-            "t_return_plant_c": _r(rc.t_from_k - KELVIN),
-            "mdot_plant_kg_per_s": _r(mdot_plant),
-            "q_storage_kw": _r((q_charge_w - q_discharge_w) / 1000.0),
-            "balance_err_kw": _r(balance_err_w / 1000.0),
-        }
         payload = {
             "junctions": junctions,
             "pipes": pipes,
