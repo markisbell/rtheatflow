@@ -23,8 +23,9 @@ from ..state import StateStore
 #: generated docs/API.md. Bump with every milestone that changes the surface.
 API_VERSION = "0.2.0"
 
-#: Network loaded at startup until the catalog/config endpoints ship (M4).
-DEFAULT_NETWORK_ID = "appendix_a"
+# The network loaded at startup is ``settings.default_network``
+# (``RTHEATFLOW_DEFAULT_NETWORK``, default ``demo_dorf`` — M3) until the
+# catalog/config endpoints ship (M4).
 
 
 @dataclass

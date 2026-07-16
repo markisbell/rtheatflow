@@ -19,6 +19,9 @@ class Settings(BaseSettings):
 
     # --- paths ---
     data_dir: Path = Path("./data")
+    # network loaded at startup (``<data_dir>/networks/<id>``) until the M4
+    # catalog/config endpoints ship; tests load their fixture explicitly
+    default_network: str = "demo_dorf"
     network_library: Path = Path("./data/network_library.json")
     user_networks_dir: Path = Path("./data/user_networks")
     profiles_dir: Path = Path("./data/profiles")
