@@ -1,0 +1,140 @@
+{
+ "name": "demo_dorf",
+ "junctions": [
+  {
+   "name": "plant",
+   "kind": "plant",
+   "geo": [
+    49.0032,
+    8.3956
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "t1",
+   "kind": "node",
+   "geo": [
+    49.0034,
+    8.3972
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "c10",
+   "kind": "consumer",
+   "geo": [
+    49.0029,
+    8.39735
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "c1",
+   "kind": "consumer",
+   "geo": [
+    49.00352,
+    8.398
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "c11",
+   "kind": "consumer",
+   "geo": [
+    49.00358,
+    8.3984
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "t2",
+   "kind": "node",
+   "geo": [
+    49.0036,
+    8.3988
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "c2",
+   "kind": "consumer",
+   "geo": [
+    49.0042,
+    8.3989
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "c6",
+   "kind": "consumer",
+   "geo": [
+    49.0048,
+    8.39905
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "c7",
+   "kind": "consumer",
+   "geo": [
+    49.0054,
+    8.39925
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "c3",
+   "kind": "consumer",
+   "geo": [
+    49.0035,
+    8.3996
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "t3",
+   "kind": "node",
+   "geo": [
+    49.00335,
+    8.4004
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "c8",
+   "kind": "consumer",
+   "geo": [
+    49.0027,
+    8.40025
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "c9",
+   "kind": "consumer",
+   "geo": [
+    49.00205,
+    8.4001
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "c4",
+   "kind": "consumer",
+   "geo": [
+    49.00345,
+    8.4012
+   ],
+   "pn_bar": 6
+  },
+  {
+   "name": "c5",
+   "kind": "consumer",
+   "geo": [
+    49.0035,
+    8.402
+   ],
+   "pn_bar": 6
+  }
+ ]
+}

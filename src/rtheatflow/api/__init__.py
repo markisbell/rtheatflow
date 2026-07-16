@@ -31,10 +31,11 @@ log = logging.getLogger(__name__)
 def create_app(settings: Settings | None = None,
                network_dir: str | Path | None = None) -> FastAPI:
     """Build the FastAPI app. *network_dir* overrides the default network
-    (``<data_dir>/networks/appendix_a``) — used by tests and tooling."""
+    (``<data_dir>/networks/<RTHEATFLOW_DEFAULT_NETWORK>``) — used by tests
+    and tooling (tests load their fixture explicitly)."""
     app_settings = settings or get_settings()
     default_dir = (Path(app_settings.data_dir) / "networks"
-                   / runtime.DEFAULT_NETWORK_ID)
+                   / app_settings.default_network)
     net_dir = Path(network_dir) if network_dir is not None else default_dir
 
     @asynccontextmanager
