@@ -179,12 +179,28 @@ export default function LiveHeatFlow({ topo, view, onView, onTopoChange }: {
   const curDay = latest && status?.running ? latest.day : (status?.day ?? latest?.day ?? 0);
   const dayIdx = nDays > 0 ? ((curDay % nDays) + nDays) % nDays : 0;
 
-  // Three-layer view switcher fallback chain (SPEC §8): truth → observed when
-  // the server withholds ground truth (strict mode strips `summary`); the
-  // estimated layer ships M7 (its segment is disabled in the top bar).
+  // Three-layer view switcher fallback chain (SPEC §8): truth → observed
+  // when the server withholds ground truth (strict mode strips `summary`);
+  // est → truth/observed when no estimate exists (yet).
   const canReveal = latest ? latest.summary !== undefined : true;
-  const mode: "truth" | "observed" =
-    viewMode === "observed" ? "observed" : canReveal ? "truth" : "observed";
+  const est = latest?.estimated ?? null;
+  const mode: "truth" | "observed" | "est" =
+    viewMode === "truth" && !canReveal ? "observed"
+    : viewMode === "est" && !est ? (canReveal ? "truth" : "observed")
+    : viewMode;
+  // est mode splices the estimated arrays over the live frame — the same
+  // MapDiagram/OverviewSection render it (blueprint splice pattern)
+  const frame = mode === "est" && latest && est
+    ? { ...latest, junctions: est.junctions, pipes: est.pipes,
+        consumers: est.consumers, summary: est.summary }
+    : latest;
+  // estimate age in simulated minutes (stale attachment: est.step/day say
+  // which step the observer last refreshed on)
+  const estAgeMin = latest && est
+    ? Math.max(0, Math.round(
+        ((latest.day * spd + latest.step) - (est.day * spd + est.step))
+        * (1440 / spd)))
+    : null;
 
   // supply-ramp domain anchor: full-hot at the active curve's design temp
   const tFlowDesign = latest?.controls?.heating_curve?.t_flow_design_c ?? 110;
@@ -205,7 +221,7 @@ export default function LiveHeatFlow({ topo, view, onView, onTopoChange }: {
   return (
     <div className="live" style={{ gridTemplateColumns: `1fr ${sideW}px` }}>
       <div className="diagram-wrap">
-        <MapDiagram topo={topo} latest={latest} layer={layer}
+        <MapDiagram topo={topo} latest={frame} layer={layer}
                     onLayer={(l) => onView({ layer: l })}
                     observedOnly={mode === "observed"} tFlowDesign={tFlowDesign}
                     placement={placement}
@@ -247,13 +263,14 @@ export default function LiveHeatFlow({ topo, view, onView, onTopoChange }: {
 
         <OverviewSection open={ovOpen} onToggle={() => setOvOpen((v) => !v)}
                          mode={mode}
-                         summary={latest?.summary}
+                         summary={frame?.summary}
                          observed={latest?.observed_summary}
                          weather={latest?.weather}
                          controls={latest?.controls}
                          solverStatus={latest?.solver_status}
                          solveMs={latest?.solve_ms ?? null}
-                         canReveal={canReveal} />
+                         canReveal={canReveal}
+                         est={est} estAgeMin={estAgeMin} />
 
         <WorstPointSection open={wpOpen} onToggle={() => setWpOpen((v) => !v)}
                            latest={latest} trace={dpTrace} />

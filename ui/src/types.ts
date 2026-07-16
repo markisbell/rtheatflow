@@ -255,9 +255,36 @@ export interface MeasurementsResponse {
   expose_ground_truth: boolean;
 }
 
+/** The estimated layer (M7, SPEC §8a): the forward observer's calculated
+ *  view — mirrors the truth arrays so the map/overview render it through
+ *  the same code path (splice pattern). `step`/`day`/`seq` say WHICH step
+ *  it estimated (stale attachment: it rides along until refreshed);
+ *  `error` is the deviation from the measurements at sensored points. */
+export interface EstimatedState {
+  junctions: JunctionState[];
+  pipes: PipeState[];
+  consumers: ConsumerState[];
+  summary: StepSummary;
+  error: {
+    max_dt_return_k: number | null;
+    mean_dt_return_k: number | null;
+    max_dmdot_kg_per_s: number | null;
+    mean_dmdot_kg_per_s: number | null;
+    max_ddp_bar: number | null;
+    mean_ddp_bar: number | null;
+    n_points: number;
+  };
+  step: number;
+  day: number;
+  seq: number;
+  solve_ms: number;
+  solver_status: "ok" | "degraded";
+}
+
 /** The single wire format. In strict mode (RTHEATFLOW_EXPOSE_GROUND_TRUTH=
  *  false) the truth keys junctions/pipes/consumers/summary are ABSENT and
- *  error is blanked — the UI falls back to the measured view. */
+ *  error is blanked — the UI falls back to the measured view. The
+ *  `estimated` layer stays visible (it is derived from measurements). */
 export interface StepResult {
   step: number;
   day: number;
@@ -276,8 +303,18 @@ export interface StepResult {
   controls: Controls;
   measurements: Measurements;
   observed_summary: ObservedSummary | null;
-  estimated: unknown | null; // M7
+  estimated: EstimatedState | null;
   error: string | null;
+}
+
+// ---- GET/POST /estimation/config (M7, SPEC §8a) ---------------------------------
+
+export interface EstimationConfigInfo {
+  enabled: boolean;
+  prior_basis: "archetype" | "design";
+  throttle_factor: number;
+  seq: number;
+  last_solve_ms: number | null;
 }
 
 // ---- GET /weather --------------------------------------------------------------

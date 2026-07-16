@@ -26,8 +26,11 @@ const de = {
     segEst: "Schätzung",
     sightTruth: "Reale Systemsicht (Simulation)",
     sightObserved: "Nur was die Wärmemengenzähler liefern",
-    estM7: "Zustandsschätzung folgt in einem späteren Meilenstein",
+    sightEst:
+      "Berechnete Betreibersicht: Vorwärts-Beobachter aus Messwerten + " +
+      "Erwartungsprofilen",
     help: "Hilfe",
+    manual: "Benutzerhandbuch",
     apiDocs: "API-Dokumentation (Swagger)",
     source: "Quellcode auf GitHub",
   },
@@ -363,6 +366,19 @@ const de = {
     coverage: "Messabdeckung",
     na: "n. v.",
     observedNote: "Aggregiert nur über bemessene Elemente — die Sicht des Betreibers.",
+    estCaption: "Schätzung (Vorwärts-Beobachter)",
+    estQuality: "Schätzgüte",
+    estErrTr: "max |ΔT Rücklauf| an Messstellen",
+    estErrMdot: "max |Δṁ| an Messstellen",
+    estErrDp: "max |ΔΔp| an Messstellen",
+    estAge: "Stand der Schätzung",
+    estAgeNow: "aktuell (#{{seq}})",
+    estAgeMin: "vor {{min}} min (#{{seq}})",
+    estSolve: "Beobachter-Rechenzeit",
+    estNote:
+      "Zweites Netzmodell, angetrieben nur von Messwerten und " +
+      "Erwartungsprofilen — unbemessene Abnehmer zeigen die Erwartung, " +
+      "nicht die Realität.",
   },
 };
 
@@ -387,8 +403,11 @@ const en: typeof de = {
     segEst: "Estimated",
     sightTruth: "Ground-truth system view (simulation)",
     sightObserved: "Only what the heat meters deliver",
-    estM7: "State estimation ships in a later milestone",
+    sightEst:
+      "Calculated operator view: forward observer from measurements + " +
+      "expected profiles",
     help: "Help",
+    manual: "User manual (German)",
     apiDocs: "API documentation (Swagger)",
     source: "Source on GitHub",
   },
@@ -723,6 +742,18 @@ const en: typeof de = {
     coverage: "Meter coverage",
     na: "n/a",
     observedNote: "Aggregated over metered elements only — the operator's view.",
+    estCaption: "Estimate (forward observer)",
+    estQuality: "Estimate quality",
+    estErrTr: "max |ΔT return| at sensors",
+    estErrMdot: "max |Δṁ| at sensors",
+    estErrDp: "max |ΔΔp| at sensors",
+    estAge: "Estimate age",
+    estAgeNow: "current (#{{seq}})",
+    estAgeMin: "{{min}} min ago (#{{seq}})",
+    estSolve: "Observer solve time",
+    estNote:
+      "A second network model driven only by measurements and expected " +
+      "profiles — unmetered consumers show the expectation, not reality.",
   },
 };
 

@@ -5,6 +5,7 @@ import type {
   AssignPreview,
   DpControlInfo,
   EngineStatus,
+  EstimationConfigInfo,
   ExportStatus,
   HeatingCurveInfo,
   HeatingCurveParams,
@@ -156,6 +157,13 @@ export const api = {
     post<MeasurementsResponse>("/measurements/mode", { mode }),
   setMeasurementPreset: (preset: MeterPreset) =>
     post<MeasurementsResponse>("/measurements/preset", { preset }),
+
+  // ---- M7: estimation policy (SPEC §8a) ----
+  estimationConfig: () => get<EstimationConfigInfo>("/estimation/config"),
+  setEstimationConfig: (body: Partial<Pick<EstimationConfigInfo,
+    "enabled" | "prior_basis" | "throttle_factor">>) =>
+    post<EstimationConfigInfo>("/estimation/config", body),
+  manualUrl: () => `${API}/manual`,
 
   // ---- M4: network catalog + loadgen + swap (SPEC §4.5/§4.6) ----
   networks: () => get<{ available: boolean; networks: NetworkListItem[] }>("/networks"),
