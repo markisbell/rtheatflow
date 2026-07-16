@@ -96,13 +96,34 @@ class SolveOutcome:
     tier: int             # 1-based tier that converged; 0 if none
     solve_ms: float
     error: str | None = None
+    transient: bool = False   # a transient tier converged (M7 exporter flag)
 
 
-def solve_with_retry(net, iter_base: int = 100) -> SolveOutcome:
-    """Run the retry ladder on *net*. Never raises for non-convergence."""
+def solve_with_retry(net, iter_base: int = 100,
+                     transient_ctx: dict | None = None) -> SolveOutcome:
+    """Run the retry ladder on *net*. Never raises for non-convergence.
+
+    *transient_ctx* (SPEC §3.5, offline exporter only): ``{"dt": <simulated
+    seconds per step>, "step": <monotonic step counter>}`` prepends two
+    transient bidirectional tiers. Per-step chaining is the SAME mechanism
+    ``run_timeseries`` uses internally (it calls ``pipeflow`` per step with
+    ``transient=True, dt=..., simulation_time_step=i`` and relies on
+    ``net["_pit"]`` persisting between calls) — proven bit-identical against
+    ``run_timeseries`` in ``tests/test_transient_m7.py``. ``dt`` is always
+    passed explicitly (``dt=None`` crashes the numba path, issue #787);
+    ``simulation_time_step=0`` starts the chain cold. If every transient
+    tier fails, the quasi-static ladder below is the automatic fallback
+    (§3.5) — the outcome then reports ``transient=False``.
+    """
     t0 = time.perf_counter()
     errors: list[str] = []
-    for tier, kwargs in enumerate(retry_attempts(iter_base), start=1):
+    attempts = retry_attempts(iter_base)
+    if transient_ctx is not None:
+        base = dict(mode="bidirectional", iter=int(iter_base), transient=True,
+                    dt=float(transient_ctx["dt"]),
+                    simulation_time_step=int(transient_ctx["step"]))
+        attempts = [base, {**base, "alpha": 0.5}] + attempts
+    for tier, kwargs in enumerate(attempts, start=1):
         try:
             pipeflow(net, **kwargs)
         except PipeflowNotConverged as exc:
@@ -112,8 +133,9 @@ def solve_with_retry(net, iter_base: int = 100) -> SolveOutcome:
             errors.append(f"tier {tier} {kwargs}: {type(exc).__name__}: {exc}")
             continue
         ms = (time.perf_counter() - t0) * 1000.0
+        transient = bool(kwargs.get("transient", False))
         if kwargs["mode"] == "bidirectional":
-            return SolveOutcome(True, "ok", tier, ms)
+            return SolveOutcome(True, "ok", tier, ms, transient=transient)
         return SolveOutcome(
             True, "degraded", tier, ms,
             error="sequential fallback: temperature set points not honored")
@@ -357,6 +379,9 @@ class Simulator:
         # The engine re-applies a held config across grid swaps.
         self.est_config = EstimationConfig()
         self._observer: ForwardObserver | None = None
+        #: whether the last solve converged on a transient tier (M7 §3.5);
+        #: None = the last run was not a transient-context run
+        self.last_transient: bool | None = None
 
     # -- estimation layer (SPEC §8a, M7) ---------------------------------------
 
@@ -495,8 +520,15 @@ class Simulator:
 
     # -- the step ------------------------------------------------------------
 
-    def run_step(self, step: int, day: int) -> StepResult:
-        """One simulation step. Never raises for non-convergence (SPEC §3.3)."""
+    def run_step(self, step: int, day: int,
+                 solve_ctx: dict | None = None) -> StepResult:
+        """One simulation step. Never raises for non-convergence (SPEC §3.3).
+
+        *solve_ctx* is the exporter-only transient context (SPEC §3.5):
+        ``{"dt": seconds, "step": monotonic counter}`` — the live engine
+        never passes it. ``self.last_transient`` reports whether a transient
+        tier actually converged (None = not a transient run).
+        """
         tick = self._tick(step, day)
         apply_error: str | None = None
         try:
@@ -507,9 +539,12 @@ class Simulator:
                         apply_error)
 
         if apply_error is None:
-            outcome = solve_with_retry(self.net, self.settings.solver_iter)
+            outcome = solve_with_retry(self.net, self.settings.solver_iter,
+                                       transient_ctx=solve_ctx)
         else:
             outcome = SolveOutcome(False, "failed", 0, 0.0, error=apply_error)
+        self.last_transient = (bool(outcome.transient)
+                               if solve_ctx is not None else None)
 
         if outcome.converged:
             try:
