@@ -218,7 +218,7 @@ Be precise and honest here; the blueprint's credibility depends on it:
 - **Pump electric power [W]:** `P_hyd = V̇ · Δp` (`vdot_m3_per_s`, Δp in Pa from `(p_to_bar − p_from_bar)·1e5`), `P_el = P_hyd / η` with configurable η ≈ 0.7 (0.6–0.8 typical). `res_circ_pump_*` does not compute this; `compr_power_mw` exists only for the curve-based in-line `pump` component.
 - **Worst-point Δp:** `min over consumers of (p_bar[supply_j] − p_bar[return_j])` + argmin (which consumer is critical). Warn below the substation minimum (configurable, default 0.5 bar).
 - **Plant feed-in [W] — define it yourself, do not use the raw column:** `q_feed_plant = mdot_plant · cp(T_mean) · (t_flow_k − t_return_k)` from `res_circ_pump_pressure` temperatures/mass flow. ⚠️ The ready-made `res_circ_pump_pressure.qext_w` column uses the **enthalpy-difference form** `mdot·(cp(T_out)·T_out − cp(T_in)·T_in)` with temperature-dependent cp — on the Appendix A fixture it returns ≈ 195.96 kW where the balance-consistent feed-in is ≈ 187.3 kW (≈ +4.6 %). It is fine as a display value but **must not** be used in the energy-balance check.
-- **Total feed-in (sign-exact):** `q_feed_in = q_feed_plant + Σ(−res_heat_exchanger.qext_w for secondary producers where qext_w < 0)` — secondary feed-ins carry *negative* `qext_w` by convention, so they are negated, never summed raw.
+- **Total feed-in (sign-exact):** `q_feed_in = q_feed_plant + Σ(−net.heat_exchanger.qext_w for secondary producers where qext_w < 0)` — secondary feed-ins carry *negative* `qext_w` by convention, so they are negated, never summed raw. ⚠️ Read the dispatch from the **component table**, not the result table: `res_heat_exchanger` carries **no `qext_w` column** at runtime 0.14.0 (verified M2; it has only the 8 hydraulic/thermal branch columns). `qext_w` is a fixed input setpoint, so the component table is authoritative anyway.
 - **Loss ratio:** `Σ q_loss / q_feed_in`.
 - **Energy balance check (every step, cheap):** `q_feed_in ≈ Σ res_heat_consumer.qext_w + Σ q_loss` — assert within 1 % in tests (using the definitions above); expose as a hidden diagnostic field (`summary.balance_err_kw`).
 
@@ -349,6 +349,8 @@ class StepResult:
                       # mdot_plant_kg_per_s, balance_err_kw
     # ── runtime equipment (always visible) ──
     producers: list   # {id, kind, q_kw, t_flow_c, plift_bar, pump_el_kw, cop?, p_el_kw?}
+                      # id = platform-unique pid (M2): pandapipes element indices are
+                      # per-component-table and collide across kinds (slack 0 vs hx 0)
     storages: list    # {id, soc_kwh, capacity_kwh, q_kw}
     weather: dict     # {t_amb_c, t_ground_c, override: bool}
     controls: dict    # {heating_curve: {...}, dp_control: {setpoint_bar, plift_bar}}
@@ -476,7 +478,7 @@ Clone the blueprint UI wholesale (§9.2 maps components 1:1); differences are do
 | Heat consumer | `create_heat_consumer(net, from_j, to_j, qext_w, controlled_mdot_kg_per_s, deltat_k, treturn_k)` — exactly two, no `deltat_k`+`treturn_k` | `res_heat_consumer`: pipe-like + `deltat_k, qext_w` (no reynolds/lambda at runtime, docs lag) |
 | Circ pump (pressure) | `create_circ_pump_const_pressure(net, return_junction, flow_junction, p_flow_bar, plift_bar, t_flow_k, type="auto")` | `res_circ_pump_pressure`: branch cols + `deltat_k, qext_w` (= plant heat input) |
 | Circ pump (mass) | `create_circ_pump_const_mass_flow(net, return_junction, flow_junction, p_flow_bar, mdot_flow_kg_per_s, t_flow_k)` | `res_circ_pump_mass`: same |
-| Heat exchanger | `create_heat_exchanger(net, from_j, to_j, qext_w, inner_diameter_mm)` — negative `qext_w` = feed-in | `res_heat_exchanger`: branch cols |
+| Heat exchanger | `create_heat_exchanger(net, from_j, to_j, qext_w, inner_diameter_mm)` — negative `qext_w` = feed-in | `res_heat_exchanger`: branch cols only (`p_from_bar, p_to_bar, t_from_k, t_to_k, t_outlet_k, mdot_from_kg_per_s, mdot_to_kg_per_s, vdot_m3_per_s`) — **no `qext_w`/`deltat_k`** at runtime (verified M2); read the dispatch from `net.heat_exchanger.qext_w` |
 | Flow control | `create_flow_control(net, from_j, to_j, controlled_mdot_kg_per_s, control_active=True)` | `res_flow_control`: branch cols |
 | Valve | `create_valve(net, junction, element, et="ju"\|"pi", inner_diameter_mm, opened=True)` — **0.14 signature** (junction/element/et since 0.13; `et="ju"` → `element` is a second junction id, making it a normal two-junction branch; `et="pi"` → `element` is a pipe id) | `res_valve`: branch cols |
 | Pressure control | `create_pressure_control(net, from_j, to_j, controlled_junction, controlled_p_bar)` — table is `net.press_control`; assumes fixed junction temps, use with care in thermal runs | `res_press_control`: branch cols + `deltap_bar` |

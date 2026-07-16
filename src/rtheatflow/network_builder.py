@@ -69,12 +69,18 @@ class NetIndex:
     junction_names: list[str]  # pandapipes junction index -> trench-node name
     junction_sides: list[str]  # pandapipes junction index -> "s" | "r"
     init_pn_bar: np.ndarray    # build-time pn_bar per junction (failure reset)
-    # producers
+    # producers. producer_meta rows carry a platform-unique "pid" (the wire
+    # id — element indices live in per-component tables and collide across
+    # kinds, e.g. slack 0 vs heat_exchanger 0; added M2) plus the pandapipes
+    # "element" index within the kind's own table.
     slack: int                 # circ_pump_pressure table index
     slack_node: str
     heat_exchangers: np.ndarray
     pump_mass: np.ndarray
     producer_meta: list[dict] = field(default_factory=list)
+
+    def next_pid(self) -> int:
+        return 1 + max((int(m["pid"]) for m in self.producer_meta), default=-1)
 
 
 @dataclass
@@ -222,7 +228,8 @@ def build_network(
                 flow_junction=junction_supply[p.node],
                 p_flow_bar=float(p.p_flow_bar), plift_bar=float(p.plift_bar),
                 t_flow_k=float(p.t_flow_k), name=name)
-            producer_meta.append({"kind": "slack", "element": slack_idx,
+            producer_meta.append({"pid": len(producer_meta), "kind": "slack",
+                                  "element": slack_idx,
                                   "node": p.node, "name": name})
         elif p.kind == "heat_exchanger":
             dispatch = _resample_staircase(p.qext_w, n_ticks)
@@ -234,7 +241,8 @@ def build_network(
                 inner_diameter_mm=float(p.inner_diameter_mm), name=name)
             hx_idx.append(hx)
             hx_qext_rows.append(dispatch)
-            producer_meta.append({"kind": "heat_exchanger", "element": hx,
+            producer_meta.append({"pid": len(producer_meta),
+                                  "kind": "heat_exchanger", "element": hx,
                                   "node": p.node, "name": name})
         else:  # pump_mass
             mdot = (_resample_staircase(p.mdot_flow_kg_per_s, n_ticks)
@@ -248,7 +256,8 @@ def build_network(
                 t_flow_k=float(p.t_flow_k), name=name)
             pm_idx.append(pm)
             pm_mdot_rows.append(mdot)
-            producer_meta.append({"kind": "pump_mass", "element": pm,
+            producer_meta.append({"pid": len(producer_meta),
+                                  "kind": "pump_mass", "element": pm,
                                   "node": p.node, "name": name})
 
     index = NetIndex(

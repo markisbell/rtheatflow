@@ -3,41 +3,25 @@
 Per tick: ``result = await asyncio.to_thread(sim.run_step, step, day)`` →
 ``await store.publish(result)`` → advance step, wrap day →
 ``await asyncio.sleep(interval)``. The solve runs off-loop so REST/WebSocket
-(M2) stay responsive. The engine owns nothing domain-specific.
+stay responsive. The engine owns nothing domain-specific.
 
-M1 is headless: :class:`HeadlessStore` is a minimal latest+history stand-in
-for the M2 ``StateStore`` (same ``publish``/``reset`` surface, no WS
-subscribers, no strict-mode projection yet).
+Frames land in the :class:`~rtheatflow.state.StateStore` (M2 — replaced M1's
+``HeadlessStore`` stand-in), which fans them out to WebSocket subscribers and
+serves REST ``/state`` / ``/history`` through the shared projection path.
 """
 from __future__ import annotations
 
 import asyncio
 import logging
-from collections import deque
 
 from .config import Settings, get_settings
 from .net_inputs import NetInputs
-from .simulator import Simulator, StepResult
+from .simulator import Simulator
+from .state import StateStore
 
 log = logging.getLogger(__name__)
 
 MIN_INTERVAL_S = 0.01  # SPEC §6: set_interval floor
-
-
-class HeadlessStore:
-    """Latest frame + bounded history. M2 replaces this with ``StateStore``."""
-
-    def __init__(self, history_size: int = 1440):
-        self.latest: StepResult | None = None
-        self.history: deque[StepResult] = deque(maxlen=history_size)
-
-    async def publish(self, result: StepResult) -> None:
-        self.latest = result
-        self.history.append(result)
-
-    def reset(self) -> None:
-        self.latest = None
-        self.history.clear()
 
 
 class RealtimeEngine:
@@ -46,13 +30,12 @@ class RealtimeEngine:
     def __init__(
         self,
         simulator: Simulator,
-        store: HeadlessStore | None = None,
+        store: StateStore | None = None,
         settings: Settings | None = None,
     ):
         self.settings = settings or get_settings()
         self.sim = simulator
-        self.store = store if store is not None else HeadlessStore(
-            self.settings.history_size)
+        self.store = store if store is not None else StateStore(self.settings)
         self.interval = max(MIN_INTERVAL_S,
                             float(self.settings.step_interval_seconds))
         self.steps_per_day = int(self.settings.steps_per_day)
