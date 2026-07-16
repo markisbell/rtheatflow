@@ -28,6 +28,7 @@ from . import (
     consumers,
     control,
     core,
+    measurements,
     networks,
     plant,
     producers,
@@ -116,6 +117,7 @@ def create_app(settings: Settings | None = None,
     fastapi_app.include_router(producers.router)
     fastapi_app.include_router(storage.router)
     fastapi_app.include_router(consumers.router)
+    fastapi_app.include_router(measurements.router)
     fastapi_app.include_router(networks.router)
     fastapi_app.include_router(scenarios.router)
     return fastapi_app

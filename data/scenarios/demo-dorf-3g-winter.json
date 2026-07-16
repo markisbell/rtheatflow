@@ -30,7 +30,8 @@
   "storages": [],
   "consumer_ops": [],
   "measurements": {
-    "preset": "all_consumers"
+    "preset": "all_consumers",
+    "mode": "standard"
   },
   "engine": {
     "day": 0,

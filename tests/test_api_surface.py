@@ -15,12 +15,14 @@ from rtheatflow.api import create_app
 from rtheatflow.api.runtime import API_VERSION
 
 # ---------------------------------------------------------------------------
-# THE M4 SURFACE. Deliberately exhaustive and alphabetical — change the API,
-# change this list, consciously. (SPEC §7; sensors/measurements arrive M5,
-# recording/export + /networks/import arrive M6, profiles/estimation M7.)
+# THE M5 SURFACE. Deliberately exhaustive and alphabetical — change the API,
+# change this list, consciously. (SPEC §7; recording/export +
+# /networks/import arrive M6, profiles/estimation M7.)
 # ---------------------------------------------------------------------------
 EXPECTED = {
     ("DELETE", "/consumer/{consumer_id}"),
+    ("DELETE", "/measurements/consumer/{consumer_id}"),
+    ("DELETE", "/measurements/node/{node_id}"),
     ("DELETE", "/producer/{producer_id}"),
     ("DELETE", "/scenarios/{sid}"),
     ("DELETE", "/storage/{storage_id}"),
@@ -32,6 +34,7 @@ EXPECTED = {
     ("GET", "/heatingcurve"),
     ("GET", "/history"),
     ("GET", "/loadgen/archetypes"),
+    ("GET", "/measurements"),
     ("GET", "/network"),
     ("GET", "/networks"),
     ("GET", "/networks/{network_id}"),
@@ -53,6 +56,10 @@ EXPECTED = {
     ("POST", "/dpcontrol"),
     ("POST", "/heatingcurve"),
     ("POST", "/loadgen/assign"),
+    ("POST", "/measurements/consumer/{consumer_id}"),
+    ("POST", "/measurements/mode"),
+    ("POST", "/measurements/node/{node_id}"),
+    ("POST", "/measurements/preset"),
     ("POST", "/producer"),
     ("POST", "/producer/{producer_id}/config"),
     ("POST", "/scenarios"),
@@ -96,7 +103,7 @@ def test_route_inventory_is_pinned():
 
 
 def test_api_version_reported():
-    assert API_VERSION == "0.4.0"
+    assert API_VERSION == "0.5.0"
     app = create_app(make_settings())
     assert app.version == API_VERSION
 
