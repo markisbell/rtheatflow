@@ -14,10 +14,23 @@ Two modes (SPEC §4.3):
 * ``fixed``      — "ungeregelte Pumpe": ``plift_bar`` stays wherever the user
   set it (teaching the difference — and the oversizing penalty).
 
-Blindness principle (SPEC §8a): the controller consumes the **observed**
-worst-point Δp only (``observed_summary.dp_worst_bar``). Without a metered
-worst point (``None``) it holds — a real pump controller without a sensor
-reading neither ramps up nor down. It never touches ground truth.
+Blindness semantics (SPEC §8a, fixed in M5 — the documented decision, see
+CLAUDE.md): the controller consumes the **observed** worst-point Δp only
+(``observed_summary.dp_worst_bar`` = min over *metered* consumers). It never
+touches ground truth. Degradation ladder:
+
+* **No usable Δp reading** (no consumer meters — e.g. presets ``clear`` /
+  ``plant_only`` — or every meter still inside its cold-start window in
+  standard mode): ``dp_worst_bar`` is ``None`` → the controller **holds**
+  ``plift_bar``. Holding the lift *is* "controlling on plant Δp" (SPEC §8a):
+  the plant pump keeps its own differential pressure constant, like a real
+  constant-Δp pump with no remote sensor.
+* **Metered, but the TRUE worst point carries no meter**: the controller
+  regulates on the best *measured* Δp — exactly what a real Schlechtpunkt
+  controller does; it cannot know better. The frame flags this as
+  ``controls.dp_control.blind_spot`` (UI-visible), because the platform —
+  unlike the operator — knows the truth: the unmetered worst point may be
+  starved while the measured one sits at the setpoint.
 """
 from __future__ import annotations
 

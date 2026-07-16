@@ -29,7 +29,9 @@ export default function App() {
   const [liveKey, setLiveKey] = useState(0);
 
   const reloadTopo = useCallback(() => {
-    api.network().then(setTopo).catch((e) => setTopoErr(String(e)));
+    api.network()
+      .then((t) => { setTopo(t); setTopoErr(null); })  // a later retry heals
+      .catch((e) => setTopoErr(String(e)));
   }, []);
   useEffect(() => { reloadTopo(); }, [reloadTopo]);
 

@@ -88,9 +88,19 @@ def scenarios_save(req: ScenarioSaveRequest) -> dict:
         "producers": producers,
         "storages": [s.config() for s in sim.storages],
         "consumer_ops": list(sim.consumer_ops),
-        # reserved for the M5 sensor placement CRUD; the interim preset
-        # (SPEC §8a) is already part of the recipe
-        "measurements": {"preset": sim.measurements.preset},
+        # M5 sensor placement: meters are stored by consumer NAME (element
+        # ids shift across replay; the consumer-op replay recreates the same
+        # names deterministically), node sensors by trench-node name.
+        "measurements": {
+            "preset": sim.measurements.preset,
+            "mode": sim.measurements.mode,
+            "consumer_meters": sorted(
+                sim.index.consumer_names[i]
+                for i in range(len(sim.index.consumers))
+                if int(sim.index.consumers[i])
+                in sim.measurements.consumer_meters),
+            "node_sensors": sorted(sim.measurements.node_sensors),
+        },
         "engine": {"day": engine.day, "step": engine.step,
                    "interval_seconds": engine.interval},
     }
@@ -204,13 +214,41 @@ async def scenarios_load(sid: str) -> dict:
                 sim.remove_consumer(int(idx.consumers[pos]))
         except Exception:  # noqa: BLE001
             log.warning("scenario '%s': skipped consumer op %s", sid, op)
-    preset = (doc.get("measurements") or {}).get("preset")
-    if preset:
+    # sensor placement (M5) — after the consumer ops, so meters saved by
+    # name find their replayed consumers. Explicit placement lists win
+    # (config, faithfully restored); M4-era docs carry only a preset name.
+    meas_doc = doc.get("measurements") or {}
+    preset = meas_doc.get("preset")
+    if "consumer_meters" in meas_doc or "node_sensors" in meas_doc:
+        idx = sim.index
+        sim.measurements.apply_preset("clear")
+        for cname in meas_doc.get("consumer_meters", []):
+            if cname in idx.consumer_names:
+                pos = idx.consumer_names.index(cname)
+                sim.measurements.add_consumer_meter(int(idx.consumers[pos]))
+            else:
+                log.warning("scenario '%s': no consumer '%s' for its "
+                            "heat meter", sid, cname)
+        for node in meas_doc.get("node_sensors", []):
+            if node in idx.junction_supply:
+                sim.measurements.add_node_sensor(node)
+            else:
+                log.warning("scenario '%s': no node '%s' for its T/p "
+                            "sensor", sid, node)
+        if preset:  # keep the label the placement was authored under
+            sim.measurements.preset = preset
+    elif preset:
         try:
             sim.measurements.apply_preset(preset)
         except ValueError:
             log.warning("scenario '%s': skipped measurement preset %s",
                         sid, preset)
+    if meas_doc.get("mode"):
+        try:
+            sim.measurements.set_mode(meas_doc["mode"])
+        except ValueError:
+            log.warning("scenario '%s': skipped measurement mode %s",
+                        sid, meas_doc["mode"])
 
     # 4) the engine clock, then run
     eng = doc.get("engine") or {}

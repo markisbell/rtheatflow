@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api";
-import type { ArchetypeInfo, EngineStatus, Topology } from "../types";
+import type {
+  ArchetypeInfo,
+  EngineStatus,
+  MeasurementsResponse,
+  Topology,
+} from "../types";
 import { useStepStream } from "../useStepStream";
 import MapDiagram from "../components/MapDiagram";
 import OverviewSection from "../components/OverviewSection";
 import WorstPointSection from "../components/WorstPointSection";
+import MeasurementPanel from "../components/MeasurementPanel";
 import HeatingCurveSection from "../components/HeatingCurveSection";
 import WeatherSection from "../components/WeatherSection";
 import ElementMenu, { type MenuAction, type MenuTarget } from "../components/ElementMenu";
@@ -32,6 +38,7 @@ export default function LiveHeatFlow({ topo, view, onView, onTopoChange }: {
   const [status, setStatus] = useState<EngineStatus | null>(null);
   const [ovOpen, setOvOpen] = useState(true);
   const [wpOpen, setWpOpen] = useState(true);
+  const [msOpen, setMsOpen] = useState(true);
   const [hcOpen, setHcOpen] = useState(false);
   const [wxOpen, setWxOpen] = useState(false);
   const [stepSeconds, setStepSeconds] = useState(1); // wall-clock s per sim minute
@@ -40,6 +47,10 @@ export default function LiveHeatFlow({ topo, view, onView, onTopoChange }: {
   const [pins, setPins] = useState<PinTarget[]>([]);
   const [archetypes, setArchetypes] = useState<ArchetypeInfo[]>([]);
   const [dpTrace, setDpTrace] = useState<number[]>([]);
+  // M5 sensor placement: every /measurements verb returns the fresh
+  // placement, so the panel + map markers re-sync from each response
+  const [placement, setPlacement] =
+    useState<MeasurementsResponse | null>(null);
   const intervalInit = useRef(false);
   const lastStamp = useRef<string>("");
 
@@ -49,6 +60,7 @@ export default function LiveHeatFlow({ topo, view, onView, onTopoChange }: {
   useEffect(() => {
     loadStatus();
     api.archetypes().then((r) => setArchetypes(r.archetypes)).catch(() => {});
+    api.measurements().then(setPlacement).catch(() => {});
     const iv = setInterval(loadStatus, 2000);
     return () => clearInterval(iv);
   }, []);
@@ -83,13 +95,32 @@ export default function LiveHeatFlow({ topo, view, onView, onTopoChange }: {
     setStatus(await api.stepInterval(s));
   };
 
-  // ---- ElementMenu action dispatcher (M4 equipment CRUD) ----
+  // ---- ElementMenu action dispatcher (M4 equipment CRUD + M5 sensors) ----
   const runMenuAction = (a: MenuAction) => {
     if (!menu) return;
     const node = menu.node;
-    const done = () => onTopoChange();
+    const done = () => {
+      onTopoChange();
+      // equipment CRUD can move meters too (a removed consumer takes its
+      // heat meter with it) — re-sync the placement
+      api.measurements().then(setPlacement).catch(() => {});
+    };
     const fail = (e: unknown) => window.alert(String(e));
     switch (a.type) {
+      case "placeMeter":
+        api.placeConsumerMeter(menu.id as number)
+          .then(setPlacement, fail);
+        break;
+      case "removeMeter":
+        api.removeConsumerMeter(menu.id as number)
+          .then(setPlacement, fail);
+        break;
+      case "placeNodeSensor":
+        api.placeNodeSensor(node).then(setPlacement, fail);
+        break;
+      case "removeNodeSensor":
+        api.removeNodeSensor(node).then(setPlacement, fail);
+        break;
       case "addHx":
         api.addProducer({ node, kind: "heat_exchanger",
                           qext_w: 20000, inner_diameter_mm: 50 })
@@ -177,6 +208,7 @@ export default function LiveHeatFlow({ topo, view, onView, onTopoChange }: {
         <MapDiagram topo={topo} latest={latest} layer={layer}
                     onLayer={(l) => onView({ layer: l })}
                     observedOnly={mode === "observed"} tFlowDesign={tFlowDesign}
+                    placement={placement}
                     onMenu={setMenu}
                     onPin={(m) => pinTarget(m)} />
       </div>
@@ -185,7 +217,11 @@ export default function LiveHeatFlow({ topo, view, onView, onTopoChange }: {
         <ElementMenu target={menu} archetypes={archetypes}
                      onAction={runMenuAction}
                      onPin={() => pinTarget(menu)}
-                     onClose={() => setMenu(null)} />
+                     onClose={() => setMenu(null)}
+                     metered={menu.kind === "consumer" && !!placement
+                       ?.consumer_meters.some((m) => m.id === menu.id)}
+                     nodeSensored={!!placement
+                       ?.node_sensors.includes(menu.node)} />
       )}
 
       <aside className="side">
@@ -221,6 +257,15 @@ export default function LiveHeatFlow({ topo, view, onView, onTopoChange }: {
 
         <WorstPointSection open={wpOpen} onToggle={() => setWpOpen((v) => !v)}
                            latest={latest} trace={dpTrace} />
+
+        <MeasurementPanel open={msOpen} onToggle={() => setMsOpen((v) => !v)}
+                          placement={placement}
+                          onPreset={(p) => api.setMeasurementPreset(p)
+                            .then(setPlacement)
+                            .catch((e) => window.alert(String(e)))}
+                          onMode={(m) => api.setMeasurementMode(m)
+                            .then(setPlacement)
+                            .catch((e) => window.alert(String(e)))} />
 
         <HeatingCurveSection open={hcOpen} onToggle={() => setHcOpen((v) => !v)}
                              latest={latest} />

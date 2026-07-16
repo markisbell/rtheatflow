@@ -29,7 +29,7 @@ from .heating_curve import HeatingCurve, from_config
 from .net_inputs import NetInputs
 from .network_builder import KELVIN, ProfileArrays, build_network
 from .producers import PlantModel
-from .sensors import MeasurementSet, _r
+from .sensors import WINDOW_MINUTES, MeasurementSet, _r
 from .storage import IDLE_MDOT_KG_PER_S, IDLE_QEXT_W, BufferStorage
 from .weather import WeatherModel
 
@@ -172,11 +172,65 @@ class Simulator:
             self._pipe_trench[int(ps)] = (t, "s")
             self._pipe_trench[int(pr)] = (t, "r")
 
-        # measurable layer (SPEC §8a interim rule): exists from M2 with the
-        # default preset all_consumers + plant SCADA; CRUD/fidelity in M5
-        self.measurements = MeasurementSet()
-
         self._last_payload: dict | None = None  # last converged _collect()
+        #: Δp blind-spot flag (SPEC §8a, M5): true when the TRUE worst point
+        #: carries no meter — deliberate meta-information about the sensor
+        #: layout (the teaching point), not a physics value. None pre-solve.
+        self._blind_spot: bool | None = None
+
+        # net ends for the key_points preset: leaf nodes of the trench graph
+        # (static — runtime consumer CRUD reuses existing nodes)
+        degree: dict[str, int] = {}
+        for pipe in inputs.pipes.pipes:
+            degree[pipe.from_node] = degree.get(pipe.from_node, 0) + 1
+            degree[pipe.to_node] = degree.get(pipe.to_node, 0) + 1
+        self._end_nodes = [n for n, d in degree.items()
+                           if d == 1 and n != self.index.slack_node]
+
+        # measurable layer (SPEC §8a): real placement model since M5. The
+        # default preset stays all_consumers + plant SCADA (M2–M4 parity),
+        # applied through the placement machinery; the 15-min standard
+        # window is expressed in engine ticks (steps_per_day-aware).
+        window_steps = max(1, round(
+            WINDOW_MINUTES * self.settings.steps_per_day / 1440.0))
+        self.measurements = MeasurementSet(
+            window_steps=window_steps, context=self._measurement_context)
+
+    # -- measurement layer (SPEC §8a, M5) -------------------------------------
+
+    def _measurement_context(self) -> dict:
+        """Element inventory for the placement presets (sensors.py).
+
+        The key_points worst-point consumer comes from the last converged
+        frame — the operator places that meter where the *known* worst point
+        is; before the first solve none is known (no meter — honest).
+        """
+        idx = self.index
+        worst_id: int | None = None
+        if self._last_payload:
+            worst_name = (self._last_payload.get("summary") or {}).get(
+                "worst_consumer")
+            if worst_name in idx.consumer_names:
+                pos = idx.consumer_names.index(worst_name)
+                worst_id = int(idx.consumers[pos])
+        return {
+            "consumer_ids": [int(c) for c in idx.consumers],
+            "plant_node": idx.slack_node,
+            "end_nodes": list(self._end_nodes),
+            "node_names": list(idx.junction_supply),
+            "worst_consumer_id": worst_id,
+        }
+
+    def measurement_placement(self) -> dict:
+        """The GET /measurements payload (placement + coverage)."""
+        idx = self.index
+        meta = [{"id": int(idx.consumers[i]), "name": idx.consumer_names[i],
+                 "node": idx.consumer_nodes[i]}
+                for i in range(len(idx.consumers))]
+        return self.measurements.placement(
+            n_consumers=len(idx.consumers),
+            n_nodes=len(idx.junction_supply),
+            consumer_meta=meta)
 
     # -- tick bookkeeping ---------------------------------------------------
 
@@ -363,6 +417,7 @@ class Simulator:
                 "max_step_bar": _r(dp.max_step_bar),
                 "plift_bar": _r(plift),
                 "dp_worst_observed_bar": _r(dp.last_dp_observed_bar),
+                "blind_spot": self._blind_spot,
             },
         }
 
@@ -585,7 +640,21 @@ class Simulator:
         # observed layer (SPEC §8a): projection of the truth payload onto the
         # sensored elements — every frame carries measurements/observed_summary
         payload["measurements"], payload["observed_summary"] = \
-            self.measurements.observe(payload)
+            self.measurements.observe(payload, tick)
+
+        # Δp blind-spot flag (SPEC §8a, M5 — documented in CLAUDE.md): true
+        # when the operator's Δp view misses the TRUE worst point — either no
+        # usable Δp reading at all, or the truth's critical consumer carries
+        # no meter (the controller then regulates on the best *measured* Δp).
+        # Deliberate meta-information about sensor-layout adequacy: it names
+        # no physics value, and SPEC §8a wants the UI to show WHY blindness
+        # is worse.
+        obs = payload["observed_summary"] or {}
+        worst_el = int(idx.consumers[worst_pos])
+        self._blind_spot = (
+            obs.get("dp_worst_bar") is None
+            or worst_el not in self.measurements.consumer_meters)
+        payload["controls"]["dp_control"]["blind_spot"] = self._blind_spot
         return payload
 
     # -- runtime equipment CRUD (SPEC §4.4) ------------------------------------
@@ -936,6 +1005,8 @@ class Simulator:
         p.q_dhw_w = np.delete(p.q_dhw_w, pos, axis=0)
         p.qext_w = np.delete(p.qext_w, pos, axis=0)
         p.treturn_k = np.delete(p.treturn_k, pos, axis=0)
+        # a removed consumer takes its heat meter with it (M5)
+        self.measurements.prune({int(c) for c in idx.consumers})
         self.consumer_ops.append({"op": "remove_consumer", "name": name})
         self._reset_initialization()
         return {"id": int(element), "name": name, "node": node, "kind": kind}

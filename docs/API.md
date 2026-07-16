@@ -1,7 +1,7 @@
 # rtheatflow API reference
 
 > **Generated** by `scripts/gen_api_doc.py` — do not edit by hand.
-> API version **0.4.0** · interactive docs at `/docs` (Swagger) when the
+> API version **0.5.0** · interactive docs at `/docs` (Swagger) when the
 > backend runs · default bind `127.0.0.1:8000`, no auth (teaching tool).
 
 The single wire format is the projected `StepResult` (SPEC §6): `/state`,
@@ -113,6 +113,24 @@ limits (weather override out of range) · `500` internal failures only —
 - **`POST /bypass`** — Place a Netzschluss-Bypass — the §3.2 canonical heat_consumer pair (tiny fixed mdot + standby qext); also the zero-flow guard for stubs.
 - **`POST /consumer`** — Place a heat_consumer substation at an existing trench node (demand profile assigned on placement, SPEC §4.4). 400 on unknown node/archetype or when neither archetype nor q_kw is given.
 - **`DELETE /consumer/{consumer_id}`** — Remove by the heat_consumer element id reported in the frame's ``consumers`` list. 404 unknown; 409 for the last remaining consumer.
+
+## measurements
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/measurements` | Sensor placement + coverage |
+| `DELETE` | `/measurements/consumer/{consumer_id}` | Remove a heat meter |
+| `POST` | `/measurements/consumer/{consumer_id}` | Place a heat meter |
+| `POST` | `/measurements/mode` | Set the meter fidelity mode |
+| `DELETE` | `/measurements/node/{node_id}` | Remove a T/p sensor |
+| `POST` | `/measurements/node/{node_id}` | Place a T/p sensor |
+| `POST` | `/measurements/preset` | Apply a placement preset |
+
+- **`GET /measurements`** — Which consumers carry a heat meter, which nodes a T/p sensor, the fidelity mode, and coverage fractions per element class. Plant SCADA is always measured (real plants are) and does not appear as a placement.
+- **`POST /measurements/consumer/{consumer_id}`** — Install a Wärmemengenzähler at the consumer substation. In standard mode the new meter starts cold: readings stay null until its first 15-minute window closes (SPEC §8a).
+- **`POST /measurements/mode`** — Bulk fidelity switch for every placed device: ``full`` = every channel every step; ``standard`` = 15-min-window means aligned to simulated time, null until the first window closes (honest cold start — the window state resets on every switch). Plant SCADA stays live either way.
+- **`POST /measurements/node/{node_id}`** — Install a T/p sensor pair at a trench node: supply and return pressure + temperature at that node's junction pair (SPEC §8a).
+- **`POST /measurements/preset`** — Replace the placement wholesale: ``all_consumers`` (meter at every substation — the default), ``plant_only`` (plant T/p only), ``key_points`` (plant + net ends + a meter at the currently known worst point), ``clear`` (no devices — the operator flies blind).
 
 ## networks
 

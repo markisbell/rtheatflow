@@ -64,6 +64,43 @@ const de = {
     storageCharge: "Speicher laden",
     storageDischarge: "Speicher entladen",
     storageIdle: "Speicher in Bereitschaft",
+    placeMeter: "Wärmemengenzähler setzen",
+    removeMeter: "Wärmemengenzähler entfernen",
+    placeSensor: "T/p-Sensor setzen",
+    removeSensor: "T/p-Sensor entfernen",
+  },
+
+  meas: {
+    heading: "Messstellen",
+    modeHdr: "Zähler-Modus",
+    modeFull: "Live",
+    modeStd: "Standard 15 min",
+    modeFullTitle: "Jeder Messwert in jedem Simulationsschritt (Telemetrie)",
+    modeStdTitle:
+      "Lastgang-Zähler: 15-Minuten-Mittelwerte, leer bis das erste Fenster " +
+      "schließt — ehrlicher Kaltstart",
+    meters: "Wärmemengenzähler",
+    sensors: "T/p-Sensoren",
+    none: "keine Messstellen — das Netz ist für den Betreiber unsichtbar",
+    presetHdr: "Vorlagen",
+    preset_all_consumers: "Alle Abnehmer",
+    preset_plant_only: "Nur Erzeuger",
+    preset_key_points: "Schlüsselstellen",
+    preset_clear: "Alles entfernen",
+    preset_all_consumersTitle: "Zähler an jeder Übergabestation",
+    preset_plant_onlyTitle: "Nur die Erzeuger-SCADA + T/p am Erzeugerknoten",
+    preset_key_pointsTitle:
+      "Erzeuger + Netzenden + Zähler am aktuell bekannten Schlechtpunkt",
+    preset_clearTitle: "Alle Messgeräte entfernen (Blindflug)",
+    stdHint:
+      "Standard-Lastgang: Werte erscheinen erst mit dem ersten vollen " +
+      "15-min-Fenster und bleiben Fenstermittel.",
+    placeHint:
+      "Einzelne Zähler/Sensoren: Rechtsklick auf Abnehmer oder Knoten in " +
+      "der Karte.",
+    strict:
+      "Strict Mode: der Server liefert nur die Messwerte — die Realität " +
+      "bleibt verborgen.",
   },
 
   wp: {
@@ -78,6 +115,11 @@ const de = {
     yTitle: "Δp / bar",
     observed: "Schlechtpunkt (gemessen)",
     blind: "blind — kein Messwert",
+    blindSpot:
+      "Blinder Fleck: der wahre Schlechtpunkt hat keinen Zähler — geregelt " +
+      "wird auf den schlechtesten GEMESSENEN Wert.",
+    blindSpotNoMeter:
+      "Blind: kein Δp-Messwert — die Pumpe hält ihre Förderhöhe.",
     pliftNow: "Förderhöhe aktuell",
     pumpEl: "Pumpe P el",
     hintControlled:
@@ -244,6 +286,8 @@ const de = {
     designLoad: "Auslegungslast",
     unobserved: "keine Messung — unbekannt",
     noData: "noch keine Live-Daten",
+    coldStart: "Standard-Zähler: warte auf das erste 15-min-Fenster",
+    windowed: "15-min-Mittelwerte (Standard-Lastgang)",
   },
 
   live: {
@@ -350,6 +394,42 @@ const en: typeof de = {
     storageCharge: "Charge storage",
     storageDischarge: "Discharge storage",
     storageIdle: "Storage standby",
+    placeMeter: "Install heat meter",
+    removeMeter: "Remove heat meter",
+    placeSensor: "Install T/p sensor",
+    removeSensor: "Remove T/p sensor",
+  },
+
+  meas: {
+    heading: "Measurement points",
+    modeHdr: "Meter mode",
+    modeFull: "Live",
+    modeStd: "Standard 15 min",
+    modeFullTitle: "Every reading at every simulation step (telemetry)",
+    modeStdTitle:
+      "Load-profile meters: 15-minute means, empty until the first window " +
+      "closes — honest cold start",
+    meters: "Heat meters",
+    sensors: "T/p sensors",
+    none: "no measurement points — the network is invisible to the operator",
+    presetHdr: "Presets",
+    preset_all_consumers: "All consumers",
+    preset_plant_only: "Plant only",
+    preset_key_points: "Key points",
+    preset_clear: "Remove all",
+    preset_all_consumersTitle: "A meter at every substation",
+    preset_plant_onlyTitle: "Only the plant SCADA + T/p at the plant node",
+    preset_key_pointsTitle:
+      "Plant + network ends + a meter at the currently known worst point",
+    preset_clearTitle: "Remove every device (flying blind)",
+    stdHint:
+      "Standard load profile: values appear only with the first complete " +
+      "15-min window and stay window means.",
+    placeHint:
+      "Individual meters/sensors: right-click a consumer or node on the map.",
+    strict:
+      "Strict mode: the server serves only the measurements — reality stays " +
+      "hidden.",
   },
 
   wp: {
@@ -364,6 +444,11 @@ const en: typeof de = {
     yTitle: "Δp / bar",
     observed: "Worst point (measured)",
     blind: "blind — no reading",
+    blindSpot:
+      "Blind spot: the TRUE worst point carries no meter — control acts on " +
+      "the worst MEASURED value.",
+    blindSpotNoMeter:
+      "Blind: no Δp reading — the pump holds its lift.",
     pliftNow: "Pump lift now",
     pumpEl: "Pump P el",
     hintControlled:
@@ -530,6 +615,8 @@ const en: typeof de = {
     designLoad: "Design load",
     unobserved: "no measurement — unknown",
     noData: "no live data yet",
+    coldStart: "standard meter: waiting for the first 15-min window",
+    windowed: "15-min means (standard load profile)",
   },
 
   live: {

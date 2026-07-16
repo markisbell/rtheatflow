@@ -23,7 +23,7 @@ from ..state import StateStore
 
 #: API contract version, reported by /health and /status and stamped into the
 #: generated docs/API.md. Bump with every milestone that changes the surface.
-API_VERSION = "0.4.0"
+API_VERSION = "0.5.0"
 
 # The network loaded at startup is ``settings.default_network``
 # (``RTHEATFLOW_DEFAULT_NETWORK``, default ``demo_dorf``); the M4 catalog
