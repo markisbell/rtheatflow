@@ -1,0 +1,21 @@
+{
+ "version": 1,
+ "networks": [
+  {
+   "id": "demo_dorf",
+   "name": "Demo-Dorf",
+   "character": "rural",
+   "nodes": 15,
+   "trench_km": 0.953,
+   "dir": "networks/demo_dorf"
+  },
+  {
+   "id": "appendix_a",
+   "name": "Appendix A (Referenzschleife)",
+   "character": "abstract",
+   "nodes": 4,
+   "trench_km": 1.0,
+   "dir": "networks/appendix_a"
+  }
+ ]
+}

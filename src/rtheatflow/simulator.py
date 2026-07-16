@@ -450,7 +450,19 @@ class Simulator:
                 q_discharge_w += abs(float(rm.mdot_from_kg_per_s)) * cp_s * (
                     float(rm.t_outlet_k) - float(rm.t_from_k))
 
-        q_feed_in_w = q_feed_plant_w + q_secondary_w + q_discharge_w
+        # pump_mass producers feed like the plant: mdot·cp·(t_out − t_in)
+        # (realized, from the result table — the M2 fixture had none, so
+        # they only enter the balance since their M4 placement CRUD)
+        q_pump_mass_w: dict[int, float] = {}
+        for el in idx.pump_mass:
+            rm = net.res_circ_pump_mass.loc[int(el)]
+            t_mean = (float(rm.t_outlet_k) + float(rm.t_from_k)) / 2
+            cp_pm = float(fluid.get_heat_capacity(np.array([t_mean]))[0])
+            q_pump_mass_w[int(el)] = abs(float(rm.mdot_from_kg_per_s)) * \
+                cp_pm * (float(rm.t_outlet_k) - float(rm.t_from_k))
+
+        q_feed_in_w = (q_feed_plant_w + q_secondary_w + q_discharge_w
+                       + float(sum(q_pump_mass_w.values())))
 
         # consumers only — storage charge branches are heat_consumer rows
         # too but belong to the storage bucket, never to the demand KPI
@@ -530,12 +542,9 @@ class Simulator:
                 entry["q_kw"] = _r(-q / 1000.0)  # feed-in positive on the wire
             else:  # pump_mass
                 rm = net.res_circ_pump_mass.loc[meta["element"]]
-                t_mean = (float(rm.t_outlet_k) + float(rm.t_from_k)) / 2
-                cp_pm = float(fluid.get_heat_capacity(np.array([t_mean]))[0])
-                q_pm_w = abs(float(rm.mdot_from_kg_per_s)) * cp_pm * (
-                    float(rm.t_outlet_k) - float(rm.t_from_k))
                 entry.update({
-                    "q_kw": _r(q_pm_w / 1000.0),  # realized feed (display)
+                    "q_kw": _r(q_pump_mass_w.get(
+                        int(meta["element"]), 0.0) / 1000.0),  # realized
                     "t_flow_c": _r(rm.t_outlet_k - KELVIN),
                     "mdot_kg_per_s": _r(abs(rm.mdot_from_kg_per_s)),
                 })
@@ -657,15 +666,20 @@ class Simulator:
         self,
         node: str,
         mdot_flow_kg_per_s: float,
-        p_flow_bar: float,
         t_flow_k: float,
+        p_flow_bar: float | None = None,
         name: str | None = None,
     ) -> dict:
         """Place a ``circ_pump_const_mass_flow`` producer at *node*.
 
-        Per the M1 data contract all three of ``mdot_flow_kg_per_s``,
-        ``p_flow_bar`` and ``t_flow_k`` are required (the create call needs
-        them; type resolves to "pt" — a pressure-holding booster station).
+        ``p_flow_bar=None`` (default) creates the **pressure-free** ``type=
+        "t"`` variant: fixed mdot at fixed flow temperature, no pressure
+        constraint. ⚠ Runtime-verified (2026-07-16): a pressure-fixing
+        "pt" pump (the M1 *file* contract) over-determines the hydraulics
+        of a loop that already has its pressure slack — ALL retry-ladder
+        tiers fail on the Appendix A net. Passing an explicit ``p_flow_bar``
+        keeps the "pt" booster semantics for expert use (frames may come
+        back ``converged=false`` — that is data, not an error).
         """
         idx, p = self.index, self.profiles
         jr = idx.junction_return[node]  # KeyError -> unknown node (API: 400)
@@ -674,8 +688,9 @@ class Simulator:
         mdot = float(mdot_flow_kg_per_s)
         pm = pp.create_circ_pump_const_mass_flow(
             self.net, return_junction=jr, flow_junction=js,
-            p_flow_bar=float(p_flow_bar), mdot_flow_kg_per_s=mdot,
-            t_flow_k=float(t_flow_k), name=name)
+            p_flow_bar=(None if p_flow_bar is None else float(p_flow_bar)),
+            mdot_flow_kg_per_s=mdot, t_flow_k=float(t_flow_k),
+            type=("t" if p_flow_bar is None else "pt"), name=name)
         idx.pump_mass = np.append(idx.pump_mass, pm)
         p.pump_mass_mdot = np.vstack(
             [p.pump_mass_mdot, np.full((1, p.steps), mdot)])

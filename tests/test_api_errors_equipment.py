@@ -40,15 +40,18 @@ def test_missing_kind_specific_fields_is_400():
         assert r.status_code == 400
 
 
-def test_unknown_kind_node_and_m4_kind_are_400():
+def test_unknown_kind_node_and_incomplete_pump_mass_are_400():
     with make_api_client() as client:
         assert client.post("/producer", json={
             "node": "n2", "kind": "fusion_reactor"}).status_code == 400
         assert client.post("/producer",
                            json=dict(HX, node="nope")).status_code == 400
-        assert client.post("/producer", json={
-            "node": "n2", "kind": "pump_mass", "mdot_flow_kg_per_s": 1.0,
-            "p_flow_bar": 6.0, "t_flow_k": 340.0}).status_code == 400
+        # pump_mass needs mdot + t_flow_k (p_flow_bar optional since M4:
+        # omitted = pressure-free type="t" feed pump)
+        r = client.post("/producer", json={
+            "node": "n2", "kind": "pump_mass", "mdot_flow_kg_per_s": 1.0})
+        assert r.status_code == 400
+        assert "t_flow_k" in r.json()["detail"]
 
 
 def test_delete_slack_409_unknown_404():

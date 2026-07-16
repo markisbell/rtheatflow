@@ -15,17 +15,19 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..config import Settings
+from ..consumers import ArchetypeLibrary
 from ..engine import RealtimeEngine
+from ..network_catalog import NetworkCatalog
 from ..simulator import Simulator
 from ..state import StateStore
 
 #: API contract version, reported by /health and /status and stamped into the
 #: generated docs/API.md. Bump with every milestone that changes the surface.
-API_VERSION = "0.2.0"
+API_VERSION = "0.4.0"
 
 # The network loaded at startup is ``settings.default_network``
-# (``RTHEATFLOW_DEFAULT_NETWORK``, default ``demo_dorf`` — M3) until the
-# catalog/config endpoints ship (M4).
+# (``RTHEATFLOW_DEFAULT_NETWORK``, default ``demo_dorf``); the M4 catalog
+# (``/networks`` + ``/config/apply``) swaps it at runtime.
 
 
 @dataclass
@@ -39,6 +41,9 @@ class App:
     network_dir: Path
     topology: dict = field(default_factory=dict)
     loaded_at: float = 0.0
+    catalog: NetworkCatalog | None = None          # M4 network library
+    library: ArchetypeLibrary | None = None        # M4 loadgen archetypes
+    active: dict = field(default_factory=dict)     # /config/active metadata
 
     @property
     def sim(self) -> Simulator:
@@ -125,6 +130,7 @@ def build_topology(network_id: str, sim: Simulator) -> dict:
     consumers = [
         {"id": int(idx.consumers[i]), "name": idx.consumer_names[i],
          "node": idx.consumer_nodes[i],
+         "kind": (idx.consumer_kinds[i] if idx.consumer_kinds else "consumer"),
          "q_design_w": float(idx.q_design_w[i]),
          "t_supply_min_c": float(idx.t_supply_min_c[i])}
         for i in range(len(idx.consumers))
