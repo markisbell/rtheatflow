@@ -19,7 +19,7 @@ from ..scenarios import ScenarioStore
 from ..sensors import _r
 from .consumers import build_consumer_op
 from .networks import apply_network
-from .runtime import get_app, status_payload
+from .runtime import get_app, recording_meta, status_payload
 
 log = logging.getLogger(__name__)
 
@@ -259,6 +259,10 @@ async def scenarios_load(sid: str) -> dict:
     await app.engine.start()
 
     app.active.update(source="scenario", scenario=doc.get("name"))
+    if app.settings.record and app.recorder is not None:
+        # continuous operation: the swap auto-stopped the previous pack
+        # (apply_network); the fully replayed scenario starts the next one
+        app.recorder.start(recording_meta(app))
     # topology may have grown (replayed equipment) — rebuild for the reply
     from .runtime import build_topology
     topo = build_topology(app.network_id, sim)

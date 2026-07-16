@@ -21,7 +21,9 @@ from ..config import Settings, get_settings
 from ..consumers import ArchetypeLibrary
 from ..data_loader import load_network
 from ..engine import RealtimeEngine
+from ..exporter import BulkExporter
 from ..network_catalog import NetworkCatalog
+from ..recorder import Recorder
 from ..simulator import Simulator
 from ..state import StateStore
 from . import (
@@ -32,6 +34,7 @@ from . import (
     networks,
     plant,
     producers,
+    recordings,
     runtime,
     scenarios,
     storage,
@@ -61,8 +64,16 @@ def create_app(settings: Settings | None = None,
         engine = RealtimeEngine(sim, store, app_settings)
         catalog = NetworkCatalog(
             manifest=app_settings.network_library,
-            networks_dir=Path(app_settings.data_dir) / "networks")
+            networks_dir=Path(app_settings.data_dir) / "networks",
+            user_dir=app_settings.user_networks_dir)
         library = ArchetypeLibrary(app_settings.profiles_dir)
+        # session recorder (M6): taps the store's publish stream through the
+        # sink hook, recording the PROJECTED frame — exactly what goes out on
+        # the wire, so strict mode gates the CSVs too. The sink is a plain
+        # queue.put; the engine loop is never blocked (SPEC §6).
+        recorder = Recorder(app_settings.recordings_dir)
+        store.sink = lambda result: recorder.record(store.frame(result))
+        exporter = BulkExporter(app_settings.recordings_dir)
         runtime.set_app(App(
             settings=app_settings,
             store=store,
@@ -82,7 +93,14 @@ def create_app(settings: Settings | None = None,
                 "n_consumers": len(inputs.consumers.consumers),
                 "n_days": inputs.n_days,
             },
+            recorder=recorder,
+            exporter=exporter,
         ))
+        if app_settings.record:
+            # continuous operation (RTHEATFLOW_RECORD): one pack per setup —
+            # started here, finished/rotated on every network apply/scenario
+            # load and on shutdown
+            recorder.start(runtime.recording_meta())
         if app_settings.autostart:
             await engine.start()
             log.info("engine autostarted (interval %.3fs)", engine.interval)
@@ -90,6 +108,7 @@ def create_app(settings: Settings | None = None,
             yield
         finally:
             await engine.stop()
+            await asyncio.to_thread(recorder.stop)
             runtime.clear_app()
 
     fastapi_app = FastAPI(
@@ -120,6 +139,7 @@ def create_app(settings: Settings | None = None,
     fastapi_app.include_router(measurements.router)
     fastapi_app.include_router(networks.router)
     fastapi_app.include_router(scenarios.router)
+    fastapi_app.include_router(recordings.router)
     return fastapi_app
 
 

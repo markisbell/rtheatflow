@@ -437,3 +437,45 @@ export interface ScenarioInfo {
   network_id: string | null;
   created: string | null;
 }
+
+// ---- recording & bulk export (M6, SPEC §4.6/§7) --------------------------------------
+
+export interface RecordingStatus {
+  active: boolean;
+  id: string | null;
+  steps: number;
+  started: string | null;
+  bytes: number;
+}
+
+export interface RecordingInfo {
+  id: string;
+  network: string | null;
+  started: string | null;
+  ended: string | null;
+  steps: number | null;
+  bytes: number;
+}
+
+export interface ExportStatus {
+  active: boolean;
+  id?: string;
+  days?: number[];
+  steps_total?: number;
+  steps_done?: number;
+  day?: number | null;
+  started?: number;
+  eta_seconds?: number;
+  error?: string | null;
+  cancelled?: boolean;
+}
+
+/** POST /networks/import — the five contract documents as one bundle. */
+export interface NetworkImportBundle {
+  name?: string;
+  network_structure: unknown;
+  pipes: unknown;
+  consumers: unknown;
+  producers: unknown;
+  weather: unknown;
+}

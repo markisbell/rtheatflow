@@ -2,28 +2,68 @@
 
 Realtime pandapipes district-heating simulator — supply/return hydraulics + thermal state on a live map, three-layer observability (reality / measured / estimated). Sibling of [rtpowerflow](https://github.com/markisbell/rtpowerflow) (netzsim), translated from electricity to heat.
 
-**Status: specification & validation phase.** No application code yet — the build follows [SPEC.md](SPEC.md) (binding build specification for a coding agent, milestones M1–M7).
+**Status: M6 (ops) complete.** Headless core, REST/WebSocket API (58 routes), Leaflet UI (DE/EN), equipment & scenarios, measurement layer, session recording → CSV, offline bulk export, InfluxDB/Grafana stack, Docker Compose, CI → GHCR. The estimation layer (M7) is next. [SPEC.md](SPEC.md) is the binding build specification; [CLAUDE.md](CLAUDE.md) is the development log.
 
-## What exists today
+## Run it
+
+### Windows one-click (development)
+
+```
+start_rtheatflow.bat
+```
+
+Starts the backend (FastAPI, :8000) and the Vite dev UI (:5173) in separate consoles, waits for `/health` (first solve pays the numba JIT warm-up, up to ~60 s) and opens the browser. Requires a one-time setup:
+
+```
+py -3 -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+```
+
+(`ui\node_modules` is installed automatically on first launch.)
+
+### Docker Compose (full stack)
+
+```
+docker compose up --build
+```
+
+| Service | URL | What |
+|---|---|---|
+| backend | http://localhost:8000 | REST + WebSocket API, Swagger at `/docs`, built-in monitor at `/` |
+| ui | http://localhost:8080 | React/Leaflet app served by nginx (`/api/` + `/ws` proxied) |
+| influxdb | http://localhost:8086 | InfluxDB 2.7 (admin / rtheatflow-admin — dev credentials) |
+| collector | — | polls `/state`, dedupes on `(day, step)`, writes wall-clock points |
+| grafana | http://localhost:3000 | Grafana 11, file-provisioned DH dashboard (admin / admin) |
+
+The backend image bakes the committed `data/` (demo networks, archetype profiles, reference scenarios) and runs standalone; the `./data` volume persists recordings and imported networks.
+
+### Manual dev mode
+
+```
+# backend (:8000)
+set PYTHONPATH=src
+.venv\Scripts\python -m rtheatflow.main
+
+# UI (:5173, proxies /api and /ws to 127.0.0.1:8000)
+cd ui && npm run dev
+```
+
+Tests: `pytest -q` (backend, 134), `cd ui && npm run build && npx vitest run` (tsc strict + 20 unit tests).
+
+## What is where
 
 | Asset | Purpose |
 |---|---|
 | [SPEC.md](SPEC.md) | The complete build specification: architecture cloned from netzsim, runtime-verified pandapipes 0.14.0 API reference, data contract, wire format, API surface, milestones |
-| [scripts/validate_core.py](scripts/validate_core.py) | M1 pre-validation suite: known-answer fixture (converged, balance −0.04 %), solver retry-ladder validation, benchmarks (21–33 ms/solve), transient smoke test |
-| [scripts/realistic_year.py](scripts/realistic_year.py) | Physics acceptance scenario: re-parametrized `schutterwald_heat`, 12-month quasi-static year → 9.1–19.1 % annual losses depending on linear heat density (matches German literature) |
-| [scripts/generate_profiles.py](scripts/generate_profiles.py) | Archetype profile generator: demandlib VDI 4655 (space heating) + OpenDHW (stochastic DHW), 15-min, seed-salted variants |
-| [data/profiles/](data/profiles/) | Generated archetype cache (`index.json` + one JSON per archetype, `q_sh_w`/`q_dhw_w` split per SPEC §5) |
+| [CLAUDE.md](CLAUDE.md) | Development log & agent handoff (per-milestone build notes, verified pins, deviations) |
+| [docs/API.md](docs/API.md) | Generated API reference (`scripts/gen_api_doc.py`, pinned by test) |
+| `src/rtheatflow/` | Backend: five-file data contract, build-once network builder, retry-ladder solver, RealtimeEngine, StateStore, controllers (heating curve, Schlechtpunkt-Δp), equipment CRUD, measurement layer, recorder + bulk exporter, scenario recipes |
+| `ui/` | React 18 + TypeScript strict + Vite + raw Leaflet, i18next DE/EN |
+| `visualization/` | InfluxDB collector + file-provisioned Grafana dashboard |
+| `data/` | Demo networks (`demo_dorf`, `appendix_a`), archetype profile cache, reference scenarios; runtime dirs `data/recordings/`, `data/user_networks/` (gitignored) |
+| [scripts/](scripts/) | Profile/demo-network generators, API-doc generator, M1 validation & benchmarks |
 
-## Quickstart (validation environment)
-
-```
-py -3 -m venv .venv
-.venv\Scripts\python -m pip install -r requirements.txt
-.venv\Scripts\python scripts\validate_core.py
-.venv\Scripts\python scripts\generate_profiles.py --out data\profiles
-```
-
-Pinned core: `pandapipes==0.14.0` (pulls `pandapower==3.3.3`). Validated on Python 3.11/3.14, Windows 11.
+Pinned core: `pandapipes==0.14.0` (pulls `pandapower==3.3.3`). Validated on Python 3.11/3.14, Windows 11; CI runs 3.11.
 
 ## License
 

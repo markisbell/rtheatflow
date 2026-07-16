@@ -1,0 +1,95 @@
+# rtheatflow full stack (SPEC §9.3): backend + UI + InfluxDB + collector +
+# Grafana. ⚠️ Every credential/token below is a DEVELOPMENT default (teaching
+# tool, no auth by design) — the same values are wired into the collector env
+# and visualization/grafana/provisioning/datasources/influxdb.yml; change
+# them together if this stack ever leaves a trusted machine.
+services:
+  # --- Realtime district-heating simulation (app 1) ----------------------- #
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      RTHEATFLOW_DATA_DIR: /app/data
+      # inside the container the API must be reachable from the other services
+      RTHEATFLOW_HOST: 0.0.0.0
+      RTHEATFLOW_STEP_INTERVAL_SECONDS: "1.0"
+      RTHEATFLOW_STEPS_PER_DAY: "1440"
+      RTHEATFLOW_AUTOSTART: "true"
+      RTHEATFLOW_LOG_LEVEL: info
+      RTHEATFLOW_CORS_ORIGINS: "*"
+    volumes:
+      # persist recordings/user imports, or mount your own dataset over the
+      # bundled one (the image bakes the committed data/ and runs standalone)
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # --- Interactive UI (React/Vite served by nginx) ------------------------ #
+  ui:
+    build: ./ui
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # --- Time-series database ------------------------------------------------ #
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: rtheatflow-admin   # dev credentials
+      DOCKER_INFLUXDB_INIT_ORG: rtheatflow
+      DOCKER_INFLUXDB_INIT_BUCKET: heatflow
+      DOCKER_INFLUXDB_INIT_RETENTION: 7d
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: rtheatflow-dev-token   # dev token
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # --- Collector: REST -> InfluxDB (app 2, part a) ------------------------- #
+  collector:
+    build: ./visualization/collector
+    depends_on:
+      influxdb:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    environment:
+      RTHEATFLOW_URL: http://backend:8000
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: rtheatflow-dev-token   # dev token (matches influxdb init)
+      INFLUX_ORG: rtheatflow
+      INFLUX_BUCKET: heatflow
+      POLL_INTERVAL_SECONDS: "0.5"
+    restart: unless-stopped
+
+  # --- Grafana dashboard (app 2, part b) ----------------------------------- #
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3000:3000"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin   # dev credentials
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./visualization/grafana/provisioning:/etc/grafana/provisioning
+      - ./visualization/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    restart: unless-stopped
+
+volumes:
+  influxdb-data:
+  grafana-data:

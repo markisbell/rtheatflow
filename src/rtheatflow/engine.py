@@ -90,16 +90,22 @@ class RealtimeEngine:
 
         Never a process restart (SPEC §3.4). Restarts the tick loop if it was
         running.
+
+        Blueprint semantics (M6 fix): the swap **awaits the in-flight step**
+        via ``stop()`` — a mere ``pause()`` leaves the current
+        ``to_thread(run_step)`` racing the swap, and on slow hardware its
+        old-network frame can land *after* ``store.reset()``, briefly serving
+        a stale ``/state`` for the new network (caught by CI).
         """
         was_running = self.running
-        self.pause()
+        await self.stop()          # drains the in-flight step, if any
         sim = await asyncio.to_thread(Simulator, inputs, self.settings)
         self.sim = sim
         self.store.reset()
         self.step = 0
         self.day = 0
         if was_running:
-            self.resume()
+            await self.start()
 
     # -- the loop --------------------------------------------------------------
 

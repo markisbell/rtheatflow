@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "./api";
-import type { ApplyResponse, ScenarioInfo, Topology } from "./types";
+import type {
+  ApplyResponse, ExportStatus, RecordingInfo, RecordingStatus, ScenarioInfo,
+  Topology,
+} from "./types";
 import LiveHeatFlow from "./views/LiveHeatFlow";
 import NetzStudio from "./views/NetzStudio";
 import { fmt } from "./scales";
@@ -99,10 +102,12 @@ export default function App() {
   );
 }
 
-/** Desktop-style menu bar: Datei (Szenarien) · Ansicht (map color layer) ·
- *  Hilfe, the Live/NetzStudio tab segment, plus the ALWAYS-VISIBLE Sicht
- *  segment (Realität / Gemessen / Schätzung) — the layered-view concept is
- *  core, so switching must not require menu digging (blueprint). */
+/** Desktop-style menu bar: Datei (Szenarien · Aufzeichnung · Export) ·
+ *  Ansicht (map color layer) · Hilfe, the Live/NetzStudio tab segment, plus
+ *  the ALWAYS-VISIBLE Sicht segment (Realität / Gemessen / Schätzung) — the
+ *  layered-view concept is core, so switching must not require menu digging
+ *  (blueprint). Activity chips (⏺ recording / ⬇ export) stay visible with
+ *  all menus closed and jump into the Datei menu on click (M6). */
 function MenuBar({ live, onLive, tab, onTab, onApplied }: {
   live: LiveView;
   onLive: (p: Partial<LiveView>) => void;
@@ -113,8 +118,25 @@ function MenuBar({ live, onLive, tab, onTab, onApplied }: {
   const { t } = useTranslation();
   const [open, setOpen] = useState<string | null>(null);
   const [scenarios, setScenarios] = useState<ScenarioInfo[]>([]);
+  const [dialog, setDialog] = useState<"export" | null>(null);
   const toggle = (id: string) => setOpen((o) => (o === id ? null : id));
   const close = () => setOpen(null);
+
+  // lightweight global poll (3 s, blueprint) so an active recording / running
+  // bulk export stays visible as a chip even with all menus closed
+  const [rec, setRec] = useState<RecordingStatus | null>(null);
+  const [exp, setExp] = useState<ExportStatus | null>(null);
+  const poll = useCallback(() => {
+    api.recording().then(setRec).catch(() => {});
+    api.exportStatus().then(setExp).catch(() => {});
+  }, []);
+  useEffect(() => {
+    poll();
+    const iv = setInterval(poll, 3000);
+    return () => clearInterval(iv);
+  }, [poll]);
+  const expPct = exp?.active && exp.steps_total
+    ? Math.round((100 * (exp.steps_done ?? 0)) / exp.steps_total) : null;
 
   // refresh the scenario list whenever the Datei menu opens
   useEffect(() => {
@@ -132,7 +154,7 @@ function MenuBar({ live, onLive, tab, onTab, onApplied }: {
   };
   const loadScenario = (sid: string) => {
     close();
-    api.loadScenario(sid).then(onApplied)
+    api.loadScenario(sid).then((r) => { onApplied(r); poll(); })
       .catch((e) => window.alert(String(e)));
   };
   const deleteScenario = (sid: string) =>
@@ -168,6 +190,10 @@ function MenuBar({ live, onLive, tab, onTab, onApplied }: {
             </button>
           </div>
         ))}
+        <div className="mi-sep" />
+        <RecordingSection isOpen={open === "file"} rec={rec} exp={exp}
+                          onChanged={poll}
+                          onExportDialog={() => { setDialog("export"); close(); }} />
       </Menu>
       <Menu id="view" label={t("mbar.view")} open={open} onToggle={toggle}>
         <div className="mi-hdr">{t("mbar.layerHdr")}</div>
@@ -215,7 +241,206 @@ function MenuBar({ live, onLive, tab, onTab, onApplied }: {
           🧮 {t("mbar.segEst")}
         </button>
       </div>
+
+      {(rec?.active || exp?.active) && (
+        <div className="mbar-chips">
+          {rec?.active && (
+            <button className="mbar-chip rec" title={t("rec.record")}
+                    onClick={() => setOpen("file")}>
+              ⏺ {t("rec.recChip", { n: rec.steps })}
+            </button>
+          )}
+          {exp?.active && (
+            <button className="mbar-chip" title={t("rec.exportRunning")}
+                    onClick={() => setOpen("file")}>
+              ⬇ {t("rec.expChip", { pct: expPct ?? 0 })}
+            </button>
+          )}
+        </div>
+      )}
+
+      {dialog === "export" && (
+        <ExportDialog onClose={() => { setDialog(null); poll(); }} />
+      )}
     </nav>
+  );
+}
+
+function fmtBytes(b: number): string {
+  return b >= 1048576
+    ? `${(b / 1048576).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(b / 1024))} KB`;
+}
+
+/** Datei-menu block for the M6 recording/export workflow: record toggle,
+ *  stored-recordings submenu (ZIP download / delete), export trigger or
+ *  progress row with cancel. Polls every 2 s while the menu is open so the
+ *  pack list and export progress stay live (blueprint DateiMenu). */
+function RecordingSection({ isOpen, rec, exp, onChanged, onExportDialog }: {
+  isOpen: boolean;
+  rec: RecordingStatus | null;
+  exp: ExportStatus | null;
+  onChanged: () => void;
+  onExportDialog: () => void;
+}) {
+  const { t } = useTranslation();
+  const [list, setList] = useState<RecordingInfo[] | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setNote(null);
+    const load = () => {
+      api.recordings().then((r) => setList(r.recordings)).catch(() => {});
+      onChanged();
+    };
+    load();
+    const iv = setInterval(load, 2000);
+    return () => clearInterval(iv);
+  }, [isOpen, onChanged]);
+
+  const act = (p: Promise<unknown>) =>
+    p.then(() => setNote(null)).catch((e) => setNote(String(e))).finally(() => {
+      api.recordings().then((r) => setList(r.recordings)).catch(() => {});
+      onChanged();
+    });
+
+  const pct = exp?.active && exp.steps_total
+    ? Math.round((100 * (exp.steps_done ?? 0)) / exp.steps_total) : 0;
+
+  return (
+    <>
+      <button className="mi"
+              onClick={() => act(rec?.active
+                ? api.recordingStop() : api.recordingStart())}>
+        {rec?.active ? (
+          <>⏹ {t("rec.recordStop")}{" "}
+            <span className="muted">{rec.steps} {t("rec.steps")}</span></>
+        ) : (
+          <><span style={{ color: "#f85149" }}>⏺</span> {t("rec.record")}</>
+        )}
+      </button>
+      <SubMenu label={`🗂 ${t("rec.recordings")}`}>
+        {list === null && <div className="mi info">…</div>}
+        {list !== null && list.length === 0 && (
+          <div className="mi info">{t("rec.none")}</div>
+        )}
+        {list?.map((r) => (
+          <div key={r.id} className="mi" style={{ padding: 0 }}>
+            <a className="mi" style={{ flex: 1 }}
+               href={api.recordingDownloadUrl(r.id)}
+               title={`${r.network ?? ""} · ${r.steps ?? "?"} ${t("rec.steps")} · ${fmtBytes(r.bytes)}`}>
+              💾 {r.id}
+            </a>
+            <button className="mi" style={{ flex: "none" }}
+                    title={t("rec.delete")}
+                    onClick={(e) => { e.stopPropagation(); act(api.deleteRecording(r.id)); }}>
+              🗑
+            </button>
+          </div>
+        ))}
+      </SubMenu>
+      {!exp?.active && (
+        <button className="mi" onClick={onExportDialog}>
+          ⬇ {t("rec.exportDaysDots")}
+        </button>
+      )}
+      {exp?.active && (
+        <div className="mi" style={{ padding: 0 }}>
+          <span className="mi info" style={{ flex: 1 }}>
+            ⬇ {t("rec.expChip", { pct })}
+            {exp.eta_seconds != null && ` · ~${exp.eta_seconds} s`}
+          </span>
+          <button className="mi" style={{ flex: "none" }}
+                  onClick={() => act(api.exportCancel())}>
+            {t("rec.cancel")}
+          </button>
+        </div>
+      )}
+      {exp?.error && (
+        <div className="mi info">{t("rec.error")}: {exp.error}</div>
+      )}
+      {note && <div className="mi info">{note}</div>}
+    </>
+  );
+}
+
+/** Flyout submenu ("Aufzeichnungen ▸") — keeps the parent dropdown a short
+ *  command list instead of an inline wall (blueprint). */
+function SubMenu({ label, children }: { label: ReactNode; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mi-sub" onMouseEnter={() => setOpen(true)}
+         onMouseLeave={() => setOpen(false)}>
+      <button className="mi" onClick={() => setOpen((o) => !o)}>
+        <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
+        <span className="sub-arrow">▸</span>
+      </button>
+      {open && <div className="mbar-drop sub">{children}</div>}
+    </div>
+  );
+}
+
+/** Modal dialog shell (Escape closes — blueprint Dialog). */
+function Dialog({ title, onClose, children }: {
+  title: string; onClose: () => void; children: ReactNode;
+}) {
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [onClose]);
+  return (
+    <>
+      <div className="dlg-overlay" onClick={onClose} />
+      <div className="dlg" role="dialog" aria-label={title}>
+        <div className="dlg-head">
+          <span>{title}</span>
+          <button className="dlg-x" onClick={onClose}>✕</button>
+        </div>
+        {children}
+      </div>
+    </>
+  );
+}
+
+/** "Tage exportieren…" — replay whole days offline into a recording pack
+ *  (quasi-static, like the live loop; SPEC §3.5). */
+function ExportDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  const [days, setDays] = useState(1);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const start = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await api.exportDays(days);
+      onClose();
+    } catch (e) {
+      setErr(String(e));
+      setBusy(false);
+    }
+  };
+  return (
+    <Dialog title={`⬇ ${t("rec.exportTitle")}`} onClose={onClose}>
+      <div className="dlg-row">
+        <label>{t("rec.days")}</label>
+        <input type="number" min={1} max={366} value={days} autoFocus
+               style={{ width: "5em" }}
+               onChange={(e) =>
+                 setDays(Math.max(1, Math.min(366, Number(e.target.value) || 1)))}
+               onKeyDown={(e) => e.key === "Enter" && start()} />
+      </div>
+      <div className="dlg-note">{t("rec.exportHint")}</div>
+      {err && <div className="dlg-note">{err}</div>}
+      <div className="dlg-actions">
+        <button onClick={onClose}>{t("rec.cancel")}</button>
+        <button className="primary" disabled={busy} onClick={start}>
+          {t("rec.exportStart")}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
