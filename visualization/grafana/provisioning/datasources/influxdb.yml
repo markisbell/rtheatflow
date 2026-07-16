@@ -1,0 +1,18 @@
+# File-provisioned InfluxDB datasource (SPEC §9.3). Dev credentials only —
+# they match the docker-compose init env; change both together.
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    uid: influxdb
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: true
+    jsonData:
+      version: Flux
+      organization: rtheatflow
+      defaultBucket: heatflow
+      tlsSkipVerify: true
+    secureJsonData:
+      token: rtheatflow-dev-token

@@ -1,0 +1,23 @@
+# keep the backend image lean — runtime artifacts and tooling stay out
+.git
+.github
+.claude
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+dist
+build
+*.egg-info
+.env
+
+# runtime data created by the app (mounted, never baked)
+data/recordings
+data/user_networks
+
+# the UI and visualization build in their own contexts
+ui/node_modules
+ui/dist
+docs
+tests
