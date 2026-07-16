@@ -1,8 +1,19 @@
 import type {
+  ActiveConfig,
+  ApplyResponse,
+  ArchetypeInfo,
+  AssignPreview,
+  DpControlInfo,
   EngineStatus,
   HeatingCurveInfo,
   HeatingCurveParams,
+  LoadgenPolicy,
+  NetworkListItem,
+  NetworkPreview,
+  PlantKind,
+  ScenarioInfo,
   StepResult,
+  StorageInfo,
   Topology,
   WeatherInfo,
 } from "./types";
@@ -67,6 +78,80 @@ export const api = {
   heatingCurve: () => get<HeatingCurveInfo>("/heatingcurve"),
   setHeatingCurve: (cfg: Partial<HeatingCurveParams> & { preset?: "3G" | "4G" }) =>
     post<HeatingCurveInfo>("/heatingcurve", cfg),
+
+  // ---- M4: Δp control (SPEC §4.3) ----
+  dpControl: () => get<DpControlInfo>("/dpcontrol"),
+  setDpControl: (cfg: {
+    mode?: "controlled" | "fixed";
+    setpoint_bar?: number;
+    plift_bar?: number;
+  }) => post<DpControlInfo>("/dpcontrol", cfg),
+
+  // ---- M4: producers ----
+  producers: () => get<Record<string, unknown>[]>("/producers"),
+  addProducer: (body: {
+    node: string;
+    kind: "heat_exchanger" | "pump_mass";
+    name?: string;
+    qext_w?: number;
+    inner_diameter_mm?: number;
+    mdot_flow_kg_per_s?: number;
+    t_flow_k?: number;
+  }) => post<{ added: { id: number } }>("/producer", body),
+  configProducer: (id: number, body: {
+    qext_w?: number;
+    mdot_flow_kg_per_s?: number;
+    t_flow_k?: number;
+    plant_kind?: PlantKind;
+    eta_g?: number;
+    t_cold_source?: "t_amb" | "t_ground";
+  }) => post<unknown>(`/producer/${id}/config`, body),
+  removeProducer: (id: number) => del<unknown>(`/producer/${id}`),
+
+  // ---- M4: storage (SPEC §4.4) ----
+  storages: () => get<StorageInfo[]>("/storages"),
+  addStorage: (body: {
+    node: string;
+    capacity_kwh: number;
+    power_kw: number;
+    name?: string;
+  }) => post<{ added: StorageInfo }>("/storage", body),
+  configStorage: (id: number, body: {
+    mode?: "idle" | "charge" | "discharge";
+    power_kw?: number;
+    capacity_kwh?: number;
+  }) => post<unknown>(`/storage/${id}/config`, body),
+  removeStorage: (id: number) => del<unknown>(`/storage/${id}`),
+
+  // ---- M4: consumers & bypass (SPEC §3.2/§4.4) ----
+  addConsumer: (body: {
+    node: string;
+    name?: string;
+    archetype?: string;
+    seed?: number;
+    q_kw?: number;
+    treturn_c?: number;
+  }) => post<{ added: { id: number } }>("/consumer", body),
+  removeConsumer: (id: number) => del<unknown>(`/consumer/${id}`),
+  addBypass: (node: string) => post<{ added: { id: number } }>("/bypass", { node }),
+
+  // ---- M4: network catalog + loadgen + swap (SPEC §4.5/§4.6) ----
+  networks: () => get<{ available: boolean; networks: NetworkListItem[] }>("/networks"),
+  networkPreview: (id: string) => get<NetworkPreview>(`/networks/${id}`),
+  archetypes: () =>
+    get<{ available: boolean; archetypes: ArchetypeInfo[] }>("/loadgen/archetypes"),
+  assign: (network_id: string, policy: LoadgenPolicy) =>
+    post<AssignPreview>("/loadgen/assign", { network_id, policy }),
+  applyConfig: (network_id: string, loadgen?: LoadgenPolicy) =>
+    post<ApplyResponse>("/config/apply", { network_id, loadgen }),
+  activeConfig: () => get<ActiveConfig>("/config/active"),
+
+  // ---- M4: scenarios (SPEC §4.6) ----
+  scenarios: () => get<{ scenarios: ScenarioInfo[] }>("/scenarios"),
+  saveScenario: (name: string, description = "") =>
+    post<{ id: string; name: string }>("/scenarios", { name, description }),
+  loadScenario: (sid: string) => post<ApplyResponse>(`/scenarios/${sid}/load`),
+  deleteScenario: (sid: string) => del<unknown>(`/scenarios/${sid}`),
 };
 
 export function wsUrl(): string {
