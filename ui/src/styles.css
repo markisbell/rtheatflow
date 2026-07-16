@@ -80,6 +80,57 @@ body { background: var(--bg); color: var(--text); }
 .mbar-seg button.on { background: var(--accent-2); color: #fff; }
 .mbar-seg button:disabled { opacity: 0.4; cursor: default; }
 
+/* M6: flyout submenu (Aufzeichnungen ▸) inside a dropdown */
+.mi-sub { position: relative; }
+.mi-sub > .mi { width: 100%; }
+.mi-sub .sub-arrow { color: var(--muted); flex: none; }
+.mbar-drop.sub {
+  top: -6px; left: calc(100% + 2px);
+  max-height: 60vh; overflow: auto;
+}
+
+/* M6: activity chips (⏺ recording / ⬇ export) — visible with menus closed */
+.mbar-chips { display: flex; gap: 6px; align-items: center; margin-left: 8px; }
+.mbar-chip {
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 2px 10px; font-size: 0.75rem; cursor: pointer; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.mbar-chip:hover { border-color: var(--accent-2); }
+.mbar-chip.rec { color: #f85149; border-color: #f8514966; }
+
+/* M6: modal dialog (Tage exportieren…) */
+.dlg-overlay { position: fixed; inset: 0; z-index: 1290;
+  background: rgba(0, 0, 0, 0.45); }
+.dlg {
+  position: fixed; z-index: 1300; top: 20vh; left: 50%;
+  transform: translateX(-50%); min-width: 320px; max-width: 440px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 14px 14px;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.6);
+}
+.dlg-head { display: flex; justify-content: space-between; align-items: center;
+  font-weight: 700; margin-bottom: 8px; }
+.dlg-x { background: transparent; color: var(--muted); border: none;
+  cursor: pointer; font-size: 0.9rem; padding: 2px 6px; }
+.dlg-x:hover { color: var(--text); }
+.dlg-row { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
+.dlg-row input[type="number"] {
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px;
+}
+.dlg-note { color: var(--muted); font-size: 0.78rem; margin: 6px 0; }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.dlg-actions button {
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 7px;
+  padding: 5px 12px; cursor: pointer; font-size: 0.82rem;
+}
+.dlg-actions button.primary { background: var(--accent-2); color: #fff;
+  border-color: transparent; }
+.dlg-actions button:disabled { opacity: 0.5; cursor: default; }
+
 .content { flex: 1; min-height: 0; overflow: hidden; }
 
 /* ---- generic ---- */

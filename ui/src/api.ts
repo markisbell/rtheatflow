@@ -5,15 +5,19 @@ import type {
   AssignPreview,
   DpControlInfo,
   EngineStatus,
+  ExportStatus,
   HeatingCurveInfo,
   HeatingCurveParams,
   LoadgenPolicy,
   MeasurementsResponse,
   MeterMode,
   MeterPreset,
+  NetworkImportBundle,
   NetworkListItem,
   NetworkPreview,
   PlantKind,
+  RecordingInfo,
+  RecordingStatus,
   ScenarioInfo,
   StepResult,
   StorageInfo,
@@ -156,6 +160,8 @@ export const api = {
   // ---- M4: network catalog + loadgen + swap (SPEC §4.5/§4.6) ----
   networks: () => get<{ available: boolean; networks: NetworkListItem[] }>("/networks"),
   networkPreview: (id: string) => get<NetworkPreview>(`/networks/${id}`),
+  importNetwork: (bundle: NetworkImportBundle) =>
+    post<NetworkPreview>("/networks/import", bundle),
   archetypes: () =>
     get<{ available: boolean; archetypes: ArchetypeInfo[] }>("/loadgen/archetypes"),
   assign: (network_id: string, policy: LoadgenPolicy) =>
@@ -170,6 +176,22 @@ export const api = {
     post<{ id: string; name: string }>("/scenarios", { name, description }),
   loadScenario: (sid: string) => post<ApplyResponse>(`/scenarios/${sid}/load`),
   deleteScenario: (sid: string) => del<unknown>(`/scenarios/${sid}`),
+
+  // ---- M6: session recording + bulk export (SPEC §4.6/§7) ----
+  recording: () => get<RecordingStatus>("/recording"),
+  recordingStart: (name?: string) =>
+    post<RecordingStatus>("/recording/start", name ? { name } : undefined),
+  recordingStop: () => post<RecordingStatus>("/recording/stop"),
+  recordings: () =>
+    get<{ recordings: RecordingInfo[]; active: RecordingStatus }>("/recordings"),
+  recordingDownloadUrl: (rid: string) =>
+    `${API}/recordings/${encodeURIComponent(rid)}/download`,
+  deleteRecording: (rid: string) =>
+    del<{ deleted: string }>(`/recordings/${encodeURIComponent(rid)}`),
+  exportDays: (days: number | number[], name?: string) =>
+    post<ExportStatus>("/export/days", { days, name }),
+  exportStatus: () => get<ExportStatus>("/export"),
+  exportCancel: () => post<ExportStatus>("/export/cancel"),
 };
 
 export function wsUrl(): string {

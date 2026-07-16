@@ -3,10 +3,14 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api";
 import type {
   ApplyResponse, ArchetypeInfo, AssignPreview, LoadgenPolicy,
-  NetworkListItem, NetworkPreview,
+  NetworkImportBundle, NetworkListItem, NetworkPreview,
 } from "../types";
 import { fmt } from "../scales";
 import Sparkline from "../components/Sparkline";
+
+const FIVE_FILES = [
+  "network_structure", "pipes", "consumers", "producers", "weather",
+] as const;
 
 /** The network workflow view (blueprint NetzStudio port, SPEC §8): column 1
  *  picks a catalog network, column 2 configures the §4.5 loadgen policy
@@ -90,6 +94,47 @@ export default function NetzStudio({ selected, onSelect, onApplied }: {
       .finally(() => setBusy(false));
   };
 
+  // ---- M6: five-file bundle import (POST /networks/import) ----
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [note, setNote] = useState<string | null>(null);
+
+  const importFiles = async (files: File[]) => {
+    setNote(null);
+    try {
+      let bundle: NetworkImportBundle;
+      if (files.length === 1) {
+        // a single JSON carrying all five documents as keys
+        const doc = JSON.parse(await files[0].text());
+        const missing = FIVE_FILES.filter((k) => !(k in doc));
+        if (missing.length) {
+          throw new Error(`${t("netz.importNeedFive")} (${missing.join(", ")})`);
+        }
+        bundle = doc as NetworkImportBundle;
+      } else {
+        // the five contract files picked together (named <doc>.json)
+        const byName: Record<string, unknown> = {};
+        for (const f of files) {
+          const key = f.name.replace(/\.json$/i, "");
+          if ((FIVE_FILES as readonly string[]).includes(key)) {
+            byName[key] = JSON.parse(await f.text());
+          }
+        }
+        const missing = FIVE_FILES.filter((k) => !(k in byName));
+        if (missing.length) {
+          throw new Error(`${t("netz.importNeedFive")} (${missing.join(", ")})`);
+        }
+        bundle = byName as unknown as NetworkImportBundle;
+      }
+      const r = await api.importNetwork(bundle);
+      const nets = await api.networks();
+      setNetworks(nets.networks);
+      onSelect(r.id);
+      setNote(t("netz.imported", { name: r.name }));
+    } catch (e) {
+      setNote(`${t("netz.importErr")} ${String(e)}`);
+    }
+  };
+
   const toggle = (id: string) =>
     setChosen((s) => {
       const n = new Set(s);
@@ -108,28 +153,38 @@ export default function NetzStudio({ selected, onSelect, onApplied }: {
 
   return (
     <div className="netzstudio">
-      {/* ---- 1 · pick a network ---------------------------------------- */}
+      {/* ---- 1 · pick or import a network -------------------------------- */}
       <aside className="ns-list">
         <h3>{t("netz.step1")}</h3>
+        <button className="ghost" style={{ width: "100%" }}
+                title={t("netz.importTitle")}
+                onClick={() => fileRef.current?.click()}>
+          ⬆ {t("netz.import")}
+        </button>
+        <input ref={fileRef} type="file" multiple
+               accept=".json,application/json" style={{ display: "none" }}
+               onChange={(e) => {
+                 const files = Array.from(e.target.files ?? []);
+                 if (files.length) importFiles(files);
+                 e.target.value = "";
+               }} />
+        {note && (
+          <p className="note" style={{ fontSize: "0.75rem" }}>{note}</p>
+        )}
         <div className="ns-hdr">{t("netz.library")}</div>
-        {networks.map((n) => (
-          <div key={n.id} className={`ns-row${n.id === selected ? " sel" : ""}`}
-               onClick={() => onSelect(n.id)}>
-            <div className="title">{n.name}</div>
-            <div className="sub">
-              {n.character && <span className="tag">{t(`netz.ch_${n.character}`, { defaultValue: n.character })}</span>}
-              {n.nodes != null && (
-                <span className="muted"> {t("netz.nodes", { count: n.nodes })}</span>
-              )}
-              {n.trench_km != null && (
-                <span className="muted"> · {fmt(n.trench_km, 2)} km</span>
-              )}
-            </div>
-          </div>
+        {networks.filter((n) => n.source !== "user").map((n) => (
+          <NetworkRow key={n.id} n={n} selected={n.id === selected}
+                      onClick={() => onSelect(n.id)} />
         ))}
-        <p className="muted" style={{ fontSize: "0.72rem", marginTop: "0.6rem" }}>
-          {t("netz.importM6")}
-        </p>
+        {networks.some((n) => n.source === "user") && (
+          <>
+            <div className="ns-hdr">{t("netz.own")}</div>
+            {networks.filter((n) => n.source === "user").map((n) => (
+              <NetworkRow key={n.id} n={n} selected={n.id === selected}
+                          onClick={() => onSelect(n.id)} />
+            ))}
+          </>
+        )}
       </aside>
 
       {/* ---- 2 · loadgen policy ----------------------------------------- */}
@@ -262,6 +317,30 @@ export default function NetzStudio({ selected, onSelect, onApplied }: {
           </button>
         )}
       </section>
+    </div>
+  );
+}
+
+function NetworkRow({ n, selected, onClick }: {
+  n: NetworkListItem; selected: boolean; onClick: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className={`ns-row${selected ? " sel" : ""}`} onClick={onClick}>
+      <div className="title">{n.name}</div>
+      <div className="sub">
+        {n.character && (
+          <span className="tag">
+            {t(`netz.ch_${n.character}`, { defaultValue: n.character })}
+          </span>
+        )}
+        {n.nodes != null && (
+          <span className="muted"> {t("netz.nodes", { count: n.nodes })}</span>
+        )}
+        {n.trench_km != null && (
+          <span className="muted"> · {fmt(n.trench_km, 2)} km</span>
+        )}
+      </div>
     </div>
   );
 }

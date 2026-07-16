@@ -40,6 +40,28 @@ const de = {
     delete: "Szenario löschen",
   },
 
+  rec: {
+    record: "Aufzeichnung starten",
+    recordStop: "Aufzeichnung beenden",
+    steps: "Schritte",
+    recChip: "REC {{n}}",
+    recordings: "Aufzeichnungen",
+    none: "keine gespeicherten Aufzeichnungen",
+    delete: "Aufzeichnung löschen",
+    exportDaysDots: "Tage exportieren…",
+    exportTitle: "Tage exportieren",
+    exportRunning: "Export läuft",
+    expChip: "Export {{pct}} %",
+    days: "Anzahl Tage",
+    exportHint:
+      "Simuliert ganze Tage des aktuellen Aufbaus so schnell wie möglich " +
+      "offline und legt sie als Aufzeichnung (CSV-Paket) ab — quasistatisch " +
+      "wie der Live-Betrieb.",
+    exportStart: "Export starten",
+    cancel: "Abbrechen",
+    error: "Fehler",
+  },
+
   menu: {
     placeHdr: "Hier platzieren",
     addHx: "Einspeiser (20 kW)",
@@ -207,7 +229,16 @@ const de = {
     ch_suburban: "Vorort",
     ch_urban: "städtisch",
     ch_abstract: "abstrakt",
-    importM6: "Netz-Import (eigene Netze) folgt in einem späteren Meilenstein.",
+    own: "Eigene Netze",
+    import: "Netz importieren…",
+    importTitle:
+      "Fünf-Dateien-Kontrakt hochladen: network_structure, pipes, consumers, " +
+      "producers, weather (fünf .json-Dateien oder eine Bündel-Datei)",
+    imported: "„{{name}}“ importiert.",
+    importErr: "Import fehlgeschlagen:",
+    importNeedFive:
+      "Es fehlen Kontrakt-Dateien — erwartet werden network_structure, " +
+      "pipes, consumers, producers und weather",
     noCache: "Kein Archetypen-Cache — scripts/generate_profiles.py ausführen.",
     tempPreset: "Temperaturniveau",
     preset3g: "3G (hoch)",
@@ -368,6 +399,28 @@ const en: typeof de = {
     scenariosHdr: "Scenarios",
     none: "no saved scenarios",
     delete: "Delete scenario",
+  },
+
+  rec: {
+    record: "Start recording",
+    recordStop: "Stop recording",
+    steps: "steps",
+    recChip: "REC {{n}}",
+    recordings: "Recordings",
+    none: "no stored recordings",
+    delete: "Delete recording",
+    exportDaysDots: "Export days…",
+    exportTitle: "Export days",
+    exportRunning: "Export running",
+    expChip: "Export {{pct}} %",
+    days: "Number of days",
+    exportHint:
+      "Simulates whole days of the current setup offline, as fast as " +
+      "possible, and stores them as a recording (CSV pack) — quasi-static " +
+      "like the live loop.",
+    exportStart: "Start export",
+    cancel: "Cancel",
+    error: "Error",
   },
 
   menu: {
@@ -536,7 +589,16 @@ const en: typeof de = {
     ch_suburban: "suburban",
     ch_urban: "urban",
     ch_abstract: "abstract",
-    importM6: "Network import (own networks) ships in a later milestone.",
+    own: "Own networks",
+    import: "Import network…",
+    importTitle:
+      "Upload the five-file contract: network_structure, pipes, consumers, " +
+      "producers, weather (five .json files or one bundle file)",
+    imported: "Imported “{{name}}”.",
+    importErr: "Import failed:",
+    importNeedFive:
+      "Contract files missing — expected network_structure, pipes, " +
+      "consumers, producers and weather",
     noCache: "No archetype cache — run scripts/generate_profiles.py.",
     tempPreset: "Temperature level",
     preset3g: "3G (high)",
