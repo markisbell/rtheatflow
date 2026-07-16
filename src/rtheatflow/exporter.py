@@ -158,11 +158,17 @@ class BulkExporter:
           controllers); a **fixed** pump keeps the user's setting (config);
         * storages start at SoC 0 (the M4 scenario-load convention);
         * measurement windows fresh (standard-mode meters cold-start
-          honestly), last-payload/blind-spot cleared.
+          honestly), last-payload/blind-spot cleared;
+        * estimation disabled on the replay copy (M7): packs never record
+          the estimated layer (its refresh cadence is wall-clock-throttled —
+          machine timing, not physics), so running the observer would only
+          burn replay time. The blueprint's ``estimate`` export flag guarded
+          the same cost; ours is simply always off for replays.
 
         Public on purpose: the live-vs-export byte-compatibility test starts
         its live recording from this same normalized state.
         """
+        from dataclasses import replace
         tick0 = sim._tick(0, first_day)
         idx = sim.index
         if sim.heating_curve is not None:
@@ -180,6 +186,7 @@ class BulkExporter:
         sim.measurements._reset_windows()
         sim._last_payload = None
         sim._blind_spot = None
+        sim.set_est_config(replace(sim.est_config, enabled=False))
         sim._reset_initialization()
 
 
