@@ -169,6 +169,10 @@ export interface Controls {
     max_step_bar?: number | null;
     plift_bar: number | null;
     dp_worst_observed_bar?: number | null;
+    /** M5 (SPEC §8a): the TRUE worst point carries no meter — the pump
+     *  regulates on the best measured Δp (or holds without any reading).
+     *  Null before the first converged frame. */
+    blind_spot?: boolean | null;
   };
 }
 
@@ -178,7 +182,9 @@ export interface WeatherState {
   override: boolean;
 }
 
-/** Heat-meter reading at a consumer substation (SPEC §8a channels). */
+/** Heat-meter reading at a consumer substation (SPEC §8a channels). In
+ *  standard fidelity every channel is a 15-min-window mean and null until
+ *  the first window after placement closes (honest cold start). */
 export interface ConsumerMeasurement {
   id: number;
   name: string;
@@ -190,10 +196,23 @@ export interface ConsumerMeasurement {
   dp_bar: number | null;
 }
 
+/** T/p sensor reading at a trench node's junction pair (SPEC §8a). */
+export interface NodeMeasurement {
+  node: string;
+  p_supply_bar: number | null;
+  p_return_bar: number | null;
+  t_supply_c: number | null;
+  t_return_c: number | null;
+}
+
+export type MeterMode = "full" | "standard";
+export type MeterPreset = "all_consumers" | "plant_only" | "key_points" | "clear";
+
 export interface Measurements {
-  preset?: string;
+  preset?: string; // MeterPreset | "custom"
+  mode?: MeterMode;
   consumers?: ConsumerMeasurement[];
-  nodes?: unknown[]; // T/p junction sensors ship with the M5 CRUD
+  nodes?: NodeMeasurement[];
   plant?: {
     q_feed_kw: number | null;
     t_flow_c: number | null;
@@ -208,12 +227,32 @@ export interface ObservedSummary {
   q_demand_metered_kw: number | null;
   n_metered: number;
   n_consumers: number;
+  n_node_sensors?: number;
+  n_nodes?: number;
   dp_worst_bar: number | null;
   worst_consumer: string | null;
   t_flow_plant_c: number | null;
   t_return_plant_c: number | null;
   mdot_plant_kg_per_s: number | null;
   pump_el_kw: number | null;
+}
+
+// ---- GET /measurements + every /measurements/* verb (M5, SPEC §7) --------------
+
+export interface MeasurementsResponse {
+  preset: string; // MeterPreset | "custom"
+  mode: MeterMode;
+  consumer_meters: { id: number; name: string | null; node: string | null }[];
+  node_sensors: string[];
+  coverage: {
+    n_consumers: number;
+    n_consumer_meters: number;
+    consumer_fraction: number;
+    n_nodes: number;
+    n_node_sensors: number;
+    node_fraction: number;
+  };
+  expose_ground_truth: boolean;
 }
 
 /** The single wire format. In strict mode (RTHEATFLOW_EXPOSE_GROUND_TRUTH=

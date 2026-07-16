@@ -103,6 +103,13 @@ export default function WorstPointSection({ open, onToggle, latest, trace }: {
             value={livePlift != null ? `${fmt(livePlift, 2)} bar` : "—"} />
       <Stat label={t("wp.pumpEl")}
             value={pumpEl != null ? `${fmt(pumpEl, 2)} kW` : "—"} />
+      {dc?.blind_spot === true && (
+        /* M5 (SPEC §8a): the TRUE worst point carries no meter — the pump
+         * can only hold or regulate on the best measured Δp */
+        <div className="note" style={{ fontSize: "0.7rem", marginTop: 4 }}>
+          ⚠️ {dpObserved != null ? t("wp.blindSpot") : t("wp.blindSpotNoMeter")}
+        </div>
+      )}
       <div className="muted" style={{ fontSize: "0.68rem", marginTop: 4 }}>
         {mode === "controlled" ? t("wp.hintControlled") : t("wp.hintFixed")}
       </div>

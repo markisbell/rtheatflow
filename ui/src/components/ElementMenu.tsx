@@ -26,7 +26,12 @@ export type MenuAction =
   | { type: "removeProducer" }
   | { type: "removeStorage" }
   | { type: "storageMode"; mode: "idle" | "charge" | "discharge" }
-  | { type: "plantKind"; kind: PlantKind; tColdSource?: "t_amb" | "t_ground" };
+  | { type: "plantKind"; kind: PlantKind; tColdSource?: "t_amb" | "t_ground" }
+  // M5 sensor placement (SPEC §7/§8a)
+  | { type: "placeMeter" }
+  | { type: "removeMeter" }
+  | { type: "placeNodeSensor" }
+  | { type: "removeNodeSensor" };
 
 /** Context menu on a clicked map element: element-specific actions first
  *  (pin details, remove, storage mode, plant kind), then the placement
@@ -34,13 +39,17 @@ export type MenuAction =
  *  Two-page: the consumer archetype picker and the plant-kind picker swap
  *  the page in place. */
 export default function ElementMenu({
-  target, archetypes, onAction, onPin, onClose,
+  target, archetypes, onAction, onPin, onClose, metered, nodeSensored,
 }: {
   target: MenuTarget;
   archetypes: ArchetypeInfo[];
   onAction: (a: MenuAction) => void;
   onPin: () => void;
   onClose: () => void;
+  /** M5: does this consumer already carry a heat meter? */
+  metered?: boolean;
+  /** M5: does this element's node already carry a T/p sensor? */
+  nodeSensored?: boolean;
 }) {
   const { t } = useTranslation();
   const [page, setPage] = useState<"main" | "consumer" | "plant">("main");
@@ -97,12 +106,26 @@ export default function ElementMenu({
       item("pin", `📌 ${t("menu.pin")}`, onPin),
     ];
     if (target.kind === "consumer") {
+      // M5: heat meter (Wärmemengenzähler) at the substation
+      specific.push(metered
+        ? item("rmM", `📟 ${t("menu.removeMeter")}`,
+               act({ type: "removeMeter" }))
+        : item("addM", `📟 ${t("menu.placeMeter")}`,
+               act({ type: "placeMeter" })));
       specific.push(item(
         "rmC",
         `🗑️ ${target.consumerKind === "bypass"
           ? t("menu.removeBypass") : t("menu.removeConsumer")}`,
         act({ type: "removeConsumer" })));
-    } else if (target.kind === "producer") {
+    } else if (target.kind === "node" || target.kind === "producer") {
+      // M5: T/p sensor pair at the trench node (SPEC §8a)
+      specific.push(nodeSensored
+        ? item("rmS", `🌡️ ${t("menu.removeSensor")}`,
+               act({ type: "removeNodeSensor" }))
+        : item("addS", `🌡️ ${t("menu.placeSensor")}`,
+               act({ type: "placeNodeSensor" })));
+    }
+    if (target.kind === "producer") {
       if (target.producerKind === "slack") {
         specific.push(item("plant", `🏭 ${t("menu.plantKind")}…`,
                            () => setPage("plant"), false));

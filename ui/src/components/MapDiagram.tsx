@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import type {
   ConsumerMeasurement,
   ConsumerState,
+  MeasurementsResponse,
   PipeState,
   StepResult,
   Topology,
@@ -42,6 +43,8 @@ interface Props {
   observedOnly: boolean;
   /** supply-ramp anchor: the active heating curve's design temperature */
   tFlowDesign: number;
+  /** M5 sensor placement: 📟 heat-meter / 🌡️ T/p-sensor map markers */
+  placement: MeasurementsResponse | null;
   /** right-click context menu on elements/nodes (SPEC §8 grammar, M4) */
   onMenu?: (target: MenuTarget) => void;
   /** Ctrl-click pins an element details section (SPEC §8) */
@@ -75,7 +78,8 @@ interface TrenchLive { s?: PipeState; r?: PipeState }
  *  or for unsensored elements in the measured view, elements render in the
  *  dedicated UNOBSERVED grey/dash — never in a healthy ramp color. */
 export default function MapDiagram({
-  topo, latest, layer, onLayer, observedOnly, tFlowDesign, onMenu, onPin,
+  topo, latest, layer, onLayer, observedOnly, tFlowDesign, placement,
+  onMenu, onPin,
 }: Props) {
   const { t, i18n } = useTranslation();
   const elRef = useRef<HTMLDivElement | null>(null);
@@ -84,6 +88,7 @@ export default function MapDiagram({
   const trenchRef = useRef<Map<number, L.Polyline>>(new Map());
   const consRef = useRef<Map<number, L.CircleMarker>>(new Map());
   const equipRef = useRef<Map<string, L.Marker>>(new Map());
+  const sensorRef = useRef<Map<string, L.Marker>>(new Map());
   const plantRef = useRef<L.CircleMarker | null>(null);
   const [light, setLight] = useState(true);
 
@@ -161,17 +166,22 @@ export default function MapDiagram({
   };
 
   const consumerPopup = (cons: Topology["consumers"][number]): string => {
-    const { latest: f } = liveRef.current;
+    const { latest: f, observedOnly: obs } = liveRef.current;
     const head = `<b>${esc(t("tip.consumer", { name: cons.name }))}</b>`
       + `<br><span style="color:var(--muted)">${t("pop.designLoad")} ${fmt(cons.q_design_w / 1000, 1)} kW</span>`;
     if (!f) return `${head}<br>${t("pop.noData")}`;
     const c = consumerLive(cons.id);
     if (!c) return `${head}<br>${t("pop.unobserved")}`;
+    // M5: a standard-fidelity meter is honest about its raster — cold start
+    // until the first 15-min window closes, windowed means afterwards
+    const std = obs && f.measurements?.mode === "standard";
+    if (std && c.q_kw == null) return `${head}<br>📟 ${t("pop.coldStart")}`;
     return `${head}<br>${row(t("pop.q"), `${fmt(c.q_kw, 1)} kW`)} · `
       + row(t("pop.mdot"), `${fmt(c.mdot_kg_per_s, 3)} kg/s`)
       + `<br>${row(t("pop.tSupply"), `${fmt(c.t_supply_c, 1)} °C`)} · `
       + row(t("pop.tReturn"), `${fmt(c.t_return_c, 1)} °C`)
-      + `<br>${row(t("pop.dp"), `${fmt(c.dp_bar, 2)} bar`)}`;
+      + `<br>${row(t("pop.dp"), `${fmt(c.dp_bar, 2)} bar`)}`
+      + (std ? `<br><span style="color:var(--muted)">📟 ${t("pop.windowed")}</span>` : "");
   };
 
   const plantPopup = (): string => {
@@ -310,6 +320,7 @@ export default function MapDiagram({
       mapRef.current = null;
       tileRef.current = null;
       equipRef.current.clear();
+      sensorRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topo, i18n.language]); // rebuild (incl. tooltips) on language change
@@ -364,6 +375,44 @@ export default function MapDiagram({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latest, topo]);
+
+  // ---- sensor markers (M5): 📟 heat meter at metered consumers, 🌡️ T/p
+  // sensor at sensored nodes — diffed against the placement, decorative
+  // (never intercept the element's own clicks) ----
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const nodeGeo = new Map<string, [number, number]>(
+      topo.nodes.map((n) => [n.name, n.geo]));
+    const consNode = new Map<number, string>(
+      topo.consumers.map((c) => [c.id, c.node]));
+    const want = new Map<string, { emoji: string; pos: [number, number] }>();
+    for (const m of placement?.consumer_meters ?? []) {
+      const pos = nodeGeo.get(m.node ?? consNode.get(m.id) ?? "");
+      if (pos) want.set(`m${m.id}`, { emoji: "📟", pos });
+    }
+    for (const node of placement?.node_sensors ?? []) {
+      const pos = nodeGeo.get(node);
+      if (pos) want.set(`t${node}`, { emoji: "🌡️", pos });
+    }
+    for (const [key, mk] of sensorRef.current) {
+      if (!want.has(key)) {
+        map.removeLayer(mk);
+        sensorRef.current.delete(key);
+      }
+    }
+    for (const [key, w] of want) {
+      if (sensorRef.current.has(key)) continue;
+      const mk = L.marker(w.pos, {
+        icon: L.divIcon({ className: "equip-icon", html: w.emoji,
+                          iconAnchor: [-8, -4] }),
+        interactive: false, keyboard: false,
+      }).addTo(map);
+      sensorRef.current.set(key, mk);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placement, topo]);
 
   // ---- basemap (light/dark) --------------------------------------------------
 
@@ -424,13 +473,19 @@ export default function MapDiagram({
     for (const [id, cm] of consRef.current) {
       const c = f ? consumerLive(id) : undefined;
       if (!c) {
-        cm.setStyle({ fillColor: UNOBSERVED, fillOpacity: 0.7 });
+        cm.setStyle({ fillColor: UNOBSERVED, fillOpacity: 0.7,
+                      dashArray: undefined });
       } else {
+        // M5 staleness hint: a standard-fidelity meter inside its first
+        // 15-min window has no values yet — dashed ring, muted fill
+        const stale = observedOnly
+          && f?.measurements?.mode === "standard" && c.q_kw == null;
         const fill = layer === "supply" ? supplyTempColor(c.t_supply_c, tFlowDesign)
           : layer === "return" ? returnTempColor(c.t_return_c)
           : layer === "dp" ? dpColor(c.dp_bar)
           : "#94a3b8"; // velocity is a pipe property — consumers stay neutral
-        cm.setStyle({ fillColor: fill, fillOpacity: 0.95 });
+        cm.setStyle({ fillColor: fill, fillOpacity: stale ? 0.75 : 0.95,
+                      dashArray: stale ? "3 3" : undefined });
       }
       if (cm.isPopupOpen()) {
         const cons = topo.consumers.find((x) => x.id === id);

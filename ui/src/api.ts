@@ -8,6 +8,9 @@ import type {
   HeatingCurveInfo,
   HeatingCurveParams,
   LoadgenPolicy,
+  MeasurementsResponse,
+  MeterMode,
+  MeterPreset,
   NetworkListItem,
   NetworkPreview,
   PlantKind,
@@ -134,6 +137,21 @@ export const api = {
   }) => post<{ added: { id: number } }>("/consumer", body),
   removeConsumer: (id: number) => del<unknown>(`/consumer/${id}`),
   addBypass: (node: string) => post<{ added: { id: number } }>("/bypass", { node }),
+
+  // ---- M5: sensor placement (SPEC §7 Sensors row, §8a) ----
+  measurements: () => get<MeasurementsResponse>("/measurements"),
+  placeConsumerMeter: (id: number) =>
+    post<MeasurementsResponse>(`/measurements/consumer/${id}`),
+  removeConsumerMeter: (id: number) =>
+    del<MeasurementsResponse>(`/measurements/consumer/${id}`),
+  placeNodeSensor: (node: string) =>
+    post<MeasurementsResponse>(`/measurements/node/${encodeURIComponent(node)}`),
+  removeNodeSensor: (node: string) =>
+    del<MeasurementsResponse>(`/measurements/node/${encodeURIComponent(node)}`),
+  setMeasurementMode: (mode: MeterMode) =>
+    post<MeasurementsResponse>("/measurements/mode", { mode }),
+  setMeasurementPreset: (preset: MeterPreset) =>
+    post<MeasurementsResponse>("/measurements/preset", { preset }),
 
   // ---- M4: network catalog + loadgen + swap (SPEC §4.5/§4.6) ----
   networks: () => get<{ available: boolean; networks: NetworkListItem[] }>("/networks"),
