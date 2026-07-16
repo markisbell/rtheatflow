@@ -4,9 +4,13 @@ rtheatflow is a pure *consumer*: it lists networks from the committed
 manifest (``data/network_library.json``) and loads a chosen one through the
 five-file contract on demand (cached). Blueprint ``grid_catalog.py`` port.
 
-``POST /networks/import`` (user network upload) is deferred to M6 together
-with the ``data/user_networks/`` scan — the M4 catalog serves the committed
-library; the manifest format already carries a ``source`` field for it.
+Since M6 the catalog also scans ``data/user_networks/`` (``POST
+/networks/import`` writes validated five-file bundles there): every
+subdirectory with a ``network_structure.json`` becomes an entry with id
+``user_<dirname>`` and ``source="user"``. The scan is cheap (two small JSON
+reads per entry for the list stats) and re-runs lazily when an unknown
+``user_*`` id is looked up, so imports and hand-copied bundles appear
+without a restart.
 """
 from __future__ import annotations
 
@@ -36,15 +40,18 @@ class NetworkCatalog:
     """Lists loadable networks; converts a chosen one to NetInputs on demand."""
 
     def __init__(self, manifest: str | Path | None = None,
-                 networks_dir: str | Path | None = None):
+                 networks_dir: str | Path | None = None,
+                 user_dir: str | Path | None = None):
         self.manifest = Path(manifest) if manifest else None
         self.networks_dir = Path(networks_dir) if networks_dir else None
+        self.user_dir = Path(user_dir) if user_dir else None
         self._entries: dict[str, NetworkEntry] = {}
         self._cache: dict[str, NetInputs] = {}
         if self.manifest and self.manifest.is_file():
             self._load_manifest()
         elif self.networks_dir and self.networks_dir.is_dir():
             self._scan_dir()
+        self.rescan_user()
 
     def _load_manifest(self) -> None:
         data = json.loads(self.manifest.read_text(encoding="utf-8"))
@@ -63,11 +70,45 @@ class NetworkCatalog:
                 self._entries[sub.name] = NetworkEntry(
                     id=sub.name, name=sub.name, dir=str(sub), source="scan")
 
+    def rescan_user(self) -> None:
+        """(Re)scan ``user_networks/`` — imported bundles become ``user_*``
+        entries; entries whose directory vanished are dropped (M6)."""
+        stale = [nid for nid, e in self._entries.items()
+                 if e.source == "user" and not (
+                     e.dir and (Path(e.dir) / "network_structure.json").is_file())]
+        for nid in stale:
+            self._entries.pop(nid, None)
+            self._cache.pop(nid, None)
+        if self.user_dir is None or not self.user_dir.is_dir():
+            return
+        for sub in sorted(self.user_dir.iterdir()):
+            if not sub.is_dir() or not (sub / "network_structure.json").is_file():
+                continue
+            nid = f"user_{sub.name}"
+            name, nodes, trench_km = sub.name, None, None
+            try:  # cheap list stats — full validation happens on get_inputs
+                struct = json.loads(
+                    (sub / "network_structure.json").read_text(encoding="utf-8"))
+                name = struct.get("name") or sub.name
+                nodes = len(struct.get("junctions") or []) or None
+                pipes = json.loads(
+                    (sub / "pipes.json").read_text(encoding="utf-8"))
+                trench_km = round(sum(
+                    float(p.get("length_km") or 0.0)
+                    for p in pipes.get("pipes") or []), 3) or None
+            except Exception:  # noqa: BLE001 — stats stay unknown, entry listed
+                log.debug("user network %s: could not read list stats", nid)
+            self._entries[nid] = NetworkEntry(
+                id=nid, name=name, nodes=nodes, trench_km=trench_km,
+                dir=str(sub), source="user")
+
     @property
     def available(self) -> bool:
         return bool(self._entries)
 
     def has(self, network_id: str) -> bool:
+        if network_id not in self._entries and network_id.startswith("user_"):
+            self.rescan_user()      # imports appear without a restart
         return network_id in self._entries
 
     def entry(self, network_id: str) -> NetworkEntry:

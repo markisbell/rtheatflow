@@ -17,13 +17,15 @@ from pathlib import Path
 from ..config import Settings
 from ..consumers import ArchetypeLibrary
 from ..engine import RealtimeEngine
+from ..exporter import BulkExporter
 from ..network_catalog import NetworkCatalog
+from ..recorder import Recorder
 from ..simulator import Simulator
 from ..state import StateStore
 
 #: API contract version, reported by /health and /status and stamped into the
 #: generated docs/API.md. Bump with every milestone that changes the surface.
-API_VERSION = "0.5.0"
+API_VERSION = "0.6.0"
 
 # The network loaded at startup is ``settings.default_network``
 # (``RTHEATFLOW_DEFAULT_NETWORK``, default ``demo_dorf``); the M4 catalog
@@ -44,6 +46,8 @@ class App:
     catalog: NetworkCatalog | None = None          # M4 network library
     library: ArchetypeLibrary | None = None        # M4 loadgen archetypes
     active: dict = field(default_factory=dict)     # /config/active metadata
+    recorder: Recorder | None = None               # M6 session recorder
+    exporter: BulkExporter | None = None           # M6 bulk exporter
 
     @property
     def sim(self) -> Simulator:
@@ -93,6 +97,26 @@ def status_payload(app: App | None = None) -> dict:
             "solver_status": latest.solver_status,
             "solve_ms": latest.solve_ms,
         },
+    }
+
+
+def recording_meta(app: App | None = None) -> dict:
+    """The reproducibility recipe stored in a recording's metadata.json:
+    what was simulated (network + loadgen), what was measurable (sensor
+    placement + fidelity mode), the controller/plant config, how fast the
+    clock ticked, and whether ground truth was on the wire at all."""
+    app = app or get_app()
+    sim = app.sim
+    return {
+        "rtheatflow_version": API_VERSION,
+        "network": app.active,
+        "measurements": sim.measurement_placement(),
+        "heating_curve": (sim.heating_curve.params()
+                          if sim.heating_curve is not None else None),
+        "dp_control": sim.dp_control.params(),
+        "plant": sim.plant.params(),
+        "engine": status_payload(app),
+        "expose_ground_truth": bool(app.settings.expose_ground_truth),
     }
 
 

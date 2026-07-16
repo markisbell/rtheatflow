@@ -1,7 +1,7 @@
 # rtheatflow API reference
 
 > **Generated** by `scripts/gen_api_doc.py` — do not edit by hand.
-> API version **0.5.0** · interactive docs at `/docs` (Swagger) when the
+> API version **0.6.0** · interactive docs at `/docs` (Swagger) when the
 > backend runs · default bind `127.0.0.1:8000`, no auth (teaching tool).
 
 The single wire format is the projected `StepResult` (SPEC §6): `/state`,
@@ -141,6 +141,7 @@ limits (weather override out of range) · `500` internal failures only —
 | `GET` | `/loadgen/archetypes` | Archetype cache |
 | `POST` | `/loadgen/assign` | Preview a loadgen assignment |
 | `GET` | `/networks` | Network library |
+| `POST` | `/networks/import` | Import a network (five-file bundle) |
 | `GET` | `/networks/{network_id}` | Network preview |
 
 - **`GET /config/active`** — Metadata of the currently loaded network (id, source, loadgen).
@@ -148,6 +149,7 @@ limits (weather override out of range) · `500` internal failures only —
 - **`GET /loadgen/archetypes`** — The cached building archetypes (demandlib VDI 4655 + OpenDHW).
 - **`POST /loadgen/assign`** — Deterministic archetype→node assignment preview (nothing applied): assignment table, KPIs (design load, peak, trench length, linear heat density) and the load-duration curve for the NetzStudio Sparkline.
 - **`GET /networks`** — List the loadable networks of the committed library manifest.
+- **`POST /networks/import`** — Import a five-file network bundle into ``data/user_networks/<id>/``. The documents are written to disk and validated by actually loading them through the full five-file contract (pydantic models + cross-validation); a bundle that does not load is removed again (400 — blueprint convention). On success the catalog is rescanned and the network appears in ``GET /networks`` with ``source="user"``.
 - **`GET /networks/{network_id}`** — Net-free preview stats of a catalog network (loads + validates the five-file bundle on first access, cached).
 
 ## scenarios
@@ -162,3 +164,27 @@ limits (weather override out of range) · `500` internal failures only —
 - **`GET /scenarios`** — Saved scenario recipes (name, description, network, created).
 - **`POST /scenarios`** — Save the CURRENT live setup as a recipe: network id + loadgen policy + runtime equipment (producers/storages/consumer ops) + heating-curve/ Δp/plant config + weather override + the engine clock. Recipes, not snapshots (SPEC §4.6) — same name overwrites.
 - **`POST /scenarios/{sid}/load`** — Replay a scenario recipe: network (+ loadgen) swap, then the runtime layers (controllers, producers, storages, consumer ops, override), seek to the stored clock and run. Tolerant per entry — mismatching ops are skipped with a warning, never a partial 500.
+
+## recording
+
+| Method | Path | Summary |
+|---|---|---|
+| `GET` | `/export` | Export progress |
+| `POST` | `/export/cancel` | Cancel the export |
+| `POST` | `/export/days` | Bulk-export whole days |
+| `GET` | `/recording` | Recorder status |
+| `POST` | `/recording/start` | Start recording |
+| `POST` | `/recording/stop` | Stop recording |
+| `GET` | `/recordings` | Stored recordings |
+| `DELETE` | `/recordings/{rid}` | Delete a recording |
+| `GET` | `/recordings/{rid}/download` | Download a recording (ZIP) |
+
+- **`GET /export`** — Progress of the bulk export (steps done/total, ETA, errors).
+- **`POST /export/cancel`** — Stop the running bulk export; the partial pack is kept and finalized.
+- **`POST /export/days`** — Replay whole days of the CURRENT setup offline, as fast as possible, into a recording pack (appears under ``/recordings`` when finished; byte-compatible with a live recording). One export at a time (409).
+- **`GET /recording`** — State of the session recorder (active recording, steps, size).
+- **`POST /recording/start`** — Record every published frame to ``data/recordings/<id>/`` (CSV pack + metadata.json recipe). One recording at a time (409).
+- **`POST /recording/stop`** — Finish the active recording (flush, close, write metadata.json).
+- **`GET /recordings`** — Stored recordings (finished ones carry metadata.json) + the recorder state, one poll for the Datei menu.
+- **`DELETE /recordings/{rid}`** — Remove a stored recording (and its cached ZIP).
+- **`GET /recordings/{rid}/download`** — The recording as a ZIP of CSVs + metadata.json.
