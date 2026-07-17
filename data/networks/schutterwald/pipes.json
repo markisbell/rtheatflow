@@ -1,0 +1,3523 @@
+{
+ "pipes": [
+  {
+   "from_node": "K1073",
+   "to_node": "CON00059A5C5AD7E542A3",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.05937,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46188732,
+     7.87598098
+    ],
+    [
+     48.4616641,
+     7.87671023
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00059A5C5AD7E542A3",
+   "to_node": "CON00026D5B73EDF6857B",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00846,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4616641,
+     7.87671023
+    ],
+    [
+     48.46163228,
+     7.87681417
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00026D5B73EDF6857B",
+   "to_node": "CON00029E5B73EDF76495",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00163,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46163228,
+     7.87681417
+    ],
+    [
+     48.46162615,
+     7.8768342
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00029E5B73EDF76495",
+   "to_node": "CON0005B15C5AD7E73617",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00432,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46162615,
+     7.8768342
+    ],
+    [
+     48.46160993,
+     7.87688721
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005B15C5AD7E73617",
+   "to_node": "CON0002765B73EDF68B75",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00902,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46160993,
+     7.87688721
+    ],
+    [
+     48.46157602,
+     7.87699801
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002765B73EDF68B75",
+   "to_node": "CON0005995C5AD7E53103",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.0025,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46157602,
+     7.87699801
+    ],
+    [
+     48.46156662,
+     7.87702871
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005995C5AD7E53103",
+   "to_node": "CON0002775B73EDF68BFB",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00141,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46156662,
+     7.87702871
+    ],
+    [
+     48.46156133,
+     7.87704598
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002775B73EDF68BFB",
+   "to_node": "CON00026A5B73EDF683EF",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00449,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46156133,
+     7.87704598
+    ],
+    [
+     48.46154443,
+     7.87710117
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00026A5B73EDF683EF",
+   "to_node": "CON00055F5B73EDFA2F6F",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00398,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46154443,
+     7.87710117
+    ],
+    [
+     48.46152948,
+     7.87715006
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00055F5B73EDFA2F6F",
+   "to_node": "CON0005985C5AD7E51F28",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.01757,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46152948,
+     7.87715006
+    ],
+    [
+     48.4614634,
+     7.8773659
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005985C5AD7E51F28",
+   "to_node": "CON00029D5B73EDF6A3E8",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00228,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4614634,
+     7.8773659
+    ],
+    [
+     48.46145483,
+     7.8773939
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00029D5B73EDF6A3E8",
+   "to_node": "CON0005AF5C5AD7E70EB7",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00547,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46145483,
+     7.8773939
+    ],
+    [
+     48.46143427,
+     7.87746106
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005AF5C5AD7E70EB7",
+   "to_node": "CON00026B5B73EDF68478",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00669,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46143427,
+     7.87746106
+    ],
+    [
+     48.46140911,
+     7.87754327
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00026B5B73EDF68478",
+   "to_node": "CON00029C5B73EDF6A35D",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00159,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46140911,
+     7.87754327
+    ],
+    [
+     48.46140313,
+     7.87756279
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00029C5B73EDF6A35D",
+   "to_node": "CON0002695B73EDF68363",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00804,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46140313,
+     7.87756279
+    ],
+    [
+     48.4613729,
+     7.87766154
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002695B73EDF68363",
+   "to_node": "CON0005BC5C5AD7E83E54",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00364,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4613729,
+     7.87766154
+    ],
+    [
+     48.4613592,
+     7.87770629
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005BC5C5AD7E83E54",
+   "to_node": "CON00029B5B73EDF6A2D3",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00392,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4613592,
+     7.87770629
+    ],
+    [
+     48.46134447,
+     7.87775443
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00029B5B73EDF6A2D3",
+   "to_node": "CON00026C5B73EDF684FA",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00084,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46134447,
+     7.87775443
+    ],
+    [
+     48.46134133,
+     7.87776468
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00026C5B73EDF684FA",
+   "to_node": "CON0005AE5C5AD7E7E8D0",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00175,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46134133,
+     7.87776468
+    ],
+    [
+     48.46133476,
+     7.87778612
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005AE5C5AD7E7E8D0",
+   "to_node": "CON0002755B73EDF68AEB",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.01016,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46133476,
+     7.87778612
+    ],
+    [
+     48.46129656,
+     7.87791091
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002755B73EDF68AEB",
+   "to_node": "CON00029A5B73EDF6A23C",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.00956,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46129656,
+     7.87791091
+    ],
+    [
+     48.46126063,
+     7.87802833
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00029A5B73EDF6A23C",
+   "to_node": "K1074",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.02013,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46126063,
+     7.87802833
+    ],
+    [
+     48.46118493,
+     7.87827559
+    ]
+   ]
+  },
+  {
+   "from_node": "K1076",
+   "to_node": "CON0002885B73EDF69674",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.01895,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46063528,
+     7.88048863
+    ],
+    [
+     48.46060301,
+     7.88074032
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002885B73EDF69674",
+   "to_node": "CON00028B5B73EDF6983D",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.01896,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46060301,
+     7.88074032
+    ],
+    [
+     48.46057074,
+     7.88099211
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00028B5B73EDF6983D",
+   "to_node": "CON0002865B73EDF69563",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.01951,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46057074,
+     7.88099211
+    ],
+    [
+     48.46053753,
+     7.88125114
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002865B73EDF69563",
+   "to_node": "CON0005A95C5AD7E76BBF",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.0068,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46053753,
+     7.88125114
+    ],
+    [
+     48.46052596,
+     7.88134139
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005A95C5AD7E76BBF",
+   "to_node": "K1077",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.01068,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46052596,
+     7.88134139
+    ],
+    [
+     48.46050777,
+     7.88148328
+    ]
+   ]
+  },
+  {
+   "from_node": "K1077",
+   "to_node": "CON0005AA5C5AD7E7836F",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00185,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46050777,
+     7.88148328
+    ],
+    [
+     48.4605089,
+     7.88150827
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005AA5C5AD7E7836F",
+   "to_node": "CON00058F5C5AD7E5815A",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00809,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4605089,
+     7.88150827
+    ],
+    [
+     48.4605138,
+     7.88161748
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00058F5C5AD7E5815A",
+   "to_node": "CON00028D5B73EDF699A9",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00555,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4605138,
+     7.88161748
+    ],
+    [
+     48.46051716,
+     7.8816923
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00028D5B73EDF699A9",
+   "to_node": "CON0002E05B73EDF78F20",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00936,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46051716,
+     7.8816923
+    ],
+    [
+     48.46052283,
+     7.88181861
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002E05B73EDF78F20",
+   "to_node": "CON0005AB5C5AD7E79A13",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00085,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46052283,
+     7.88181861
+    ],
+    [
+     48.46052335,
+     7.88183008
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005AB5C5AD7E79A13",
+   "to_node": "CON0002DD5B73EDF78D47",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00159,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46052335,
+     7.88183008
+    ],
+    [
+     48.46052431,
+     7.88185151
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002DD5B73EDF78D47",
+   "to_node": "CON0008015C5AD8549A54",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00914,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46052431,
+     7.88185151
+    ],
+    [
+     48.46052984,
+     7.88197489
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0008015C5AD8549A54",
+   "to_node": "CON0002935B73EDF69DAF",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00527,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46052984,
+     7.88197489
+    ],
+    [
+     48.46053303,
+     7.88204597
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002935B73EDF69DAF",
+   "to_node": "CON0005AC5C5AD7E7B10B",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00889,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46053303,
+     7.88204597
+    ],
+    [
+     48.46053841,
+     7.88216588
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005AC5C5AD7E7B10B",
+   "to_node": "CON0002DC5B73EDF78CAC",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00202,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46053841,
+     7.88216588
+    ],
+    [
+     48.46053964,
+     7.88219315
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002DC5B73EDF78CAC",
+   "to_node": "CON0002DE5B73EDF78DE2",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00444,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46053964,
+     7.88219315
+    ],
+    [
+     48.46054233,
+     7.88225303
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002DE5B73EDF78DE2",
+   "to_node": "CON0005F85C5AD7EF2B99",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00085,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46054233,
+     7.88225303
+    ],
+    [
+     48.46054284,
+     7.88226455
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005F85C5AD7EF2B99",
+   "to_node": "CON0002DF5B73EDF78E82",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00114,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46054284,
+     7.88226455
+    ],
+    [
+     48.46054353,
+     7.88227993
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002DF5B73EDF78E82",
+   "to_node": "CON0003025B73EDF8AA21",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00818,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46054353,
+     7.88227993
+    ],
+    [
+     48.46054849,
+     7.88239034
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0003025B73EDF8AA21",
+   "to_node": "K1078",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00547,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46054849,
+     7.88239034
+    ],
+    [
+     48.4605518,
+     7.88246412
+    ]
+   ]
+  },
+  {
+   "from_node": "K1078",
+   "to_node": "CON0002905B73EDF69BAE",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.01129,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4605518,
+     7.88246412
+    ],
+    [
+     48.46057237,
+     7.88261362
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002905B73EDF69BAE",
+   "to_node": "CON00028F5B73EDF69B02",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00886,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46057237,
+     7.88261362
+    ],
+    [
+     48.46058851,
+     7.88273089
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00028F5B73EDF69B02",
+   "to_node": "CON0002DA5B73EDF78B6A",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00027,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46058851,
+     7.88273089
+    ],
+    [
+     48.46058901,
+     7.88273444
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002DA5B73EDF78B6A",
+   "to_node": "CON0002DB5B73EDF78C08",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00895,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46058901,
+     7.88273444
+    ],
+    [
+     48.46060531,
+     7.88285293
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002DB5B73EDF78C08",
+   "to_node": "CON0002915B73EDF69C58",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00571,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46060531,
+     7.88285293
+    ],
+    [
+     48.46061572,
+     7.8829286
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002915B73EDF69C58",
+   "to_node": "CON0002945B73EDF69E59",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00743,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46061572,
+     7.8829286
+    ],
+    [
+     48.46062926,
+     7.88302698
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002945B73EDF69E59",
+   "to_node": "CON0002D95B73EDF78ACB",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00326,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46062926,
+     7.88302698
+    ],
+    [
+     48.4606352,
+     7.88307017
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002D95B73EDF78ACB",
+   "to_node": "CON0007245C5AD81CA6FF",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.01349,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4606352,
+     7.88307017
+    ],
+    [
+     48.46065978,
+     7.8832487
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0007245C5AD81CA6FF",
+   "to_node": "CON0002955B73EDF69F01",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.0015,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46065978,
+     7.8832487
+    ],
+    [
+     48.46066251,
+     7.88326854
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002955B73EDF69F01",
+   "to_node": "CON0002D75B73EDF78991",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00884,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46066251,
+     7.88326854
+    ],
+    [
+     48.46067861,
+     7.88338553
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002D75B73EDF78991",
+   "to_node": "CON00062C5C5AD7F5E00A",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.0058,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46067861,
+     7.88338553
+    ],
+    [
+     48.46068917,
+     7.88346234
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00062C5C5AD7F5E00A",
+   "to_node": "CON0002D65B73EDF788E4",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00418,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46068917,
+     7.88346234
+    ],
+    [
+     48.46069679,
+     7.88351766
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002D65B73EDF788E4",
+   "to_node": "CON0002975B73EDF6A050",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00988,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46069679,
+     7.88351766
+    ],
+    [
+     48.46071479,
+     7.88364851
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002975B73EDF6A050",
+   "to_node": "CON0002D85B73EDF78A2F",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00374,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46071479,
+     7.88364851
+    ],
+    [
+     48.46072161,
+     7.88369801
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002D85B73EDF78A2F",
+   "to_node": "CON00062B5C5AD7F5C4A5",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00806,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46072161,
+     7.88369801
+    ],
+    [
+     48.4607363,
+     7.88380476
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00062B5C5AD7F5C4A5",
+   "to_node": "K1079",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.01375,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4607363,
+     7.88380476
+    ],
+    [
+     48.46076134,
+     7.88398677
+    ]
+   ]
+  },
+  {
+   "from_node": "K1079",
+   "to_node": "CON0002925B73EDF69D04",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00652,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46076134,
+     7.88398677
+    ],
+    [
+     48.46077194,
+     7.88407352
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002925B73EDF69D04",
+   "to_node": "CON0005D55C5AD7EB84DA",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.01625,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46077194,
+     7.88407352
+    ],
+    [
+     48.46079834,
+     7.88428959
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005D55C5AD7EB84DA",
+   "to_node": "CON0005D45C5AD7EB6C5A",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00497,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46079834,
+     7.88428959
+    ],
+    [
+     48.46080641,
+     7.88435563
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005D45C5AD7EB6C5A",
+   "to_node": "CON0002995B73EDF6A1A6",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00052,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46080641,
+     7.88435563
+    ],
+    [
+     48.46080725,
+     7.88436253
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002995B73EDF6A1A6",
+   "to_node": "CON0005AD5C5AD7E7C81C",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00983,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46080725,
+     7.88436253
+    ],
+    [
+     48.46082322,
+     7.88449326
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005AD5C5AD7E7C81C",
+   "to_node": "CON0004B35B73EDF9511C",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00207,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46082322,
+     7.88449326
+    ],
+    [
+     48.46082659,
+     7.88452077
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0004B35B73EDF9511C",
+   "to_node": "CON0005D05C5AD7EA1347",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.01328,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46082659,
+     7.88452077
+    ],
+    [
+     48.46084817,
+     7.8846974
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005D05C5AD7EA1347",
+   "to_node": "CON0004D85B73EDF979D8",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00235,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46084817,
+     7.8846974
+    ],
+    [
+     48.46085199,
+     7.8847287
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0004D85B73EDF979D8",
+   "to_node": "CON0005CF5C5AD7EAFC2E",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00155,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46085199,
+     7.8847287
+    ],
+    [
+     48.46085451,
+     7.88474928
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005CF5C5AD7EAFC2E",
+   "to_node": "CON0005CE5C5AD7EAE66C",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00348,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46085451,
+     7.88474928
+    ],
+    [
+     48.46086016,
+     7.88479556
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005CE5C5AD7EAE66C",
+   "to_node": "CON0002C65B73EDF77DF1",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00048,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46086016,
+     7.88479556
+    ],
+    [
+     48.46086094,
+     7.88480191
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002C65B73EDF77DF1",
+   "to_node": "CON0005D15C5AD7EA293A",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00266,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46086094,
+     7.88480191
+    ],
+    [
+     48.46086525,
+     7.88483726
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005D15C5AD7EA293A",
+   "to_node": "K1080",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00303,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46086525,
+     7.88483726
+    ],
+    [
+     48.46087018,
+     7.88487755
+    ]
+   ]
+  },
+  {
+   "from_node": "K1080",
+   "to_node": "CON0005215B73EDFADFD6",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00494,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46087018,
+     7.88487755
+    ],
+    [
+     48.46087988,
+     7.88494277
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005215B73EDFADFD6",
+   "to_node": "CON0002C55B73EDF77D5D",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.01231,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46087988,
+     7.88494277
+    ],
+    [
+     48.46090404,
+     7.88510527
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002C55B73EDF77D5D",
+   "to_node": "CON0007445C5AD8232E73",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00206,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46090404,
+     7.88510527
+    ],
+    [
+     48.46090809,
+     7.88513247
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0007445C5AD8232E73",
+   "to_node": "CON00054E5B73EDFA1AB2",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00124,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46090809,
+     7.88513247
+    ],
+    [
+     48.46091052,
+     7.88514877
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00054E5B73EDFA1AB2",
+   "to_node": "CON00062D5C5AD7F5FCF3",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00072,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46091052,
+     7.88514877
+    ],
+    [
+     48.46091193,
+     7.88515829
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00062D5C5AD7F5FCF3",
+   "to_node": "CON0005CA5C5AD7EA8C57",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00623,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46091193,
+     7.88515829
+    ],
+    [
+     48.46092416,
+     7.88524049
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005CA5C5AD7EA8C57",
+   "to_node": "CON00056E5B73EDFA4073",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.01198,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46092416,
+     7.88524049
+    ],
+    [
+     48.46094768,
+     7.88539863
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00056E5B73EDFA4073",
+   "to_node": "CON0002C75B73EDF77E85",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00233,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46094768,
+     7.88539863
+    ],
+    [
+     48.46095225,
+     7.88542938
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002C75B73EDF77E85",
+   "to_node": "CON0005CC5C5AD7EAB911",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.01259,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46095225,
+     7.88542938
+    ],
+    [
+     48.46097695,
+     7.88559546
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005CC5C5AD7EAB911",
+   "to_node": "CON0005735B73EDFA4618",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00021,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46097695,
+     7.88559546
+    ],
+    [
+     48.46097736,
+     7.88559821
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005735B73EDFA4618",
+   "to_node": "CON0005755B73EDFA4858",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.01464,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46097736,
+     7.88559821
+    ],
+    [
+     48.46100609,
+     7.8857914
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005755B73EDFA4858",
+   "to_node": "CON0002CA5B73EDF7805D",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00715,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46100609,
+     7.8857914
+    ],
+    [
+     48.46102013,
+     7.88588581
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002CA5B73EDF7805D",
+   "to_node": "CON00057E5B73EDFA535B",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00746,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46102013,
+     7.88588581
+    ],
+    [
+     48.46103478,
+     7.88598432
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00057E5B73EDFA535B",
+   "to_node": "CON0004675B73EDF900C0",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.01496,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46103478,
+     7.88598432
+    ],
+    [
+     48.46106414,
+     7.88618178
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0004675B73EDF900C0",
+   "to_node": "K1081",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.03206,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46106414,
+     7.88618178
+    ],
+    [
+     48.46112707,
+     7.8866049
+    ]
+   ]
+  },
+  {
+   "from_node": "K1088",
+   "to_node": "CON0004665B73EDF9FBCA",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.01747,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46168413,
+     7.88979476
+    ],
+    [
+     48.46174825,
+     7.89001019
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0004665B73EDF9FBCA",
+   "to_node": "K1087",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.03293,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46174825,
+     7.89001019
+    ],
+    [
+     48.4618691,
+     7.89041615
+    ]
+   ]
+  },
+  {
+   "from_node": "K1090",
+   "to_node": "CON0007EB5C5AD84ED372",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00641,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46128052,
+     7.88910029
+    ],
+    [
+     48.46131608,
+     7.8891684
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0007EB5C5AD84ED372",
+   "to_node": "K1089",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.03399,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46131608,
+     7.8891684
+    ],
+    [
+     48.46150474,
+     7.88952977
+    ]
+   ]
+  },
+  {
+   "from_node": "K1091",
+   "to_node": "CON00071A5C5AD81AA41E",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.01326,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46103387,
+     7.88855201
+    ],
+    [
+     48.46110064,
+     7.88870042
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00071A5C5AD81AA41E",
+   "to_node": "CON0007EA5C5AD84E8ECD",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00101,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46110064,
+     7.88870042
+    ],
+    [
+     48.46110574,
+     7.88871177
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0007EA5C5AD84E8ECD",
+   "to_node": "CON0006EC5C5AD81115C0",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.02509,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46110574,
+     7.88871177
+    ],
+    [
+     48.46123203,
+     7.8889925
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0006EC5C5AD81115C0",
+   "to_node": "K1090",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00963,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46123203,
+     7.8889925
+    ],
+    [
+     48.46128052,
+     7.88910029
+    ]
+   ]
+  },
+  {
+   "from_node": "K1092",
+   "to_node": "CON0007E25C5AD84C85CF",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.01564,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4608657,
+     7.88805856
+    ],
+    [
+     48.46092984,
+     7.88824678
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0007E25C5AD84C85CF",
+   "to_node": "K1091",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.02536,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46092984,
+     7.88824678
+    ],
+    [
+     48.46103387,
+     7.88855201
+    ]
+   ]
+  },
+  {
+   "from_node": "K1093",
+   "to_node": "CON00052F5B73EDFAF05F",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.01873,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46071996,
+     7.88769306
+    ],
+    [
+     48.46085119,
+     7.88753434
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00052F5B73EDFAF05F",
+   "to_node": "K1094",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00607,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46085119,
+     7.88753434
+    ],
+    [
+     48.46089374,
+     7.88748289
+    ]
+   ]
+  },
+  {
+   "from_node": "K1074",
+   "to_node": "CON00060B5C5AD7F1257E",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.01308,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46118493,
+     7.87827559
+    ],
+    [
+     48.46113623,
+     7.8784365
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00060B5C5AD7F1257E",
+   "to_node": "CON0006135C5AD7F20223",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00539,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46113623,
+     7.8784365
+    ],
+    [
+     48.46111616,
+     7.87850277
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0006135C5AD7F20223",
+   "to_node": "CON0002A25B73EDF76742",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00057,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46111616,
+     7.87850277
+    ],
+    [
+     48.46111406,
+     7.87850976
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002A25B73EDF76742",
+   "to_node": "CON00060D5C5AD7F15BAE",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00211,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46111406,
+     7.87850976
+    ],
+    [
+     48.46110619,
+     7.87853574
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00060D5C5AD7F15BAE",
+   "to_node": "CON0003045B73EDF8AB78",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00122,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46110619,
+     7.87853574
+    ],
+    [
+     48.46110165,
+     7.87855073
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0003045B73EDF8AB78",
+   "to_node": "CON0003035B73EDF8AADC",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.01099,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46110165,
+     7.87855073
+    ],
+    [
+     48.46106072,
+     7.87868594
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0003035B73EDF8AADC",
+   "to_node": "CON00027F5B73EDF690F4",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00178,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46106072,
+     7.87868594
+    ],
+    [
+     48.46105411,
+     7.87870777
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00027F5B73EDF690F4",
+   "to_node": "CON00060E5C5AD7F2774B",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00072,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46105411,
+     7.87870777
+    ],
+    [
+     48.46105145,
+     7.87871658
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00060E5C5AD7F2774B",
+   "to_node": "CON0005BE5C5AD7E96BBD",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.01998,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46105145,
+     7.87871658
+    ],
+    [
+     48.46097705,
+     7.87896238
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005BE5C5AD7E96BBD",
+   "to_node": "CON0002A35B73EDF767DA",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00149,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46097705,
+     7.87896238
+    ],
+    [
+     48.46097151,
+     7.87898066
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002A35B73EDF767DA",
+   "to_node": "CON00027E5B73EDF69068",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00024,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46097151,
+     7.87898066
+    ],
+    [
+     48.46097063,
+     7.87898356
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00027E5B73EDF69068",
+   "to_node": "CON0002855B73EDF694DA",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00976,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46097063,
+     7.87898356
+    ],
+    [
+     48.46093431,
+     7.87910355
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002855B73EDF694DA",
+   "to_node": "CON0002A45B73EDF7686F",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00907,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46093431,
+     7.87910355
+    ],
+    [
+     48.46090054,
+     7.87921513
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002A45B73EDF7686F",
+   "to_node": "CON00027D5B73EDF68FDD",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00914,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46090054,
+     7.87921513
+    ],
+    [
+     48.46086652,
+     7.87932753
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00027D5B73EDF68FDD",
+   "to_node": "CON0002815B73EDF6921C",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00763,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46086652,
+     7.87932753
+    ],
+    [
+     48.4608381,
+     7.8794214
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002815B73EDF6921C",
+   "to_node": "CON0005BF5C5AD7E98148",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.0031,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4608381,
+     7.8794214
+    ],
+    [
+     48.46082655,
+     7.87945957
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005BF5C5AD7E98148",
+   "to_node": "CON00059B5C5AD7E554F6",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00022,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46082655,
+     7.87945957
+    ],
+    [
+     48.46082574,
+     7.87946224
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00059B5C5AD7E554F6",
+   "to_node": "CON0002A95B73EDF76B75",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.0042,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46082574,
+     7.87946224
+    ],
+    [
+     48.46081009,
+     7.87951391
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002A95B73EDF76B75",
+   "to_node": "CON00027C5B73EDF68F56",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.00682,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46081009,
+     7.87951391
+    ],
+    [
+     48.4607847,
+     7.8795978
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00027C5B73EDF68F56",
+   "to_node": "K1075",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.01131,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4607847,
+     7.8795978
+    ],
+    [
+     48.4607426,
+     7.87973689
+    ]
+   ]
+  },
+  {
+   "from_node": "K1125",
+   "to_node": "CON00040D5B73EDF8A378",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.01212,
+   "sections": 1,
+   "geometry": [
+    [
+     48.45984781,
+     7.87731186
+    ],
+    [
+     48.45974979,
+     7.87723977
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00040D5B73EDF8A378",
+   "to_node": "CON0005595B73EDFA2844",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.00688,
+   "sections": 1,
+   "geometry": [
+    [
+     48.45974979,
+     7.87723977
+    ],
+    [
+     48.45969414,
+     7.87719883
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005595B73EDFA2844",
+   "to_node": "CON0007FA5C5AD852CFE9",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.00135,
+   "sections": 1,
+   "geometry": [
+    [
+     48.45969414,
+     7.87719883
+    ],
+    [
+     48.45968321,
+     7.8771908
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0007FA5C5AD852CFE9",
+   "to_node": "K1124",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.01884,
+   "sections": 1,
+   "geometry": [
+    [
+     48.45968321,
+     7.8771908
+    ],
+    [
+     48.45953084,
+     7.87707872
+    ]
+   ]
+  },
+  {
+   "from_node": "K1127",
+   "to_node": "CON0002665B73EDF68180",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.02247,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46067141,
+     7.87792053
+    ],
+    [
+     48.46048847,
+     7.87779122
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002665B73EDF68180",
+   "to_node": "CON0002745B73EDF68A61",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.0024,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46048847,
+     7.87779122
+    ],
+    [
+     48.46046895,
+     7.87777742
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002745B73EDF68A61",
+   "to_node": "CON00059C5C5AD7E667D9",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.0021,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46046895,
+     7.87777742
+    ],
+    [
+     48.46045189,
+     7.87776536
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00059C5C5AD7E667D9",
+   "to_node": "CON0003085B73EDF8AE6F",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.00508,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46045189,
+     7.87776536
+    ],
+    [
+     48.46041051,
+     7.8777361
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0003085B73EDF8AE6F",
+   "to_node": "CON0002655B73EDF680CD",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.00966,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46041051,
+     7.8777361
+    ],
+    [
+     48.46033185,
+     7.87768051
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002655B73EDF680CD",
+   "to_node": "CON0002735B73EDF689A7",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.0028,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46033185,
+     7.87768051
+    ],
+    [
+     48.46030909,
+     7.87766442
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002735B73EDF689A7",
+   "to_node": "K1126",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.0087,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46030909,
+     7.87766442
+    ],
+    [
+     48.46023823,
+     7.87761433
+    ]
+   ]
+  },
+  {
+   "from_node": "K1128",
+   "to_node": "CON0002805B73EDF6917F",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00477,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46100589,
+     7.8781542
+    ],
+    [
+     48.460967,
+     7.87812704
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002805B73EDF6917F",
+   "to_node": "CON0002845B73EDF6943A",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.02041,
+   "sections": 1,
+   "geometry": [
+    [
+     48.460967,
+     7.87812704
+    ],
+    [
+     48.46080053,
+     7.87801073
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002845B73EDF6943A",
+   "to_node": "CON0002685B73EDF682D0",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00013,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46080053,
+     7.87801073
+    ],
+    [
+     48.4607995,
+     7.87801001
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002685B73EDF682D0",
+   "to_node": "K1127",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.0157,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4607995,
+     7.87801001
+    ],
+    [
+     48.46067141,
+     7.87792053
+    ]
+   ]
+  },
+  {
+   "from_node": "K1252",
+   "to_node": "CON00027A5B73EDF68E14",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.00993,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4605249,
+     7.88047933
+    ],
+    [
+     48.46043661,
+     7.88045892
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00027A5B73EDF68E14",
+   "to_node": "CON00028A5B73EDF697A6",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.00107,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46043661,
+     7.88045892
+    ],
+    [
+     48.4604271,
+     7.88045673
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00028A5B73EDF697A6",
+   "to_node": "CON0002835B73EDF69392",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.02501,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4604271,
+     7.88045673
+    ],
+    [
+     48.46020484,
+     7.88040534
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002835B73EDF69392",
+   "to_node": "CON0002825B73EDF692D7",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.00562,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46020484,
+     7.88040534
+    ],
+    [
+     48.46015486,
+     7.88039378
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002825B73EDF692D7",
+   "to_node": "CON0002965B73EDF69FAA",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.00799,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46015486,
+     7.88039378
+    ],
+    [
+     48.46008385,
+     7.88037737
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002965B73EDF69FAA",
+   "to_node": "CON0002895B73EDF6970E",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.00456,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46008385,
+     7.88037737
+    ],
+    [
+     48.46004336,
+     7.88036801
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002895B73EDF6970E",
+   "to_node": "K1251",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.00732,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46004336,
+     7.88036801
+    ],
+    [
+     48.45997829,
+     7.88035296
+    ]
+   ]
+  },
+  {
+   "from_node": "K1257",
+   "to_node": "CON0002E35B73EDF790E9",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.04214,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46220321,
+     7.88304925
+    ],
+    [
+     48.46257901,
+     7.88312341
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002E35B73EDF790E9",
+   "to_node": "CON0002E75B73EDF79356",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.01625,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46257901,
+     7.88312341
+    ],
+    [
+     48.46272392,
+     7.88315201
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002E75B73EDF79356",
+   "to_node": "K1256",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.03161,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46272392,
+     7.88315201
+    ],
+    [
+     48.4630058,
+     7.88320764
+    ]
+   ]
+  },
+  {
+   "from_node": "K1260",
+   "to_node": "CON0002E95B73EDF79493",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00319,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46223278,
+     7.88276005
+    ],
+    [
+     48.46223694,
+     7.88271734
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002E95B73EDF79493",
+   "to_node": "CON0002D25B73EDF78627",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 7e-05,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46223694,
+     7.88271734
+    ],
+    [
+     48.46223704,
+     7.88271635
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002D25B73EDF78627",
+   "to_node": "K1259",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.02913,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46223704,
+     7.88271635
+    ],
+    [
+     48.46227503,
+     7.88232624
+    ]
+   ]
+  },
+  {
+   "from_node": "K1276",
+   "to_node": "CON0002AF5B73EDF7702A",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00884,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46173552,
+     7.88415079
+    ],
+    [
+     48.46181435,
+     7.8841684
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002AF5B73EDF7702A",
+   "to_node": "K1262",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.00856,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46181435,
+     7.8841684
+    ],
+    [
+     48.46189061,
+     7.88418543
+    ]
+   ]
+  },
+  {
+   "from_node": "K1264",
+   "to_node": "CON0002B35B73EDF77288",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.01231,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46124431,
+     7.88403392
+    ],
+    [
+     48.46135346,
+     7.88406061
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002B35B73EDF77288",
+   "to_node": "CON0002B15B73EDF7715F",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00029,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46135346,
+     7.88406061
+    ],
+    [
+     48.46135603,
+     7.88406125
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002B15B73EDF7715F",
+   "to_node": "K1263",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.0255,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46135603,
+     7.88406125
+    ],
+    [
+     48.46158225,
+     7.88411656
+    ]
+   ]
+  },
+  {
+   "from_node": "K1265",
+   "to_node": "CON0002D55B73EDF78834",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00489,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46102044,
+     7.88400637
+    ],
+    [
+     48.46106418,
+     7.88401176
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002D55B73EDF78834",
+   "to_node": "CON0002D45B73EDF78780",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.01705,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46106418,
+     7.88401176
+    ],
+    [
+     48.46121686,
+     7.88403055
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002D45B73EDF78780",
+   "to_node": "K1264",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.00306,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46121686,
+     7.88403055
+    ],
+    [
+     48.46124431,
+     7.88403392
+    ]
+   ]
+  },
+  {
+   "from_node": "K1262",
+   "to_node": "CON0002B65B73EDF77443",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.0065,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46189061,
+     7.88418543
+    ],
+    [
+     48.46194854,
+     7.88419658
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002B65B73EDF77443",
+   "to_node": "K1270",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.0231,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46194854,
+     7.88419658
+    ],
+    [
+     48.46215448,
+     7.88423626
+    ]
+   ]
+  },
+  {
+   "from_node": "K1276",
+   "to_node": "CON0002B75B73EDF774D4",
+   "std_type": "ISOPLUS_DRE32_STD",
+   "length_km": 0.03144,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46173552,
+     7.88415079
+    ],
+    [
+     48.46170561,
+     7.88457333
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002B75B73EDF774D4",
+   "to_node": "K1275",
+   "std_type": "ISOPLUS_DRE32_STD",
+   "length_km": 0.00336,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46170561,
+     7.88457333
+    ],
+    [
+     48.46170242,
+     7.88461847
+    ]
+   ]
+  },
+  {
+   "from_node": "K1287",
+   "to_node": "CON000DF75E0DFBF0FAAE",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.01004,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46291762,
+     7.87714931
+    ],
+    [
+     48.46298119,
+     7.87724588
+    ]
+   ]
+  },
+  {
+   "from_node": "CON000DF75E0DFBF0FAAE",
+   "to_node": "CON0005BA5C5AD7E80FAD",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00482,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46298119,
+     7.87724588
+    ],
+    [
+     48.46301169,
+     7.87729219
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005BA5C5AD7E80FAD",
+   "to_node": "CON00029F5B73EDF76530",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.01444,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46301169,
+     7.87729219
+    ],
+    [
+     48.46310306,
+     7.87743098
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00029F5B73EDF76530",
+   "to_node": "CON0007FC5C5AD852526E",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00544,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46310306,
+     7.87743098
+    ],
+    [
+     48.46313748,
+     7.87748327
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0007FC5C5AD852526E",
+   "to_node": "CON0005B95C5AD7E8F966",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00618,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46313748,
+     7.87748327
+    ],
+    [
+     48.46317661,
+     7.87754272
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005B95C5AD7E8F966",
+   "to_node": "CON0002A05B73EDF765C1",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.01099,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46317661,
+     7.87754272
+    ],
+    [
+     48.46324617,
+     7.87764837
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002A05B73EDF765C1",
+   "to_node": "CON0005B85C5AD7E8E535",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00704,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46324617,
+     7.87764837
+    ],
+    [
+     48.46329074,
+     7.87771607
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005B85C5AD7E8E535",
+   "to_node": "CON0005B65C5AD7E8B994",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00936,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46329074,
+     7.87771607
+    ],
+    [
+     48.46334996,
+     7.87780602
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005B65C5AD7E8B994",
+   "to_node": "CON0005B75C5AD7E8CDE2",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.0164,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46334996,
+     7.87780602
+    ],
+    [
+     48.46345376,
+     7.87796369
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005B75C5AD7E8CDE2",
+   "to_node": "CON0002A15B73EDF7665D",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00283,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46345376,
+     7.87796369
+    ],
+    [
+     48.46347168,
+     7.87799092
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002A15B73EDF7665D",
+   "to_node": "K1286",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00056,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46347168,
+     7.87799092
+    ],
+    [
+     48.46347521,
+     7.87799628
+    ]
+   ]
+  },
+  {
+   "from_node": "K1288",
+   "to_node": "CON0005B05C5AD7E7222A",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00708,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46257124,
+     7.87670862
+    ],
+    [
+     48.46261982,
+     7.87677042
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005B05C5AD7E7222A",
+   "to_node": "CON0005B25C5AD7E74902",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.02184,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46261982,
+     7.87677042
+    ],
+    [
+     48.46276962,
+     7.87696101
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005B25C5AD7E74902",
+   "to_node": "K1287",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.02158,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46276962,
+     7.87696101
+    ],
+    [
+     48.46291762,
+     7.87714931
+    ]
+   ]
+  },
+  {
+   "from_node": "K1082",
+   "to_node": "CON0005CD5C5AD7EACF7B",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.03938,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46100921,
+     7.88666475
+    ],
+    [
+     48.46067135,
+     7.88682416
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0005CD5C5AD7EACF7B",
+   "to_node": "CON0002C85B73EDF77F2C",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.00257,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46067135,
+     7.88682416
+    ],
+    [
+     48.46064927,
+     7.88683458
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002C85B73EDF77F2C",
+   "to_node": "K1097",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.02435,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46064927,
+     7.88683458
+    ],
+    [
+     48.46044038,
+     7.88693313
+    ]
+   ]
+  },
+  {
+   "from_node": "K1082",
+   "to_node": "CON0002C05B73EDF779F9",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.03524,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46100921,
+     7.88666475
+    ],
+    [
+     48.46116379,
+     7.88708063
+    ]
+   ]
+  },
+  {
+   "from_node": "CON0002C05B73EDF779F9",
+   "to_node": "CON00049A5B73EDF9362A",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.00894,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46116379,
+     7.88708063
+    ],
+    [
+     48.46120301,
+     7.88718616
+    ]
+   ]
+  },
+  {
+   "from_node": "CON00049A5B73EDF9362A",
+   "to_node": "K1083",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.03992,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46120301,
+     7.88718616
+    ],
+    [
+     48.46137809,
+     7.8876572
+    ]
+   ]
+  },
+  {
+   "from_node": "K1075",
+   "to_node": "K1076",
+   "std_type": "ISOPLUS_DRE100_STD",
+   "length_km": 0.0569,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4607426,
+     7.87973689
+    ],
+    [
+     48.46063528,
+     7.88048863
+    ]
+   ]
+  },
+  {
+   "from_node": "K1081",
+   "to_node": "K1082",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.0138,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46112707,
+     7.8866049
+    ],
+    [
+     48.46100921,
+     7.88666475
+    ]
+   ]
+  },
+  {
+   "from_node": "K1083",
+   "to_node": "K1084",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.033,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46137809,
+     7.8876572
+    ],
+    [
+     48.46164113,
+     7.8874502
+    ]
+   ]
+  },
+  {
+   "from_node": "K1089",
+   "to_node": "K1088",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.028,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46150474,
+     7.88952977
+    ],
+    [
+     48.46168413,
+     7.88979476
+    ]
+   ]
+  },
+  {
+   "from_node": "K1093",
+   "to_node": "K1092",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.0315,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46071996,
+     7.88769306
+    ],
+    [
+     48.4608657,
+     7.88805856
+    ]
+   ]
+  },
+  {
+   "from_node": "K1097",
+   "to_node": "K1093",
+   "std_type": "ISOPLUS_DRE32_STD",
+   "length_km": 0.0642,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46044038,
+     7.88693313
+    ],
+    [
+     48.46071996,
+     7.88769306
+    ]
+   ]
+  },
+  {
+   "from_node": "K1126",
+   "to_node": "K1125",
+   "std_type": "ISOPLUS_DRE32_STD",
+   "length_km": 0.0488,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46023823,
+     7.87761433
+    ],
+    [
+     48.45984781,
+     7.87731186
+    ]
+   ]
+  },
+  {
+   "from_node": "K1129",
+   "to_node": "K1128",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.0092,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46107994,
+     7.87820872
+    ],
+    [
+     48.46100589,
+     7.8781542
+    ]
+   ]
+  },
+  {
+   "from_node": "K1074",
+   "to_node": "K1129",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.0127,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46118493,
+     7.87827559
+    ],
+    [
+     48.46107994,
+     7.87820872
+    ]
+   ]
+  },
+  {
+   "from_node": "K1076",
+   "to_node": "K1252",
+   "std_type": "ISOPLUS_DRE32_STD",
+   "length_km": 0.0123,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46063528,
+     7.88048863
+    ],
+    [
+     48.4605249,
+     7.88047933
+    ]
+   ]
+  },
+  {
+   "from_node": "K1253",
+   "to_node": "K1254",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.044,
+   "sections": 1,
+   "geometry": [
+    [
+     48.4612613,
+     7.88059431
+    ],
+    [
+     48.46086708,
+     7.88053899
+    ]
+   ]
+  },
+  {
+   "from_node": "K1076",
+   "to_node": "K1254",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.026,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46063528,
+     7.88048863
+    ],
+    [
+     48.46086708,
+     7.88053899
+    ]
+   ]
+  },
+  {
+   "from_node": "K1255",
+   "to_node": "K1256",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.0451,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46304805,
+     7.88260168
+    ],
+    [
+     48.4630058,
+     7.88320764
+    ]
+   ]
+  },
+  {
+   "from_node": "K1258",
+   "to_node": "K1257",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.0592,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46167096,
+     7.88304236
+    ],
+    [
+     48.46220321,
+     7.88304925
+    ]
+   ]
+  },
+  {
+   "from_node": "K1257",
+   "to_node": "K1260",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.0217,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46220321,
+     7.88304925
+    ],
+    [
+     48.46223278,
+     7.88276005
+    ]
+   ]
+  },
+  {
+   "from_node": "K1261",
+   "to_node": "K1270",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.0467,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46257071,
+     7.88431627
+    ],
+    [
+     48.46215448,
+     7.88423626
+    ]
+   ]
+  },
+  {
+   "from_node": "K1266",
+   "to_node": "K1265",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.0176,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46086414,
+     7.88396506
+    ],
+    [
+     48.46102044,
+     7.88400637
+    ]
+   ]
+  },
+  {
+   "from_node": "K1079",
+   "to_node": "K1266",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.0115,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46076134,
+     7.88398677
+    ],
+    [
+     48.46086414,
+     7.88396506
+    ]
+   ]
+  },
+  {
+   "from_node": "K1268",
+   "to_node": "K1267",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.0316,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46218604,
+     7.88361721
+    ],
+    [
+     48.46221024,
+     7.88319112
+    ]
+   ]
+  },
+  {
+   "from_node": "K1269",
+   "to_node": "K1268",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.0278,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46217474,
+     7.88399332
+    ],
+    [
+     48.46218604,
+     7.88361721
+    ]
+   ]
+  },
+  {
+   "from_node": "K1270",
+   "to_node": "K1269",
+   "std_type": "ISOPLUS_DRE50_STD",
+   "length_km": 0.0181,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46215448,
+     7.88423626
+    ],
+    [
+     48.46217474,
+     7.88399332
+    ]
+   ]
+  },
+  {
+   "from_node": "K1267",
+   "to_node": "K1257",
+   "std_type": "ISOPLUS_DRE40_STD",
+   "length_km": 0.0105,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46221024,
+     7.88319112
+    ],
+    [
+     48.46220321,
+     7.88304925
+    ]
+   ]
+  },
+  {
+   "from_node": "K1274",
+   "to_node": "K1273",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.0544,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46144426,
+     7.88457902
+    ],
+    [
+     48.46139263,
+     7.88531022
+    ]
+   ]
+  },
+  {
+   "from_node": "K1275",
+   "to_node": "K1274",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.0289,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46170242,
+     7.88461847
+    ],
+    [
+     48.46144426,
+     7.88457902
+    ]
+   ]
+  },
+  {
+   "from_node": "K1263",
+   "to_node": "K1276",
+   "std_type": "ISOPLUS_DRE65_STD",
+   "length_km": 0.0172,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46158225,
+     7.88411656
+    ],
+    [
+     48.46173552,
+     7.88415079
+    ]
+   ]
+  },
+  {
+   "from_node": "K1289",
+   "to_node": "K1288",
+   "std_type": "ISOPLUS_DRE20_STD",
+   "length_km": 0.0538,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46218262,
+     7.87627479
+    ],
+    [
+     48.46257124,
+     7.87670862
+    ]
+   ]
+  },
+  {
+   "from_node": "K1289",
+   "to_node": "K1290",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.0276,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46218262,
+     7.87627479
+    ],
+    [
+     48.46197563,
+     7.87606822
+    ]
+   ]
+  },
+  {
+   "from_node": "K1290",
+   "to_node": "K1073",
+   "std_type": "ISOPLUS_DRE125_STD",
+   "length_km": 0.0118,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46197563,
+     7.87606822
+    ],
+    [
+     48.46188732,
+     7.87598098
+    ]
+   ]
+  },
+  {
+   "from_node": "K1085",
+   "to_node": "K1081",
+   "std_type": "ISOPLUS_DRE25_STD",
+   "length_km": 0.0393,
+   "sections": 1,
+   "geometry": [
+    [
+     48.46146474,
+     7.8864478
+    ],
+    [
+     48.46112707,
+     7.8866049
+    ]
+   ]
+  }
+ ]
+}

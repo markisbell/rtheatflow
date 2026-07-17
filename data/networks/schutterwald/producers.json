@@ -1,0 +1,15 @@
+{
+ "producers": [
+  {
+   "node": "K1289",
+   "name": "Heizzentrale Schutterwald",
+   "kind": "slack",
+   "p_flow_bar": 6.0,
+   "plift_bar": 3.0,
+   "t_flow_k": 383.15,
+   "heating_curve": {
+    "preset": "3G"
+   }
+  }
+ ]
+}

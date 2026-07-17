@@ -18,6 +18,14 @@
    "dir": "networks/appendix_a"
   },
   {
+   "id": "schutterwald",
+   "name": "Schutterwald (reales Ortsnetz)",
+   "character": "rural",
+   "nodes": 208,
+   "trench_km": 2.626,
+   "dir": "networks/schutterwald"
+  },
+  {
    "id": "destest_16",
    "name": "DESTEST CE1 (16 Gebäude, validiert)",
    "character": "benchmark",
