@@ -187,7 +187,9 @@ async def apply_network(app, network_id: str,
     if app.catalog is None or not app.catalog.has(network_id):
         raise HTTPException(404, f"unknown network '{network_id}'")
     try:
-        inputs = app.catalog.get_inputs(network_id)
+        # refresh: a swap must ALWAYS reflect the on-disk five files — the
+        # engine rebuild dwarfs a JSON re-parse (stale-cache bug 2026-07-17)
+        inputs = app.catalog.get_inputs(network_id, refresh=True)
         if loadgen is not None:
             if app.library is None or not app.library.available:
                 raise HTTPException(

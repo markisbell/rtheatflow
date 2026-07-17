@@ -2,7 +2,9 @@
 
 rtheatflow is a pure *consumer*: it lists networks from the committed
 manifest (``data/network_library.json``) and loads a chosen one through the
-five-file contract on demand (cached). Blueprint ``grid_catalog.py`` port.
+five-file contract on demand (cached against an on-disk fingerprint — a
+bundle regenerated on disk is re-read on the next access, never served
+stale). Blueprint ``grid_catalog.py`` port.
 
 Since M6 the catalog also scans ``data/user_networks/`` (``POST
 /networks/import`` writes validated five-file bundles there): every
@@ -19,7 +21,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from .data_loader import load_network
+from .data_loader import FILE_NAMES, load_network
 from .net_inputs import NetInputs
 
 log = logging.getLogger(__name__)
@@ -47,6 +49,7 @@ class NetworkCatalog:
         self.user_dir = Path(user_dir) if user_dir else None
         self._entries: dict[str, NetworkEntry] = {}
         self._cache: dict[str, NetInputs] = {}
+        self._cache_state: dict[str, tuple] = {}   # id -> _disk_state at load
         if self.manifest and self.manifest.is_file():
             self._load_manifest()
         elif self.networks_dir and self.networks_dir.is_dir():
@@ -79,6 +82,7 @@ class NetworkCatalog:
         for nid in stale:
             self._entries.pop(nid, None)
             self._cache.pop(nid, None)
+            self._cache_state.pop(nid, None)
         if self.user_dir is None or not self.user_dir.is_dir():
             return
         for sub in sorted(self.user_dir.iterdir()):
@@ -121,13 +125,47 @@ class NetworkCatalog:
             for e in self._entries.values()
         ]
 
-    def get_inputs(self, network_id: str) -> NetInputs:
-        """Load (and cache) a network through the five-file contract."""
+    @staticmethod
+    def _disk_state(directory: str | None) -> tuple | None:
+        """Fingerprint of the five contract files (mtime_ns + size each).
+
+        ``get_inputs`` compares it against the state captured at load time
+        and drops its cache on any difference, so a bundle regenerated on
+        disk is picked up without a process restart (2026-07-17 bug: after
+        regenerating ``data/networks/verbier/``, ``POST /config/apply``
+        kept serving the old geometry from this cache)."""
+        if not directory:
+            return None
+        d = Path(directory)
+        state = []
+        for fname in FILE_NAMES.values():
+            try:
+                st = (d / fname).stat()
+                state.append((fname, st.st_mtime_ns, st.st_size))
+            except OSError:      # missing file — load_network reports why
+                state.append((fname, None, None))
+        return tuple(state)
+
+    def get_inputs(self, network_id: str, *,
+                   refresh: bool = False) -> NetInputs:
+        """Load (and cache) a network through the five-file contract.
+
+        The cache only serves entries whose five files are unchanged on
+        disk (:meth:`_disk_state`); *refresh* forces a re-read regardless —
+        the ``/config/apply`` path passes it so a swap ALWAYS reflects the
+        on-disk state (apply is rare and heavyweight: ``engine.reconfigure``
+        rebuilds the whole Simulator, re-parsing JSON is negligible)."""
         if network_id not in self._entries:
             raise KeyError(network_id)
+        entry = self._entries[network_id]
+        state = self._disk_state(entry.dir)
+        if refresh or self._cache_state.get(network_id, state) != state:
+            self._cache.pop(network_id, None)
         if network_id not in self._cache:
-            self._cache[network_id] = load_network(
-                self._entries[network_id].dir)
+            # state captured BEFORE the load: a file rewritten mid-load
+            # yields a mismatch on the next access → conservative re-read
+            self._cache[network_id] = load_network(entry.dir)
+            self._cache_state[network_id] = state
         return self._cache[network_id]
 
 
