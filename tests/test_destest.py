@@ -127,11 +127,13 @@ def test_16_u_values_exact():
 
 
 def test_geodata_is_marked_synthetic(net):
-    """Local-metre coordinates anchored over open water (Lake Constance)."""
+    """Local-metre coordinates anchored on OPEN LAND (fields NE of the demo
+    region) — the original lake anchor rendered confusingly in open water.
+    Region pinning for the whole catalog lives in test_network_geo.py."""
     nid, inputs = net
     for j in inputs.structure.junctions:
         lat, lon = j.geo
-        assert 47.63 < lat < 47.69 and 9.28 < lon < 9.33
+        assert 49.07 < lat < 49.10 and 8.42 < lon < 8.44
 
 
 def test_solves_with_closed_balance(sim):

@@ -84,9 +84,11 @@ losses average 3.2 kW). Instead, per-pipe U′ follows the case description:
 ## Geodata (synthetic — read this)
 
 DESTEST coordinates are **local Cartesian metres without a CRS**. For the map
-the converter anchors them at **47.66 N / 9.30 E — open water in Lake
-Constance** — deliberately not a real district, so the rendered position is
-self-evidently synthetic. Only relative geometry is meaningful.
+the converter anchors them at **49.085 N / 8.43 E — open fields north-east of
+the demo-network region** (arbitrary but on land; the earlier lake anchor
+rendered confusingly in open water). The DESTEST grid is an abstract
+benchmark: the placement is synthetic and only relative geometry is
+meaningful.
 
 ## Accepted modelling differences vs the published tools
 

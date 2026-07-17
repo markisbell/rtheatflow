@@ -60,10 +60,11 @@ solver stress test.
    heating season, assumption) for **all** pipes; the 55 aerial pipes see
    the same boundary (single-`text_k` platform convention). Documented
    uncertainty: ±5 K on the boundary ⇒ roughly ∓7 % on losses.
-6. **Geodata:** anonymised local metres, no CRS → projected onto a
-   clearly-synthetic WGS84 anchor over **Lake Geneva** (open water,
-   46.42 N / 6.55 E) — nobody can mistake it for the real (undisclosed)
-   layout. Only relative geometry is meaningful.
+6. **Geodata:** anonymised local metres, no CRS → projected onto WGS84 with
+   the network **centroid over Verbier village** (46.0961 N / 7.2286 E). The
+   placement is synthetic — the real (undisclosed) routing is unknown, only
+   relative geometry is meaningful — but the alpine network now renders on
+   alpine terrain instead of in a lake.
 
 ## Validation record (2026-07-17, this machine, pandapipes 0.14.0)
 

@@ -34,8 +34,10 @@ Physics per the case-description document (verified against published results):
   The empty/partial "Total pressure loss" columns are design output — ignored.
 
 Geodata: DESTEST coordinates are local metres without a CRS. For the Leaflet
-map the converter projects them onto a clearly-synthetic WGS84 anchor in the
-middle of Lake Constance (open water — deliberately NOT a real district).
+map the converter projects them onto a synthetic WGS84 anchor on OPEN LAND
+(fields north-east of the demo-network region) — the DESTEST grid is an
+abstract benchmark, so the placement is arbitrary, but it must not sit in
+water on the map.
 
 Usage:  python scripts/convert_destest.py
 Writes: data/networks/destest_16 | destest_8 | destest_32 (five files each).
@@ -66,10 +68,11 @@ DELTAT_K = 30.0          # substation primary-side temperature difference
 PROFILE_STEP_S = 600
 WINDOW_DAYS = 7          # CE 1 window (starts 2018-01-01)
 
-# Synthetic map anchor: Lake Constance (Obersee), open water — the DESTEST
-# grid is an abstract benchmark with local-metre coordinates and no CRS.
-ANCHOR_LAT = 47.6600
-ANCHOR_LON = 9.3000
+# Synthetic map anchor on open land (fields NE of the demo-network region,
+# near Karlsruhe) — the DESTEST grid is an abstract benchmark with
+# local-metre coordinates and no CRS; placement is arbitrary but on land.
+ANCHOR_LAT = 49.0850
+ANCHOR_LON = 8.4300
 M_PER_DEG = 111_320.0
 
 

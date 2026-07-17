@@ -3,7 +3,7 @@
 Provenance, license (modified BSD-3, vendored at
 `data/sources/destest/license.md`), demand profile, case rules (constant
 70 °C source, ΔT = 30 K substations, 10 °C boundary at the outer insulation
-surface, bypass floor) and geodata treatment (synthetic Lake-Constance anchor,
+surface, bypass floor) and geodata treatment (synthetic on-land anchor NE of the demo region,
 local metres, no CRS): **identical to
 [`destest_16/DATASET.md`](../destest_16/DATASET.md)** — read that first.
 

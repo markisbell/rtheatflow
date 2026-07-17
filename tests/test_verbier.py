@@ -77,10 +77,12 @@ def test_second_plant_is_pressure_free_pump_mass(inputs):
 
 
 def test_geodata_is_marked_synthetic(inputs):
-    """Anonymised local metres on a Lake-Geneva anchor (open water)."""
+    """Anonymised local metres, centroid anchored over Verbier village —
+    synthetic placement on alpine terrain (the original lake anchor rendered
+    in open water). Catalog-wide region pinning: test_network_geo.py."""
     for j in inputs.structure.junctions:
         lat, lon = j.geo
-        assert 46.41 < lat < 46.49 and 6.54 < lon < 6.65, j.name
+        assert 46.04 < lat < 46.15 and 7.16 < lon < 7.29, j.name
 
 
 def test_meshed_net_solves_on_ladder_tier_2(sim, result):

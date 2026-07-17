@@ -32,7 +32,9 @@ Conversion (verified on the data, see DATASET.md):
   temp (81.81 degC), **without p_flow_bar** -> the pressure-free
   ``type="t"`` variant per the single-slack rule.
 * Coordinates are anonymised local metres (z uniformly 0) — projected onto
-  a clearly-synthetic WGS84 anchor over Lake Geneva (open water).
+  WGS84 with the network CENTROID over Verbier village. The placement is
+  synthetic (the source is anonymised; real routing is unknown), but an
+  alpine network belongs on alpine terrain, not in a lake.
 * Boundary temperature: not part of the dataset; constant 5 degC ground
   (alpine heating season) for all pipes — 55 aerial pipes see the same
   boundary (single-``text_k`` platform convention; documented).
@@ -54,14 +56,26 @@ STEPS = 96
 RESOLUTION_MIN = 15
 T_GROUND_C = 5.0            # alpine heating season (assumption, documented)
 T_AMB_C = 0.0
-ANCHOR_LAT = 46.4200        # Lake Geneva, open water — clearly synthetic
-ANCHOR_LON = 6.5500
+# Map placement: network centroid over Verbier village (46.0961 N, 7.2286 E).
+# Synthetic — source coordinates are anonymised local metres; see docstring.
+CENTER_LAT = 46.0961
+CENTER_LON = 7.2286
 M_PER_DEG = 111_320.0
+
+# filled by main() from the node extents (centroid-anchored projection)
+_X_MID = 0.0
+_Y_MID = 0.0
+
+
+def set_projection_center(xs: list[float], ys: list[float]) -> None:
+    global _X_MID, _Y_MID
+    _X_MID = (min(xs) + max(xs)) / 2.0
+    _Y_MID = (min(ys) + max(ys)) / 2.0
 
 
 def to_wgs84(x: float, y: float) -> list[float]:
-    lat = ANCHOR_LAT + y / M_PER_DEG
-    lon = ANCHOR_LON + x / (M_PER_DEG * math.cos(math.radians(ANCHOR_LAT)))
+    lat = CENTER_LAT + (y - _Y_MID) / M_PER_DEG
+    lon = CENTER_LON + (x - _X_MID) / (M_PER_DEG * math.cos(math.radians(CENTER_LAT)))
     return [round(lat, 7), round(lon, 7)]
 
 
@@ -96,6 +110,8 @@ def main() -> None:
 
     sup_nodes = [n for n in nodes if n["is_supply"] == "True"]
     coords = {n["node_id"][:-1]: (float(n["x"]), float(n["y"])) for n in sup_nodes}
+    set_projection_center([c[0] for c in coords.values()],
+                          [c[1] for c in coords.values()])
 
     cons_base = {s["inlet_node"][:-1]: s["sub_id"] for s in substations}
     hs = {h["hs_id"]: h["outlet_node"][:-1] for h in stations}  # outlet = supply
