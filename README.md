@@ -50,7 +50,26 @@ set PYTHONPATH=src
 cd ui && npm run dev
 ```
 
-Tests: `pytest -q` (backend, 154), `cd ui && npm run build && npx vitest run` (tsc strict + 20 unit tests).
+Tests: `pytest -q` (backend, 188), `cd ui && npm run build && npx vitest run` (tsc strict + 20 unit tests).
+
+## Reference networks & validation
+
+The catalog ships four converted **real/published reference networks** next to
+the teaching nets. Every number below was produced live on the pinned stack
+(pandapipes 0.14.0, this repo's converters + tests); sources are vendored
+under `data/sources/<id>/` with their licenses, and each network directory
+carries a `DATASET.md` with provenance, conversion decisions and the full
+validation record.
+
+| Network | Source & license | What it validates |
+|---|---|---|
+| `destest_16` (+ `destest_8`/`destest_32` variants) | IBPSA Project 1 **DESTEST** CE_1 (modified BSD-3) | Inter-tool benchmark: **CE 0** steady state — plant flow 8876.5 kg/h vs published 8848–8870, return 39.48 °C vs 39.46–39.85, heat 314.8 kW vs 308.2–314.3, supply at the far building 69.45 °C vs 69.43–69.48; **CE 1** 7-day week — injection 14.506 MWh vs 14.32–14.45 (AixLib/Buildings/IBPSA), losses 606.6 kWh vs 535–544 with the excess fully attributed to the quasi-static night regime (loaded-tick subtotal 534 kWh lands inside the published band). Bands + reasoning in `tests/test_destest_validation.py`. |
+| `schutterwald` | pandapipes example nets `sw_heat` + Schutterwald gas net (BSD-3) | Real-town plausibility: real WGS84 street trenches (2.626 km), 44 substations with gas-demand-derived heterogeneous loads (9.5–214 MWh/a, LHD 1.34 MWh/(m·a)), 3G curve; all 96 winter-day steps solve at ladder tier 1, balance ≤ 0.075 %, day loss ratio 7.5 %, annualized ≈ 13 %. |
+| `verbier` | OpenDHN Zenodo data set, **CC BY 4.0** (Boghetti & Kämpf, Idiap/EPFL, DOI 10.5281/zenodo.10793816) | Against **real monitoring data** on a meshed net (676 nodes, 6 loops, 150 substations, 2 plants): total feed −0.6 % vs measured, plant flow +0.4 %, 150 substation supply temperatures median \|ΔT\| 0.83 K / p90 2.68 K; converges on retry-ladder tier 2 (the documented meshed stress case). |
+
+Regenerate any of them offline: `python scripts/convert_destest.py` /
+`convert_schutterwald.py` / `convert_verbier.py` (deterministic, vendored
+inputs only).
 
 ## What is where
 
@@ -64,7 +83,7 @@ Tests: `pytest -q` (backend, 154), `cd ui && npm run build && npx vitest run` (t
 | `src/rtheatflow/` | Backend: five-file data contract, build-once network builder, retry-ladder solver, RealtimeEngine, StateStore, controllers (heating curve, Schlechtpunkt-Δp), equipment CRUD, measurement layer, forward-observer estimation, recorder + bulk exporter, scenario recipes |
 | `ui/` | React 18 + TypeScript strict + Vite + raw Leaflet, i18next DE/EN |
 | `visualization/` | InfluxDB collector + file-provisioned Grafana dashboard |
-| `data/` | Demo networks (`demo_dorf`, `appendix_a`), archetype profile cache, reference scenarios; runtime dirs `data/recordings/`, `data/user_networks/` (gitignored) |
+| `data/` | Networks: demos (`demo_dorf`, `appendix_a`) + reference networks (`destest_*`, `schutterwald`, `verbier`, each with a `DATASET.md`); vendored sources incl. licenses under `data/sources/`; archetype profile cache, reference scenarios; runtime dirs `data/recordings/`, `data/user_networks/` (gitignored) |
 | [scripts/](scripts/) | Profile/demo-network generators, API-doc generator, M1 validation & benchmarks |
 
 Pinned core: `pandapipes==0.14.0` (pulls `pandapower==3.3.3`). Validated on Python 3.11/3.14, Windows 11; CI runs 3.11.

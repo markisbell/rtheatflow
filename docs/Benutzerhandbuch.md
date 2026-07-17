@@ -266,6 +266,21 @@ Alle Einstellungen als Umgebungsvariablen mit Präfix `RTHEATFLOW_`
 | `RTHEATFLOW_MIN_QEXT_W` | `500` | Untergrenze der Abnehmerlast (Null-Durchfluss ist singulär) |
 | `RTHEATFLOW_SOLVER_ITER` | `100` | Basis-Iterationen der Solver-Kaskade |
 
+## 15. Referenznetze im Katalog
+
+Neben den Lehrnetzen (Demo-Dorf, Appendix A) enthält der Katalog vier
+**Referenznetze aus realen bzw. publizierten Quellen** — jedes
+Netzverzeichnis unter `data/networks/<id>/` trägt eine `DATASET.md` mit
+Herkunft, Lizenz, Konvertierungsentscheidungen und den vollständigen
+Validierungszahlen (nur live nachgerechnete Werte):
+
+| Netz | Was es ist |
+|---|---|
+| **DESTEST CE1 (16 Gebäude, validiert)** | IBPSA-Benchmarknetz: 16 identische Einfamilienhäuser, konstant 70 °C Vorlauf, ΔT 30 K. Gegen die publizierten Ergebnisse von sechs Simulationswerkzeugen validiert (stationär und 7-Tage-Woche). Koordinaten sind abstrakt — auf der Karte bewusst über dem Bodensee platziert. |
+| **DESTEST (8 / 32 Gebäude)** | Die kleinere und die doppelte Variante desselben Benchmarks (Katalogbeispiele, ohne publizierte Vergleichszahlen). |
+| **Schutterwald (reales Ortsnetz)** | Echte Straßen-Trassen (2,6 km) aus dem pandapipes-Beispielnetz; 44 Übergabestationen mit heterogenen Lasten, die aus dem realen Gasnetz des Ortes abgeleitet wurden (50-m-Anschlussradius, dokumentiert); 3G-Heizkurve. Das Karten-Vorzeigenetz. |
+| **Verbier (vermascht, Messdaten)** | Reales vermaschtes Netz aus dem Schweizer Wallis (OpenDHN, CC BY 4.0): 150 Übergabestationen mit **gemessenen** Lasten und Rücklauftemperaturen, zwei Heizzentralen. Die simulierten Vorlauftemperaturen treffen die Messwerte im Median auf 0,8 K. Groß und vermascht — Rechenschritte dauern hier mehrere Sekunden (Stresstest der Solver-Kaskade, Stufe 2). |
+
 ---
 
 *rtheatflow — MIT-Lizenz. Simulationskern: pandapipes 0.14.0 (Fraunhofer
