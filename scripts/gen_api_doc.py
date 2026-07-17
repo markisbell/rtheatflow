@@ -24,7 +24,7 @@ HEADER = f"""# rtheatflow API reference
 
 > **Generated** by `scripts/gen_api_doc.py` — do not edit by hand.
 > API version **{API_VERSION}** · interactive docs at `/docs` (Swagger) when the
-> backend runs · default bind `127.0.0.1:8000`, no auth (teaching tool).
+> backend runs · default bind `127.0.0.1:8001` (sibling scheme: netzsim owns 8000), no auth (teaching tool).
 
 The single wire format is the projected `StepResult` (SPEC §6): `/state`,
 `/history` items and every `WS /ws` message share one `asdict()` + projection

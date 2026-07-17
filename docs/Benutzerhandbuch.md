@@ -20,9 +20,13 @@ messen kann — und was er aus seinen Messwerten berechnen kann.
 start_rtheatflow.bat
 ```
 
-Der Launcher startet Backend (Port 8000) und Vite-UI (Port 5173) in eigenen
+Der Launcher startet Backend (Port 8001) und Vite-UI (Port 5174) in eigenen
 Konsolen, wartet auf `/health` (der allererste Rechenschritt kompiliert
-numba vor — bis ~60 s) und öffnet den Browser. Einmalige Vorbereitung:
+numba vor — bis ~60 s) und öffnet den Browser. **Beenden:**
+`stop_rtheatflow.bat` schließt beide Server samt eventuell verwaister
+Hintergrundprozesse. Die Ports 8001/5174 sind bewusst gewählt: netzsim/
+rtpowerflow belegt 8000/5173 — beide Plattformen laufen so parallel auf
+derselben Maschine. Einmalige Vorbereitung:
 
 ```
 py -3 -m venv .venv
@@ -39,10 +43,13 @@ docker compose up --build
 
 | Dienst | Adresse | Inhalt |
 |---|---|---|
-| ui | http://localhost:8080 | Die Karten-Oberfläche (nginx) |
-| backend | http://localhost:8000 | REST + WebSocket, Swagger unter `/docs`, Monitor unter `/`, dieses Handbuch unter `/manual` |
-| grafana | http://localhost:3000 | Vorkonfiguriertes Fernwärme-Dashboard (admin / admin) |
-| influxdb | http://localhost:8086 | Zeitreihenspeicher (Entwicklungs-Zugangsdaten) |
+| ui | http://localhost:8081 | Die Karten-Oberfläche (nginx) |
+| backend | http://localhost:8001 | REST + WebSocket, Swagger unter `/docs`, Monitor unter `/`, dieses Handbuch unter `/manual` |
+| grafana | http://localhost:3001 | Vorkonfiguriertes Fernwärme-Dashboard (admin / admin) |
+| influxdb | http://localhost:8087 | Zeitreihenspeicher (Entwicklungs-Zugangsdaten) |
+
+(Host-Ports im Geschwister-Schema: der netzsim-Compose-Stack behält
+8000/8080/8086/3000.)
 
 ## 2. Arbeitsablauf: Netz — Lasten — Live
 

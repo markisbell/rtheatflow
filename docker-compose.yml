@@ -8,7 +8,7 @@ services:
   backend:
     build: .
     ports:
-      - "8000:8000"
+      - "8001:8000"   # host 8001: sibling scheme, netzsim compose owns 8000
     environment:
       RTHEATFLOW_DATA_DIR: /app/data
       # inside the container the API must be reachable from the other services
@@ -28,7 +28,7 @@ services:
   ui:
     build: ./ui
     ports:
-      - "8080:80"
+      - "8081:80"     # host 8081: netzsim compose owns 8080
     depends_on:
       - backend
     restart: unless-stopped
@@ -37,7 +37,7 @@ services:
   influxdb:
     image: influxdb:2.7
     ports:
-      - "8086:8086"
+      - "8087:8086"   # host 8087: netzsim compose owns 8086
     environment:
       DOCKER_INFLUXDB_INIT_MODE: setup
       DOCKER_INFLUXDB_INIT_USERNAME: admin
@@ -76,7 +76,7 @@ services:
   grafana:
     image: grafana/grafana:11.1.0
     ports:
-      - "3000:3000"
+      - "3001:3000"   # host 3001: netzsim compose owns 3000
     depends_on:
       influxdb:
         condition: service_healthy

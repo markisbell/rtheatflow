@@ -52,7 +52,9 @@ class Settings(BaseSettings):
 
     # --- server (used from M2 onward) ---
     host: str = "127.0.0.1"
-    port: int = 8000
+    # sibling port scheme: 8001 (UI dev 5174) so rtheatflow can run next to
+    # netzsim/rtpowerflow (which owns 8000/5173) on the same machine
+    port: int = 8001
     log_level: str = "info"
     cors_origins: str = "*"
     record: bool = False

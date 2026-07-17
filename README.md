@@ -12,7 +12,7 @@ Realtime pandapipes district-heating simulator — supply/return hydraulics + th
 start_rtheatflow.bat
 ```
 
-Starts the backend (FastAPI, :8000) and the Vite dev UI (:5173) in separate consoles, waits for `/health` (first solve pays the numba JIT warm-up, up to ~60 s) and opens the browser. Requires a one-time setup:
+Starts the backend (FastAPI, :8001) and the Vite dev UI (:5174) in separate consoles, waits for `/health` (first solve pays the numba JIT warm-up, up to ~60 s) and opens the browser. `stop_rtheatflow.bat` shuts everything down again (servers, consoles, and any orphaned node/esbuild/python processes from this repo). The **sibling port scheme** (8001/5174 instead of 8000/5173) lets rtheatflow run next to netzsim/rtpowerflow on the same machine. Requires a one-time setup:
 
 ```
 py -3 -m venv .venv
@@ -29,22 +29,24 @@ docker compose up --build
 
 | Service | URL | What |
 |---|---|---|
-| backend | http://localhost:8000 | REST + WebSocket API, Swagger at `/docs`, built-in monitor at `/` |
-| ui | http://localhost:8080 | React/Leaflet app served by nginx (`/api/` + `/ws` proxied) |
-| influxdb | http://localhost:8086 | InfluxDB 2.7 (admin / rtheatflow-admin — dev credentials) |
+| backend | http://localhost:8001 | REST + WebSocket API, Swagger at `/docs`, built-in monitor at `/` |
+| ui | http://localhost:8081 | React/Leaflet app served by nginx (`/api/` + `/ws` proxied) |
+| influxdb | http://localhost:8087 | InfluxDB 2.7 (admin / rtheatflow-admin — dev credentials) |
 | collector | — | polls `/state`, dedupes on `(day, step)`, writes wall-clock points |
-| grafana | http://localhost:3000 | Grafana 11, file-provisioned DH dashboard (admin / admin) |
+| grafana | http://localhost:3001 | Grafana 11, file-provisioned DH dashboard (admin / admin) |
+
+(Host ports follow the sibling scheme — netzsim's compose stack keeps 8000/8080/8086/3000.)
 
 The backend image bakes the committed `data/` (demo networks, archetype profiles, reference scenarios) and runs standalone; the `./data` volume persists recordings and imported networks.
 
 ### Manual dev mode
 
 ```
-# backend (:8000)
+# backend (:8001)
 set PYTHONPATH=src
 .venv\Scripts\python -m rtheatflow.main
 
-# UI (:5173, proxies /api and /ws to 127.0.0.1:8000)
+# UI (:5174, proxies /api and /ws to 127.0.0.1:8001)
 cd ui && npm run dev
 ```
 
