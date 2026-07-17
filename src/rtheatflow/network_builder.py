@@ -253,12 +253,17 @@ def build_network(
             mdot = (_resample_staircase(p.mdot_flow_kg_per_s, n_ticks)
                     if isinstance(p.mdot_flow_kg_per_s, list)
                     else np.full(n_ticks, float(p.mdot_flow_kg_per_s)))
+            # p_flow_bar absent -> pressure-free "t" pump (fixed mdot + flow
+            # temp), the only variant that coexists with the pressure slack;
+            # explicit p_flow_bar -> expert "pt" booster (M4 discovery 1,
+            # mirrored from Simulator.add_pump_mass)
             pm = pp.create_circ_pump_const_mass_flow(
                 net, return_junction=junction_return[p.node],
                 flow_junction=junction_supply[p.node],
-                p_flow_bar=float(p.p_flow_bar),
+                p_flow_bar=(None if p.p_flow_bar is None else float(p.p_flow_bar)),
                 mdot_flow_kg_per_s=float(mdot[0]),
-                t_flow_k=float(p.t_flow_k), name=name)
+                t_flow_k=float(p.t_flow_k),
+                type=("t" if p.p_flow_bar is None else "pt"), name=name)
             pm_idx.append(pm)
             pm_mdot_rows.append(mdot)
             producer_meta.append({"pid": len(producer_meta),

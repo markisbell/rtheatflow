@@ -1,0 +1,12 @@
+{
+ "producers": [
+  {
+   "node": "i",
+   "name": "Ideale Quelle (70 °C konstant)",
+   "kind": "slack",
+   "p_flow_bar": 6.0,
+   "plift_bar": 1.0,
+   "t_flow_k": 343.15
+  }
+ ]
+}

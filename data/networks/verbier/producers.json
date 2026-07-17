@@ -1,0 +1,19 @@
+{
+ "producers": [
+  {
+   "node": "V0",
+   "name": "HS0 (Slack, gemessen 81.1 °C)",
+   "kind": "slack",
+   "p_flow_bar": 10.0,
+   "plift_bar": 5.0,
+   "t_flow_k": 354.26
+  },
+  {
+   "node": "V306",
+   "name": "HS1 (Pumpe, gemessen 5.03 kg/s)",
+   "kind": "pump_mass",
+   "mdot_flow_kg_per_s": 5.03049,
+   "t_flow_k": 354.96
+  }
+ ]
+}

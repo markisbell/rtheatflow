@@ -16,6 +16,46 @@
    "nodes": 4,
    "trench_km": 1.0,
    "dir": "networks/appendix_a"
+  },
+  {
+   "id": "schutterwald",
+   "name": "Schutterwald (reales Ortsnetz)",
+   "character": "rural",
+   "nodes": 208,
+   "trench_km": 2.626,
+   "dir": "networks/schutterwald"
+  },
+  {
+   "id": "destest_16",
+   "name": "DESTEST CE1 (16 Gebäude, validiert)",
+   "character": "benchmark",
+   "nodes": 25,
+   "trench_km": 0.39,
+   "dir": "networks/destest_16"
+  },
+  {
+   "id": "destest_8",
+   "name": "DESTEST (8 Gebäude)",
+   "character": "benchmark",
+   "nodes": 13,
+   "trench_km": 0.216,
+   "dir": "networks/destest_8"
+  },
+  {
+   "id": "destest_32",
+   "name": "DESTEST (32 Gebäude)",
+   "character": "benchmark",
+   "nodes": 49,
+   "trench_km": 0.792,
+   "dir": "networks/destest_32"
+  },
+  {
+   "id": "verbier",
+   "name": "Verbier (vermascht, Messdaten)",
+   "character": "meshed",
+   "nodes": 676,
+   "trench_km": 12.05,
+   "dir": "networks/verbier"
   }
  ]
 }

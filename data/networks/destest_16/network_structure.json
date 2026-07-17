@@ -1,0 +1,230 @@
+{
+ "name": "DESTEST CE1 (16 Gebäude)",
+ "junctions": [
+  {
+   "name": "SimpleDistrict_7",
+   "kind": "consumer",
+   "geo": [
+    47.6604312,
+    9.301067
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_1",
+   "kind": "consumer",
+   "geo": [
+    47.6606468,
+    9.3007469
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_13",
+   "kind": "consumer",
+   "geo": [
+    47.66,
+    9.301067
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "h",
+   "kind": "node",
+   "geo": [
+    47.66,
+    9.3009069
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_12",
+   "kind": "consumer",
+   "geo": [
+    47.6602156,
+    9.301067
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "d",
+   "kind": "node",
+   "geo": [
+    47.66,
+    9.3002667
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_6",
+   "kind": "consumer",
+   "geo": [
+    47.6604312,
+    9.3004268
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_2",
+   "kind": "consumer",
+   "geo": [
+    47.6606468,
+    9.3001067
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "f",
+   "kind": "node",
+   "geo": [
+    47.6604312,
+    9.3009069
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "g",
+   "kind": "node",
+   "geo": [
+    47.6602156,
+    9.3009069
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_8",
+   "kind": "consumer",
+   "geo": [
+    47.6604312,
+    9.3007469
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "i",
+   "kind": "plant",
+   "geo": [
+    47.6598922,
+    9.3005868
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_16",
+   "kind": "consumer",
+   "geo": [
+    47.66,
+    9.3001067
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_9",
+   "kind": "consumer",
+   "geo": [
+    47.6602156,
+    9.3007469
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "c",
+   "kind": "node",
+   "geo": [
+    47.6602156,
+    9.3002667
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "a",
+   "kind": "node",
+   "geo": [
+    47.6606468,
+    9.3002667
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_5",
+   "kind": "consumer",
+   "geo": [
+    47.6604312,
+    9.3001067
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_15",
+   "kind": "consumer",
+   "geo": [
+    47.66,
+    9.3004268
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_14",
+   "kind": "consumer",
+   "geo": [
+    47.66,
+    9.3007469
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "b",
+   "kind": "node",
+   "geo": [
+    47.6604312,
+    9.3002667
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_4",
+   "kind": "consumer",
+   "geo": [
+    47.6606468,
+    9.301067
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_10",
+   "kind": "consumer",
+   "geo": [
+    47.6602156,
+    9.3001067
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_11",
+   "kind": "consumer",
+   "geo": [
+    47.6602156,
+    9.3004268
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "e",
+   "kind": "node",
+   "geo": [
+    47.6606468,
+    9.3009069
+   ],
+   "pn_bar": 6.0
+  },
+  {
+   "name": "SimpleDistrict_3",
+   "kind": "consumer",
+   "geo": [
+    47.6606468,
+    9.3004268
+   ],
+   "pn_bar": 6.0
+  }
+ ]
+}
