@@ -1,0 +1,436 @@
+{
+ "pipes": [
+  {
+   "from_node": "SimpleDistrict_1",
+   "to_node": "e",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.3007469
+    ],
+    [
+     47.6606468,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_4",
+   "to_node": "e",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.301067
+    ],
+    [
+     47.6606468,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "e",
+   "to_node": "f",
+   "length_km": 0.024,
+   "inner_diameter_mm": 26.2,
+   "u_w_per_m2k": 1.85332,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.3009069
+    ],
+    [
+     47.6604312,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_8",
+   "to_node": "f",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.3007469
+    ],
+    [
+     47.6604312,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_7",
+   "to_node": "f",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.301067
+    ],
+    [
+     47.6604312,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "f",
+   "to_node": "g",
+   "length_km": 0.024,
+   "inner_diameter_mm": 32.6,
+   "u_w_per_m2k": 1.88077,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.3009069
+    ],
+    [
+     47.6602156,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_9",
+   "to_node": "g",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.3007469
+    ],
+    [
+     47.6602156,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_12",
+   "to_node": "g",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.301067
+    ],
+    [
+     47.6602156,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "g",
+   "to_node": "h",
+   "length_km": 0.024,
+   "inner_diameter_mm": 32.6,
+   "u_w_per_m2k": 1.88077,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.3009069
+    ],
+    [
+     47.66,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_13",
+   "to_node": "h",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.301067
+    ],
+    [
+     47.66,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_14",
+   "to_node": "h",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.3007469
+    ],
+    [
+     47.66,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "h",
+   "to_node": "i",
+   "length_km": 0.02683,
+   "inner_diameter_mm": 40.8,
+   "u_w_per_m2k": 1.55129,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.3009069
+    ],
+    [
+     47.6598922,
+     9.3005868
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_2",
+   "to_node": "a",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.3001067
+    ],
+    [
+     47.6606468,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_3",
+   "to_node": "a",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.3004268
+    ],
+    [
+     47.6606468,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "a",
+   "to_node": "b",
+   "length_km": 0.024,
+   "inner_diameter_mm": 26.2,
+   "u_w_per_m2k": 1.85332,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.3002667
+    ],
+    [
+     47.6604312,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_5",
+   "to_node": "b",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.3001067
+    ],
+    [
+     47.6604312,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_6",
+   "to_node": "b",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.3004268
+    ],
+    [
+     47.6604312,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "b",
+   "to_node": "c",
+   "length_km": 0.024,
+   "inner_diameter_mm": 32.6,
+   "u_w_per_m2k": 1.88077,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.3002667
+    ],
+    [
+     47.6602156,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_10",
+   "to_node": "c",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.3001067
+    ],
+    [
+     47.6602156,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_11",
+   "to_node": "c",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.3004268
+    ],
+    [
+     47.6602156,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "c",
+   "to_node": "d",
+   "length_km": 0.024,
+   "inner_diameter_mm": 32.6,
+   "u_w_per_m2k": 1.88077,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.3002667
+    ],
+    [
+     47.66,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_15",
+   "to_node": "d",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.3004268
+    ],
+    [
+     47.66,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_16",
+   "to_node": "d",
+   "length_km": 0.012,
+   "inner_diameter_mm": 20.4,
+   "u_w_per_m2k": 1.91825,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.3001067
+    ],
+    [
+     47.66,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "d",
+   "to_node": "i",
+   "length_km": 0.02683,
+   "inner_diameter_mm": 40.8,
+   "u_w_per_m2k": 1.55129,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.3002667
+    ],
+    [
+     47.6598922,
+     9.3005868
+    ]
+   ]
+  }
+ ]
+}

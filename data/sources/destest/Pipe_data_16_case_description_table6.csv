@@ -1,0 +1,25 @@
+Beginning Node,Ending Node,Length [m],Pipe size OD x wall [mm],Inner Diameter [m],Insulation Thickness [m]
+SimpleDistrict_1,e,12,25 x 2.3,0.0204,0.034
+SimpleDistrict_4,e,12,25 x 2.3,0.0204,0.034
+e,f,24,32 x 2.9,0.0262,0.030
+SimpleDistrict_8,f,12,25 x 2.3,0.0204,0.034
+SimpleDistrict_7,f,12,25 x 2.3,0.0204,0.034
+f,g,24,40 x 3.7,0.0326,0.026
+SimpleDistrict_9,g,12,25 x 2.3,0.0204,0.034
+SimpleDistrict_12,g,12,25 x 2.3,0.0204,0.034
+g,h,24,40 x 3.7,0.0326,0.026
+SimpleDistrict_13,h,12,25 x 2.3,0.0204,0.034
+SimpleDistrict_14,h,12,25 x 2.3,0.0204,0.034
+h,i,26.83,50 x 4.6,0.0408,0.031
+SimpleDistrict_2,a,12,25 x 2.3,0.0204,0.034
+SimpleDistrict_3,a,12,25 x 2.3,0.0204,0.034
+a,b,24,32 x 2.9,0.0262,0.030
+SimpleDistrict_5,b,12,25 x 2.3,0.0204,0.034
+SimpleDistrict_6,b,12,25 x 2.3,0.0204,0.034
+b,c,24,40 x 3.7,0.0326,0.026
+SimpleDistrict_10,c,12,25 x 2.3,0.0204,0.034
+SimpleDistrict_11,c,12,25 x 2.3,0.0204,0.034
+c,d,24,40 x 3.7,0.0326,0.026
+SimpleDistrict_15,d,12,25 x 2.3,0.0204,0.034
+SimpleDistrict_16,d,12,25 x 2.3,0.0204,0.034
+d,i,26.83,50 x 4.6,0.0408,0.031

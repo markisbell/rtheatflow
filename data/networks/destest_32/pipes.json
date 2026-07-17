@@ -1,0 +1,868 @@
+{
+ "pipes": [
+  {
+   "from_node": "SimpleDistrict_7",
+   "to_node": "f",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.301067
+    ],
+    [
+     47.6604312,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_1",
+   "to_node": "e",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.38927,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.3007469
+    ],
+    [
+     47.6606468,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_13",
+   "to_node": "h",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.301067
+    ],
+    [
+     47.66,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "h",
+   "to_node": "i",
+   "length_km": 0.036,
+   "inner_diameter_mm": 80.0,
+   "u_w_per_m2k": 0.97383,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.3009069
+    ],
+    [
+     47.6598922,
+     9.3005868
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_12",
+   "to_node": "g",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.301067
+    ],
+    [
+     47.6602156,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "d",
+   "to_node": "i",
+   "length_km": 0.036,
+   "inner_diameter_mm": 80.0,
+   "u_w_per_m2k": 0.97383,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.3002667
+    ],
+    [
+     47.6598922,
+     9.3005868
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_6",
+   "to_node": "b",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.3004268
+    ],
+    [
+     47.6604312,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_2",
+   "to_node": "a",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.38927,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.3001067
+    ],
+    [
+     47.6606468,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "f",
+   "to_node": "g",
+   "length_km": 0.024,
+   "inner_diameter_mm": 80.0,
+   "u_w_per_m2k": 1.01486,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.3009069
+    ],
+    [
+     47.6602156,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "g",
+   "to_node": "h",
+   "length_km": 0.024,
+   "inner_diameter_mm": 80.0,
+   "u_w_per_m2k": 0.97383,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.3009069
+    ],
+    [
+     47.66,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_8",
+   "to_node": "f",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.3007469
+    ],
+    [
+     47.6604312,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_16",
+   "to_node": "d",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.3001067
+    ],
+    [
+     47.66,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_9",
+   "to_node": "g",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.3007469
+    ],
+    [
+     47.6602156,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "c",
+   "to_node": "d",
+   "length_km": 0.024,
+   "inner_diameter_mm": 80.0,
+   "u_w_per_m2k": 0.97383,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.3002667
+    ],
+    [
+     47.66,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "a",
+   "to_node": "b",
+   "length_km": 0.024,
+   "inner_diameter_mm": 65.0,
+   "u_w_per_m2k": 1.01276,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.3002667
+    ],
+    [
+     47.6604312,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_5",
+   "to_node": "b",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.3001067
+    ],
+    [
+     47.6604312,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_15",
+   "to_node": "d",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.3004268
+    ],
+    [
+     47.66,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_14",
+   "to_node": "h",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.66,
+     9.3007469
+    ],
+    [
+     47.66,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "b",
+   "to_node": "c",
+   "length_km": 0.024,
+   "inner_diameter_mm": 80.0,
+   "u_w_per_m2k": 1.01486,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6604312,
+     9.3002667
+    ],
+    [
+     47.6602156,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_4",
+   "to_node": "e",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.38927,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.301067
+    ],
+    [
+     47.6606468,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_10",
+   "to_node": "c",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.3001067
+    ],
+    [
+     47.6602156,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_11",
+   "to_node": "c",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6602156,
+     9.3004268
+    ],
+    [
+     47.6602156,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "e",
+   "to_node": "f",
+   "length_km": 0.024,
+   "inner_diameter_mm": 65.0,
+   "u_w_per_m2k": 1.01276,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.3009069
+    ],
+    [
+     47.6604312,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_3",
+   "to_node": "a",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.38927,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6606468,
+     9.3004268
+    ],
+    [
+     47.6606468,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_23",
+   "to_node": "o",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6612936,
+     9.301067
+    ],
+    [
+     47.6612936,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_17",
+   "to_node": "n",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.38927,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6615092,
+     9.3007469
+    ],
+    [
+     47.6615092,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_29",
+   "to_node": "q",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6608624,
+     9.301067
+    ],
+    [
+     47.6608624,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_28",
+   "to_node": "p",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.661078,
+     9.301067
+    ],
+    [
+     47.661078,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_22",
+   "to_node": "k",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6612936,
+     9.3004268
+    ],
+    [
+     47.6612936,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_18",
+   "to_node": "j",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.38927,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6615092,
+     9.3001067
+    ],
+    [
+     47.6615092,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "o",
+   "to_node": "p",
+   "length_km": 0.024,
+   "inner_diameter_mm": 50.0,
+   "u_w_per_m2k": 1.17305,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6612936,
+     9.3009069
+    ],
+    [
+     47.661078,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "p",
+   "to_node": "q",
+   "length_km": 0.024,
+   "inner_diameter_mm": 65.0,
+   "u_w_per_m2k": 1.03577,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.661078,
+     9.3009069
+    ],
+    [
+     47.6608624,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_24",
+   "to_node": "o",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6612936,
+     9.3007469
+    ],
+    [
+     47.6612936,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_32",
+   "to_node": "m",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6608624,
+     9.3001067
+    ],
+    [
+     47.6608624,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_25",
+   "to_node": "p",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.661078,
+     9.3007469
+    ],
+    [
+     47.661078,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "l",
+   "to_node": "m",
+   "length_km": 0.024,
+   "inner_diameter_mm": 65.0,
+   "u_w_per_m2k": 1.03577,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.661078,
+     9.3002667
+    ],
+    [
+     47.6608624,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "j",
+   "to_node": "k",
+   "length_km": 0.024,
+   "inner_diameter_mm": 40.0,
+   "u_w_per_m2k": 1.20326,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6615092,
+     9.3002667
+    ],
+    [
+     47.6612936,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_21",
+   "to_node": "k",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6612936,
+     9.3001067
+    ],
+    [
+     47.6612936,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_31",
+   "to_node": "m",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6608624,
+     9.3004268
+    ],
+    [
+     47.6608624,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_30",
+   "to_node": "q",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6608624,
+     9.3007469
+    ],
+    [
+     47.6608624,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "k",
+   "to_node": "l",
+   "length_km": 0.024,
+   "inner_diameter_mm": 50.0,
+   "u_w_per_m2k": 1.17305,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6612936,
+     9.3002667
+    ],
+    [
+     47.661078,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_20",
+   "to_node": "n",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.38927,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6615092,
+     9.301067
+    ],
+    [
+     47.6615092,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_26",
+   "to_node": "l",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.661078,
+     9.3001067
+    ],
+    [
+     47.661078,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_27",
+   "to_node": "l",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.34389,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.661078,
+     9.3004268
+    ],
+    [
+     47.661078,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "n",
+   "to_node": "o",
+   "length_km": 0.024,
+   "inner_diameter_mm": 40.0,
+   "u_w_per_m2k": 1.20326,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6615092,
+     9.3009069
+    ],
+    [
+     47.6612936,
+     9.3009069
+    ]
+   ]
+  },
+  {
+   "from_node": "SimpleDistrict_19",
+   "to_node": "j",
+   "length_km": 0.012,
+   "inner_diameter_mm": 32.0,
+   "u_w_per_m2k": 1.38927,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6615092,
+     9.3004268
+    ],
+    [
+     47.6615092,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "m",
+   "to_node": "a",
+   "length_km": 0.024,
+   "inner_diameter_mm": 65.0,
+   "u_w_per_m2k": 1.03577,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6608624,
+     9.3002667
+    ],
+    [
+     47.6606468,
+     9.3002667
+    ]
+   ]
+  },
+  {
+   "from_node": "q",
+   "to_node": "e",
+   "length_km": 0.024,
+   "inner_diameter_mm": 65.0,
+   "u_w_per_m2k": 1.03577,
+   "k_mm": 0.007,
+   "geometry": [
+    [
+     47.6608624,
+     9.3009069
+    ],
+    [
+     47.6606468,
+     9.3009069
+    ]
+   ]
+  }
+ ]
+}
