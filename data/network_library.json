@@ -48,6 +48,14 @@
    "nodes": 49,
    "trench_km": 0.792,
    "dir": "networks/destest_32"
+  },
+  {
+   "id": "verbier",
+   "name": "Verbier (vermascht, Messdaten)",
+   "character": "meshed",
+   "nodes": 676,
+   "trench_km": 12.05,
+   "dir": "networks/verbier"
   }
  ]
 }

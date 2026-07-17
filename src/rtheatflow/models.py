@@ -208,7 +208,12 @@ class ProducerSpec(_StrictModel):
                     f"heat_exchanger producer at {self.node!r}: qext_w dispatch profile required"
                 )
         elif self.kind == "pump_mass":
-            missing = [f for f in ("mdot_flow_kg_per_s", "p_flow_bar", "t_flow_k")
+            # p_flow_bar is OPTIONAL: without it the builder creates the
+            # pressure-free ``type="t"`` variant (fixed mdot + flow temp) —
+            # the only pump_mass shape that coexists with the pressure slack
+            # (M4 runtime discovery; the live API has the same rule). An
+            # explicit p_flow_bar keeps the expert "pt" booster semantics.
+            missing = [f for f in ("mdot_flow_kg_per_s", "t_flow_k")
                        if getattr(self, f) is None]
             if missing:
                 raise ValueError(f"pump_mass producer at {self.node!r}: missing {missing}")
