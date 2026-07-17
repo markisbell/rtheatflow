@@ -6,7 +6,7 @@ Real-time district-heating simulation platform on **pandapipes 0.14.0**, structu
 
 ## Binding rules
 
-1. **⚠️ OPEN ITEM:** SPEC §0 mandates reading https://github.com/markisbell/claude-memory (project owner's rules for AI coding agents). The repo is private/unpublished (404 as of 2026-07-15). Until access is resolved: follow the blueprint repo's CLAUDE.md conventions plus SPEC §9/§11, and reconcile when the rules become available. Do not remove this notice until reconciled.
+1. **✅ RECONCILED (2026-07-16):** the SPEC §0 rules repo https://github.com/markisbell/claude-memory is the owner's private cross-project Claude memory (accessible via the machine's Git Credential Manager; it was 404 only for anonymous access). The binding do's and don'ts live in its `user-workflow-prefs.md`; the M1–M7 practices were reviewed against them and are consistent (verify live ✓, no locks — self-healing solve ✓, German-first UI with domain vocabulary ✓, regression tests pinned before refactorings ✓). Rules to observe going forward: **commit/push only on the user's request in interactive sessions** (milestone agents committed under explicit per-milestone authorization); **adopt netzsim's `de: typeof en` i18n key-parity enforcement** in `ui/src/i18n.ts` (netzsim convention not yet applied here). This project's own state file in that repo is `rtheatflow-platform-state.md`.
 2. Mirror netzsim structure/naming/behavior (SPEC §9). When in doubt: do what rtpowerflow does.
 3. Every milestone (SPEC §12) ends with working, tested, committed code before the next begins.
 
