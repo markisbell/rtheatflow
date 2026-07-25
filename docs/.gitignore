@@ -1,0 +1,13 @@
+# LaTeX build artifacts (latexmk) — the .tex source and the compiled .pdf are committed,
+# the intermediate aux files are not.
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.lof
+*.lot

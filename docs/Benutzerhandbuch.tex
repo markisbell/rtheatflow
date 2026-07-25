@@ -1,0 +1,1728 @@
+% Benutzerhandbuch — rtheatflow (Echtzeit-Simulation thermischer Wärmenetze)
+% Übersetzen mit:  latexmk -pdf Benutzerhandbuch.tex
+% Aufbau und LaTeX-Konventionen gespiegelt vom Schwesterprojekt rtpowerflow (netzsim).
+\documentclass[11pt,a4paper,parskip=half]{scrreprt}
+\usepackage[T1]{fontenc}\usepackage[utf8]{inputenc}\usepackage{lmodern}
+\usepackage[ngerman]{babel}\usepackage{microtype}\usepackage{amsmath}
+\usepackage{booktabs}\usepackage{longtable}\usepackage{tabularx}\usepackage{xcolor}
+\usepackage{enumitem}\usepackage{listings}\usepackage{graphicx}\graphicspath{{img/}}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\definecolor{shell}{gray}{0.96}\definecolor{bsp}{RGB}{0,84,159}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{shell},frame=single,framerule=0pt,
+  xleftmargin=6pt,xrightmargin=6pt,aboveskip=8pt,belowskip=8pt,breaklines=true,
+  literate={ü}{{\"u}}1 {ä}{{\"a}}1 {ö}{{\"o}}1 {ß}{{\ss}}1 {Ü}{{\"U}}1 {Ä}{{\"A}}1 {Ö}{{\"O}}1
+    {→}{{$\rightarrow$}}1 {Σ}{{$\Sigma$}}1 {≈}{{$\approx$}}1 {−}{{$-$}}1 {Δ}{{$\Delta$}}1 {·}{{$\cdot$}}1}
+\newcommand{\ui}[1]{\textsf{\bfseries #1}}
+\newcommand{\api}[1]{\texttt{#1}}
+% Grad Celsius ohne Zusatzpaket (das gegebene Präambel-Set enthält kein textcomp):
+\newcommand{\gC}{\,\ensuremath{{}^{\circ}\mathrm{C}}}
+\emergencystretch=3em
+\newenvironment{beispiel}[1][Beispiel]
+  {\par\medskip{\color{bsp}\hrule height 0.8pt}\nopagebreak\smallskip
+   \noindent\textbf{\textsf{\textcolor{bsp}{#1}}}\quad\ignorespaces}
+  {\par\nopagebreak\smallskip{\color{bsp}\hrule height 0.8pt}\par\medskip}
+\title{rtheatflow\\\Large Benutzerhandbuch}
+\subtitle{Echtzeit-Simulation thermischer Wärmenetze\\für Lehre und Forschung}
+\author{}
+\date{Stand: Juli 2026}
+
+\begin{document}
+
+\maketitle
+
+% Entstehungs- und Lizenzhinweis (Impressum)
+\begin{center}
+\fbox{\parbox{0.86\textwidth}{\small
+\textbf{Hinweis zur Entstehung:} Der Quellcode von rtheatflow sowie dieses
+Handbuch wurden mit einem \textbf{KI-Coding-Agenten} (Claude Code, Anthropic)
+erstellt --- unter menschlicher Anleitung: Anforderungen, fachliche
+Entscheidungen, Review und die Live-Verifikation gegen das laufende System
+stammen von Menschen. Die Wärmenetz-Physik ist gegen den
+\textbf{IBPSA-DESTEST-Cross-Tool-Benchmark} und gegen \textbf{reale
+Verbier-Messdaten} validiert (Kapitel~\ref{ch:referenznetze}).
+Quellcode und Handbuch stehen unter der MIT-Lizenz; die mitgelieferten
+Referenzdatensätze behalten ihre eigenen Lizenzen (IBPSA DESTEST: modifizierte
+BSD-3; pandapipes-Beispielnetze: BSD-3; OpenDHN/Verbier: CC~BY~4.0).
+Projektseite: \url{https://github.com/markisbell/rtheatflow}}}
+\end{center}
+
+\tableofcontents
+
+% ===================================================================
+\chapter{Einführung}
+\label{ch:einfuehrung}
+
+\section{Was ist rtheatflow?}
+
+rtheatflow ist eine Lehr- und Forschungsplattform für thermische
+\emph{Wärmenetze} (Fernwärme). Sie löst fortlaufend die
+Thermo-Hydraulik eines Zweileiter-Fernwärmenetzes auf Basis von
+\href{https://github.com/e2nIEE/pandapipes}{pandapipes~0.14.0} und stellt die
+Ergebnisse live im Browser dar --- auf einer echten OpenStreetMap-Karte, in der
+sich Vorlauf- und Rücklauftemperaturen, Massenströme, Drücke und Wärmeverluste
+Minute für Minute entwickeln. Anlagen (Erzeuger, Pufferspeicher, Einspeiser,
+Bypässe, Abnehmer) lassen sich im laufenden Betrieb platzieren; eine Heizkurve
+und eine Schlechtpunktregelung schließen die Betreiberschleife.
+
+rtheatflow ist das \emph{Wärme-Schwesterprojekt} des Stromnetzsimulators
+\href{https://github.com/markisbell/rtpowerflow}{rtpowerflow} (netzsim) und
+spiegelt dessen Architektur --- Elektrizität wird konsequent auf Wärme
+übersetzt: Spannung wird zu Temperatur, Strom zu Massenstrom, Wirkleistung zu
+Wärmestrom, die Leitung zur Trasse, der Trafo zur Heizzentrale.
+
+Das didaktische Kernkonzept ist die Trennung von \textbf{drei Sichten} auf
+dasselbe Netz.
+
+\section{Die drei Sichten}
+\label{sec:dreisichten}
+
+\begin{description}
+  \item[\ui{Realität}] Der vollständige, physikalisch gelöste Zustand jeder
+    Trasse, jedes Knotens, jedes Abnehmers --- das, was im Netz
+    \emph{tatsächlich} passiert. In der Wirklichkeit kennt ihn niemand.
+  \item[\ui{Gemessen}] Nur das, was platzierte Messgeräte
+    (Wärmemengenzähler, T/p-Sensoren) tatsächlich erfassen --- und nur in dem
+    Zeitraster, das der gewählte Messmodus liefert. Alles andere ist grau und
+    unbekannt (\glqq unbekannt ist unbekannt\grqq). Das ist der Standardblick
+    des Betreibers.
+  \item[\ui{Schätzung}] Das, was ein Betreiber aus seinen wenigen Messwerten
+    \emph{berechnen} kann: ein zweites Netzmodell, angetrieben allein von
+    Messwerten und Erwartungsprofilen --- inklusive des Fehlers, den diese
+    Rechnung gegenüber der Wahrheit macht.
+\end{description}
+
+Der intellektuelle Anspruch, den die Plattform im Code verteidigt: \emph{Die
+Sichten Gemessen und Schätzung dürfen ausschließlich Informationen enthalten,
+die ein realer Betreiber tatsächlich hätte.} Keine Ebene oberhalb der Realität
+darf um die Projektion herum an die Wahrheit greifen --- und das ist kein
+Vorsatz, den man sich merken muss, sondern durch Tests (die
+\glqq Ehrlichkeits-Stolperdrähte\grqq, Abschnitt~\ref{sec:stolperdraehte}) und
+zur Laufzeit durch den strikten Modus (Abschnitt~\ref{sec:strikt}) erzwungen.
+
+\begin{beispiel}[Typische Lehrfragen, die sich damit beantworten lassen]
+\begin{itemize}[nosep]
+  \item Was passiert mit dem Schlechtpunkt-$\Delta p$, wenn morgens alle
+    Übergabestationen gleichzeitig aufheizen?
+  \item Wie ändert sich die Verlustquote, wenn man von einem 3G-Netz
+    (110/60) auf ein 4G-Netz (70/40) umschaltet --- und was kostet das an
+    Pumpenstrom?
+  \item Wie viele Wärmemengenzähler braucht die Zustandsschätzung, um eine
+    Rücklauf-Anomalie an einer einzelnen Station überhaupt zu \emph{sehen}?
+  \item Kappt ein 100-kWh-Pufferspeicher die morgendliche Wärmespitze
+    wirksam --- und wann hört er von selbst auf zu laden?
+\end{itemize}
+\end{beispiel}
+
+\section{Die drei Anwendungen}
+
+Die Plattform besteht aus drei Anwendungen, die gemeinsam über eine einzige
+\texttt{docker-compose.yml} starten:
+
+\begin{enumerate}
+  \item \textbf{rtheatflow} --- der Simulationskern: eine FastAPI-Anwendung
+    (\api{src/}), die ein Netz samt Tagesprofilen lädt und fortlaufend die
+    Thermo-Hydraulik löst; jedes Ergebnis ist per REST abrufbar und wird
+    zusätzlich über einen WebSocket an alle verbundenen Browser gepusht
+    (Backend, \textbf{Port~8001}).
+  \item \textbf{Web-Oberfläche} --- die React-Anwendung im Browser
+    (\api{ui/}, deutschsprachig, oben rechts auf EN umschaltbar), über die alle
+    Funktionen dieses Handbuchs bedient werden (Vite-Entwicklungsserver
+    \textbf{Port~5174}, in Docker per nginx auf \textbf{Port~8081}).
+  \item \textbf{Visualisierungs-Stack} --- ein Collector holt jeden gelösten
+    Schritt per REST ab und schreibt ihn nach InfluxDB; ein vorkonfiguriertes
+    Grafana-Dashboard zeigt die Langzeitverläufe (Kapitel~\ref{ch:grafana},
+    Grafana \textbf{Port~3001}, InfluxDB \textbf{Port~8087}).
+\end{enumerate}
+
+\paragraph{Das Geschwister-Portschema.} Die Ports 8001/5174 (und 8081/8087/3001
+im Docker-Stack) sind \emph{mit Absicht} gewählt: netzsim/rtpowerflow belegt
+8000/5173 (bzw.\ 8080/8086/3000). So laufen beide Plattformen --- Strom und
+Wärme --- parallel auf derselben Maschine, ohne sich die Ports streitig zu
+machen.
+
+\section{Das Zeitmodell}
+\label{sec:zeitmodell}
+
+Ein Simulationstag besteht aus \textbf{1440 Schritten zu je einer Minute}. Für
+jeden Schritt werden Lasten, Wetter, Heizkurve und Anlagen auf die Werte des
+Zeitschritts gesetzt und ein vollständiger, eingeschwungener
+Thermo-Hydraulik-Zustand gelöst (auf üblichen Rechnern warm etwa 20--35~ms, siehe
+Kapitel~\ref{ch:referenznetze}). Die Simulation läuft im \emph{beschleunigten
+Takt}: pro \ui{Schrittdauer} realer Sekunden schreitet die Simulationsuhr eine
+Minute voran.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Schrittdauer & Beschleunigung & ein Simulationstag dauert \\
+\midrule
+1{,}0 s (Vorgabe) & 60$\times$ & 24 Minuten \\
+0{,}5 s & 120$\times$ & 12 Minuten \\
+0{,}1 s & 600$\times$ & 2{,}4 Minuten \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Nach Schritt~1439 (23:59~Uhr) springt die Simulation auf Schritt~0 zurück,
+zählt den Tag hoch und wiederholt die Tagesprofile. Schrittindex und Uhrzeit
+rechnen sich direkt ineinander um: $\text{Schritt} = h \cdot 60 + \mathit{min}$.
+
+\begin{beispiel}
+07:20~Uhr entspricht Schritt $7 \cdot 60 + 20 = 440$. Wer per API an die
+morgendliche Aufheizspitze springen will, ruft daher
+\api{POST /control/seek} mit \texttt{\{"step": 440\}} auf --- die Oberfläche
+erledigt dasselbe über den Zeit-Regler in der Steuerleiste.
+\end{beispiel}
+
+\section{Validierte Physik}
+\label{sec:validierung}
+
+Ein Lehrwerkzeug ist nur so glaubwürdig wie seine Physik. Die Thermo-Hydraulik
+von rtheatflow ist deshalb gegen \emph{externe} Wahrheit validiert, nicht gegen
+frühere eigene Ausgaben: gegen den \textbf{IBPSA-DESTEST}-Cross-Tool-Benchmark
+(mehrere unabhängige Gebäudesimulations-Werkzeuge rechnen dasselbe kleine Netz
+und veröffentlichen ihre Ergebnisse --- die Streuung zwischen den Werkzeugen ist
+selbst die Toleranz) und gegen \textbf{reale Messdaten} des vermaschten
+Alpennetzes Verbier (150 Übergabestationen). Als Plausibilitätsprüfung dient
+zusätzlich das reale Ortsnetz Schutterwald. Die vollständigen Zahlen, die
+akzeptierten Modellunterschiede und die Reproduktionskommandos stehen in
+Kapitel~\ref{ch:referenznetze}. Kurzfassung: Die Vorlauftemperaturen der
+150~Verbier-Stationen werden im Median auf \textbf{0{,}83~K} genau getroffen,
+ohne dass diese Temperaturen jemals Eingabe wären.
+
+\section{Weiterführende Dokumentation}
+\label{sec:weiterdoku}
+
+Dieses Handbuch ist die bedienungsorientierte Einführung. Für die Tiefe gibt es
+im Verzeichnis \api{docs/} fünf technische Deep-Dives (englisch, gegen den Code
+mit \texttt{Datei:Zeile}-Ankern geschrieben):
+\api{ARCHITECTURE.md} (System, Wireformat, Solverpolitik, Beobachtbarkeit,
+quasistatische Ehrlichkeit), \api{PHYSICS\_AND\_CONTROLS.md} (pandapipes-Modell,
+Retry-Ladder, Verluste, Heizkurve, Schlechtpunkt, Anlagen),
+\api{OBSERVABILITY.md} (die drei Ebenen, der Vorwärts-Beobachter, die
+Stolperdrähte), \api{REFERENCE\_NETWORKS.md} (der Fünf-Dateien-Vertrag, alle
+Netze) und \api{BENCHMARKS.md} (Rechenzeiten + Validierungsprotokoll).
+\api{SPEC.md} ist die bindende Spezifikation, \api{docs/API.md} die generierte
+Endpunktreferenz. Das vorliegende Handbuch wird zusätzlich unter \api{GET /manual}
+direkt aus dem Repository als HTML ausgeliefert.
+
+% ===================================================================
+\chapter{Installation und Start}
+\label{ch:installation}
+
+\section{Windows (Entwicklung, ein Klick)}
+
+Der einfachste Weg auf einem Windows-Rechner:
+
+\begin{lstlisting}
+start_rtheatflow.bat
+\end{lstlisting}
+
+Der Starter erkennt bereits laufende Server (und startet sie nicht doppelt),
+startet Backend (Port~8001) und Vite-UI (Port~5174) je in einer eigenen Konsole,
+wartet auf \api{/health} und öffnet den Browser. Der \emph{allererste}
+Rechenschritt kompiliert die numba-Kerne vor (Kaltstart, bis $\approx$60~s,
+Abschnitt~\ref{sec:kaltstart}); solange zeigt der Starter \glqq Warte auf das
+Backend\grqq. \textbf{Beenden:} \texttt{stop\_rtheatflow.bat} schließt beide
+Serverfenster samt eventuell verwaister Hintergrundprozesse dieses Repos ---
+ein parallel laufendes netzsim/rtpowerflow (Ports 8000/5173) bleibt unberührt.
+
+Einmalige Vorbereitung (die virtuelle Umgebung anlegen):
+
+\begin{lstlisting}
+py -3 -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+\end{lstlisting}
+
+\texttt{ui\textbackslash node\_modules} wird beim ersten Start automatisch per
+\texttt{npm install} nachgezogen.
+
+\section{Lokaler Start (Entwicklung, manuell)}
+
+Wer die beiden Prozesse selbst in der Hand haben will, startet sie getrennt:
+
+\begin{lstlisting}
+:: Backend (Port 8001)
+set PYTHONPATH=src
+.venv\Scripts\python -m rtheatflow.main
+
+:: UI (Port 5174; leitet /api und /ws an 127.0.0.1:8001 weiter)
+cd ui && npm run dev
+\end{lstlisting}
+
+Der Vite-Server bindet bewusst \texttt{127.0.0.1} (nicht \texttt{localhost}) als
+Proxy-Ziel und läuft mit \texttt{strictPort} --- er scheitert lieber laut, als
+still auf einen anderen Port auszuweichen und dann ins falsche Backend zu
+proxen (Abschnitt~\ref{sec:fehler} erklärt die Windows-IPv6-Falle dahinter).
+
+\section{Docker Compose (Gesamtstack)}
+
+Der komplette Stack --- Backend, UI, InfluxDB, Collector und Grafana --- startet
+mit einem Befehl:
+
+\begin{lstlisting}
+docker compose up --build
+\end{lstlisting}
+
+{\small
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Dienst & Adresse & Inhalt \\
+\midrule
+ui       & \url{http://localhost:8081} & Karten-Oberfläche (nginx) \\
+backend  & \url{http://localhost:8001} & REST + WebSocket; Swagger unter \api{/docs}, \\
+         &                             & Monitor unter \api{/}, Handbuch unter \api{/manual} \\
+grafana  & \url{http://localhost:3001} & Fernwärme-Dashboard (admin / admin) \\
+influxdb & \url{http://localhost:8087} & Zeitreihenspeicher (Entwicklungs-Zugangsdaten) \\
+\bottomrule
+\end{tabular}
+\end{center}}
+
+Das Backend-Image bäckt das mitgelieferte \api{data/}-Verzeichnis ein und läuft
+eigenständig; das Volume \api{./data} macht Aufzeichnungen und importierte Netze
+dauerhaft. Alle Zugangsdaten im Compose-File sind \textbf{Entwicklungs-Vorgaben}
+(Lehrwerkzeug, bewusst ohne Authentifizierung) --- vor einem Einsatz außerhalb
+einer vertrauenswürdigen Maschine ändern.
+
+\section{Kaltstart: der numba-JIT-Aufschlag}
+\label{sec:kaltstart}
+
+pandapipes verwendet numba mit \emph{bloßem} \texttt{@jit} (ohne
+\texttt{cache=True}), also ohne Cache-Datei: der erste Lastfluss eines jeden
+Prozesses kompiliert die Pipeflow-Kerne frisch --- etwa 7~s reine
+JIT-Zeit, dazu kommt der Import von \texttt{pandapipes}/\texttt{numba}/\texttt{llvmlite}
+selbst (4{,}9--12{,}1~s, stark schwankend). Das Backend versteckt das: unter
+\texttt{AUTOSTART} läuft der erste Rechenschritt in einem Hintergrund-Thread,
+sodass die JIT-Kompilierung das Binden des Sockets nicht blockiert. Praktisch
+heißt das: Der \emph{erste} veröffentlichte Frame trägt eine \api{solve\_ms} in
+den Tausenden --- das ist JIT, kein langsames Netz. Jeder Folgeschritt ist warm.
+
+% ===================================================================
+\chapter{Arbeitsablauf: Netz -- Lasten -- Live}
+\label{ch:arbeitsablauf}
+
+Die Oberfläche ist wie ein klassisches Desktop-Programm organisiert: Beim Start
+öffnet sich die \emph{Live-Ansicht}, die Menüleiste am oberen Rand bündelt alle
+Funktionen. Ganz oben in der Leiste:
+
+\begin{description}[nosep]
+  \item[\ui{Datei}] alles, was lädt, speichert oder exportiert: Szenarien
+    speichern/laden/löschen (Kapitel~\ref{ch:szenarien}) sowie Aufzeichnung und
+    Tage-Export (Kapitel~\ref{ch:export}). Läuft eine Aufzeichnung oder ein
+    Export, erscheinen rechts in der Leiste klickbare Status-Chips
+    (\ui{REC~n} / \ui{Export~p\,\%}).
+  \item[\ui{Ansicht}] wählt die Farbebene der Karte (Vorlauf, Rücklauf,
+    Geschwindigkeit, Differenzdruck --- Kapitel~\ref{ch:karte}).
+  \item[\ui{Hilfe}] öffnet dieses Handbuch (\api{/manual}), die Swagger-Doku
+    (\api{/docs}) und die Projektseite.
+\end{description}
+
+Rechts neben den Menüs sitzen zwei dauerhaft sichtbare Umschalter: der
+\textbf{Bereich} \ui{Live~/ NetzStudio} (zwischen laufender Simulation und
+Netz-Konfiguration wechseln) und der \textbf{Sicht-Umschalter}
+\ui{Realität~/ Gemessen~/ Schätzung} (Kapitel~\ref{ch:beobachtbarkeit}) --- die
+drei Sichten sind das Kernkonzept, deshalb ist die aktive Sicht immer ablesbar
+und mit einem Klick wechselbar. Ganz rechts steht der Netz-Chip (Name~$\cdot$
+Abnehmerzahl~$\cdot$ Trassenkilometer) und der DE/EN-Umschalter.
+
+% TODO Screenshot: Menüleiste mit geöffnetem Datei-Menü, Sicht-Segment und Netz-Chip.
+
+Der typische Arbeitsablauf ist ein Dreischritt --- Netz wählen, Lasten erzeugen,
+live beobachten. Die ersten beiden Schritte leben im Bereich \ui{NetzStudio},
+der in drei Spalten von links nach rechts durchlaufen wird.
+
+\section{NetzStudio: die drei Spalten}
+\label{sec:netzstudio}
+
+\paragraph{Spalte 1 --- Netz wählen oder importieren.} Die linke Spalte listet
+alle verfügbaren Netze, gruppiert in \ui{Bibliothek} (die mitgelieferten
+Katalognetze) und \ui{Eigene Netze} (per \api{POST /networks/import}
+importierte Fünf-Dateien-Bündel). Ein \ui{Netz importieren…}-Dateidialog nimmt
+entweder die fünf Vertragsdateien zusammen oder ein einzelnes Bündel entgegen,
+prüft sie und legt das Netz als \api{source="user"} ab. Der Katalog enthält
+zwei Lehrnetze (\ui{Demo-Dorf}, \ui{Appendix~A}) und die
+\textbf{Referenznetze} DESTEST (8/16/32~Gebäude), Schutterwald und Verbier ---
+alle mit Herkunft und validierten Zahlen (Kapitel~\ref{ch:referenznetze}).
+
+\paragraph{Spalte 2 --- Lastpolitik.} Die Mittelspalte weist den Abnehmerknoten
+realistische Tagesprofile zu (die \emph{Lastpolitik}, SPEC~\S4.5). Grundlage ist
+ein mitgelieferter Archetyp-Katalog: physikbasierte Jahresprofile aus
+\textbf{demandlib} (VDI~4655, Raumheizung) und \textbf{OpenDHW} (stochastisches
+Warmwasser). Drei Archetypen sind ausgeliefert:
+
+{\small
+\begin{center}
+\begin{tabular}{@{}llr@{}}
+\toprule
+Archetyp & Beschreibung & Jahres-Raumwärme \\
+\midrule
+\texttt{EFH\_ALT\_4P}   & unsaniertes Einfamilienhaus, 4~Pers. & 18 MWh/a \\
+\texttt{EFH\_SAN\_4P}   & KfW-saniertes EFH, 4~Pers.           & 9 MWh/a  \\
+\texttt{MFH\_ALT\_10WE} & Mehrfamilienhaus, 10~Wohneinheiten   & 95 MWh/a \\
+\bottomrule
+\end{tabular}
+\end{center}}
+
+Einstellbar sind: der Gebäudemix (Archetyp-Auswahl), der Zuweisungsmodus
+(\texttt{round\_robin} / \texttt{random}), ein \ui{Seed}, eine \ui{Skalierung},
+das \ui{Tag-Perzentil} (0{,}9~=~kalter Wintertag, 0{,}5~=~Übergang,
+0{,}05~=~Sommer), der \ui{Jitter} (deterministische $\pm$30-min-Verschiebung und
+0{,}92--1{,}08-Amplitudenstreuung, damit gleiche Gebäude nicht synchron ziehen),
+die DHW-Varianten und das Temperaturniveau \ui{3G}/\ui{4G}. Das
+Temperaturniveau koppelt sowohl die Archetyp-Rücklauftemperaturen als auch die
+Heizkurve (3G-Rückläufe sind wärmer als 4G, siehe
+Tabelle~\ref{tab:treturn}).
+
+\begin{table}[htbp]\centering
+{\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Rücklauftemperatur & 3G-Preset & 4G-Preset \\
+\midrule
+\texttt{EFH\_ALT\_4P}   & 55\gC & 45\gC \\
+\texttt{EFH\_SAN\_4P}   & 45\gC & 35\gC \\
+\texttt{MFH\_ALT\_10WE} & 50\gC & 40\gC \\
+\bottomrule
+\end{tabular}}
+\caption{Die vom Temperaturniveau gekoppelten Archetyp-Rücklauftemperaturen
+(\texttt{TRETURN\_C} in \api{loadgen/}).}
+\label{tab:treturn}
+\end{table}
+
+\paragraph{Spalte 3 --- Prüfen \& Anwenden.} Die rechte Spalte zeigt die
+Vorschau: eine Zuweisungstabelle, Kennzahlen (Auslegungslast, Spitze,
+Jahresenergie, Trassenlänge) und die \textbf{lineare Wärmedichte} [MWh/(m$\cdot$a)]
+als eingefärbte Kachel gegen die Faustregel $\geq$1--1{,}5, dazu eine
+Jahresdauerlinie als Sparkline gegen die Auslegungslast. \ui{Anwenden} lädt das
+Netz in die Engine (der Live-Bereich öffnet sich neu, die Uhr läuft ab Tag~0 /
+Schritt~0). Nichts an der Vorschau verändert die laufende Simulation --- erst
+\ui{Anwenden} wirkt.
+
+\begin{beispiel}[Warum die lineare Wärmedichte über die Wirtschaftlichkeit entscheidet]
+Wählt man das \ui{Demo-Dorf}, meldet die KPI-Kachel eine lineare Wärmedichte
+von etwa 0{,}39--0{,}46~MWh/(m$\cdot$a) --- \emph{unter} der Faustregel $\geq$1,
+die Kachel färbt sich warnend. Das ist kein Fehler, sondern der Lehrpunkt: Ein
+dünn besiedeltes Straßendorf mit langen Trassen und wenig Anschlussdichte ist
+für ein klassisches Fernwärmenetz kaum wirtschaftlich --- die stehenden
+Verluste der Trasse verteilen sich auf zu wenig verkaufte Wärme. Das reale
+Ortsnetz Schutterwald erreicht mit seinem 50-m-Anschlussradius dagegen
+1{,}34~MWh/(m$\cdot$a), genau im tragfähigen Band.
+\end{beispiel}
+
+\section{Die Live-Ansicht und die Steuerleiste}
+
+Nach \ui{Anwenden} zeigt der Bereich \ui{Live} die Karte (links,
+Kapitel~\ref{ch:karte}) und eine in der Breite ziehbare Seitenleiste (rechts)
+mit einklappbaren Abschnitten: \ui{Übersicht}, \ui{Schlechtpunkt},
+\ui{Messstellen}, \ui{Heizkurve}, \ui{Wetter} und den per Strg-Klick
+angehefteten Element-Abschnitten. Am unteren Rand liegt die \textbf{Steuerleiste}:
+
+\begin{description}[nosep]
+  \item[Start/Pause] hält die Simulationsuhr an bzw.\ lässt sie weiterlaufen.
+  \item[Zeit-Regler] springt an eine Tageszeit (Schritt $0\dots1439$).
+  \item[Tag-Regler] erscheint nur bei mehrtägigen Wetterhorizonten
+    (\texttt{n\_days>1}).
+  \item[Schrittdauer] 0{,}1--1~s echte Zeit pro Simulationsminute.
+\end{description}
+
+Jeder Steuerbefehl synchronisiert die Anzeige aus der Antwort der Engine; die
+Uhr selbst wird vom WebSocket getrieben und liegt auch bei 10~Schritten/s
+höchstens einen Frame hinter dem Backend.
+
+% ===================================================================
+\chapter{Die Karte und die Farbebenen}
+\label{ch:karte}
+
+Die Karte ist eine rohe Leaflet-Karte (ohne react-leaflet) auf
+CARTO/OSM-Kacheln. Sie ist \emph{einmal pro Topologie} aufgebaut --- eine
+Polylinie je Trasse, ein Kreismarker je Abnehmer, Marker für Erzeuger, Anlagen
+und Sensoren --- und wird pro Frame nur \emph{umgefärbt}
+(\texttt{.setStyle()}), nie neu gebaut. So bleibt die Darstellung auch bei
+hohem Tempo flüssig.
+
+\section{Die vier Farbebenen}
+\label{sec:ebenen}
+
+Das Menü \ui{Ansicht} (oder der Umschalter auf der Karte) wählt, welche Größe
+die Trassen und Marker einfärbt. Die Rampen sind \emph{domänenverankert} ---
+nicht auf das Min/Max des Augenblicks normiert, sondern an physikalisch
+bedeutsamen Schwellen fixiert, sodass eine Farbe immer dasselbe bedeutet:
+
+\begin{description}
+  \item[\ui{Vorlauftemperatur} (Standard)] warme Rampe (Gelb$\rightarrow$Rot);
+    \glqq ganz heiß\grqq{} liegt \emph{exakt} bei der Auslegungs-Vorlauftemperatur
+    der aktiven Heizkurve. Ein 4G-Netz mit 70\gC{} glüht bei 70 genau so wie
+    ein 3G-Netz bei 110 --- die Rampe folgt dem Auslegungspunkt.
+  \item[\ui{Rücklauftemperatur}] kühle Rampe (Blau$\rightarrow$Violett) über
+    25--70\gC. Hohe Rückläufe (schlechte Auskühlung, das
+    \glqq Low-$\Delta T$-Syndrom\grqq) springen violett heraus und fallen
+    sofort auf.
+  \item[\ui{Geschwindigkeit}] Grün (Ruhe) $\rightarrow$ Bernstein genau ab
+    \textbf{1{,}5~m/s} $\rightarrow$ Rot ab \textbf{3~m/s} (Kapazitätsgrenze);
+    das Vorzeichen wird ignoriert, weil Rücklaufrohre \glqq rückwärts\grqq{}
+    fließen.
+  \item[\ui{Differenzdruck}] Ampel an den Abnehmermarkern: Rot streng
+    \emph{unterhalb} des Mindest-$\Delta p$ (\texttt{DP\_MIN\_BAR}, Vorgabe
+    \textbf{0{,}5~bar}), Bernstein in einem 0{,}15-bar-Rand darüber, sonst Grün;
+    die Trassen treten dabei zurück.
+\end{description}
+
+% TODO Screenshot: dieselbe Szene in allen vier Ebenen nebeneinander, mit Legende.
+
+Jede Ebene bringt ihre eigene Farbleiste (Legende) mit, deren oberste Marke bei
+der Vorlaufebene die live gelesene Auslegungstemperatur zeigt.
+
+\section{Unbekanntes ist unbekannt}
+\label{sec:unbekannt}
+
+Das Leitprinzip der Farbgebung: \emph{Was nicht gemessen ist, wird als
+unbekannt dargestellt} --- niemals in einer \glqq gesunden\grqq{} Farbe. Ein
+Element ohne Messwert bekommt ein eigenes, gedämpftes Grau
+(\texttt{UNOBSERVED} \texttt{\#39424f} für Marker, \texttt{UNOBSERVED\_LINE}
+\texttt{\#2b323c} für Trassen) plus ein \texttt{6\,6}-Strichmuster, das keine
+gesunde Rampe je erzeugen kann. In der Sicht \ui{Gemessen} tragen die Trassen
+gar keine Zähler --- sie sind deshalb grundsätzlich grau-gestrichelt; die
+Abnehmer werden nur aus \api{measurements.consumers} gefärbt. Ein
+Standard-Zähler, der noch in seinem ersten 15-Minuten-Fenster steckt, erscheint
+mit gestricheltem \texttt{3\,3}-Ring und gedämpfter Füllung (ehrlicher
+Kaltstart, Kapitel~\ref{ch:beobachtbarkeit}).
+
+\section{Popups und Element-Kontextmenü}
+
+Ein einfacher Klick auf eine Trasse, einen Abnehmer oder Erzeuger öffnet ein
+Popup mit den Live-Werten. Popups sind \emph{lebendig}: Der Inhalt liest bei
+jedem Frame den neuesten Zustand, ein offenes Popup aktualisiert sich also
+laufend --- in der Realitätssicht tickt \glqq Vorlauf~$\rightarrow$~Rücklauf\grqq,
+in der Sicht Gemessen steht dort \glqq keine Messung --- unbekannt\grqq, ganz
+ohne Neubinden.
+
+\ui{Strg-Klick} heftet ein Element als eigenen Abschnitt in die Seitenleiste
+(mit Live-Werten und Konfigurationsreglern; ein Pufferspeicher zeigt dort seinen
+SoC-Balken). \ui{Rechtsklick} öffnet das Element-Kontextmenü --- die
+Grammatik zum Platzieren und Konfigurieren von Anlagen und Messgeräten
+(Kapitel~\ref{ch:anlagen} und~\ref{ch:beobachtbarkeit}).
+
+% ===================================================================
+\chapter{Beobachtbarkeit: Messen und Schätzen}
+\label{ch:beobachtbarkeit}
+
+Dies ist das Herzstück der Plattform. Ein realer Fernwärmebetreiber sieht nie
+den wahren Zustand seines Netzes. Er sieht eine Handvoll Wärmemengenzähler und
+Druck-/Temperatursensoren sowie die Instrumentierung der Heizzentrale --- und
+aus diesem spärlichen Bild muss er entscheiden, wie hart die Pumpe läuft und wie
+heiß der Vorlauf ist. In der Lücke zwischen wahrem und gemessenem Zustand leben
+die Betriebsfehler: ein ausgehungerter Abnehmer am Netzende (der
+\emph{Schlechtpunkt}), den kein Sensor abdeckt; ein hoher Rücklauf, der still
+Pumpenstrom verschwendet; eine Störung, die keinen Alarm auslöst, weil kein
+Instrument sie erfasst. rtheatflow macht diese Lücke sichtbar und
+\emph{erzwingt} sie.
+
+\section{Messgeräte platzieren}
+\label{sec:messgeraete}
+
+Drei Gerätearten stehen zur Verfügung. Zwei sind platzierbar (Rechtsklick auf
+das Element $\rightarrow$ Kontextmenü, verwaltet im Seitenpanel-Abschnitt
+\ui{Messstellen}); die dritte ist immer da:
+
+\begin{description}
+  \item[\ui{Wärmemengenzähler}] an einer Übergabestation (Abnehmer): liefert
+    Leistung, Massenstrom, Vor- und Rücklauftemperatur sowie $\Delta p$
+    (Kanäle \texttt{q\_kw}, \texttt{mdot\_kg\_per\_s}, \texttt{t\_supply\_c},
+    \texttt{t\_return\_c}, \texttt{dp\_bar}).
+  \item[\ui{T/p-Sensor}] an einem Trassenknoten: Druck und Temperatur in Vor-
+    und Rücklauf des Knoten-Paares.
+  \item[\ui{Erzeuger-SCADA}] an der Heizzentrale, \textbf{immer} vorhanden ---
+    echte Heizwerke messen sich selbst. Sie ist Telemetrie, keine Messstelle,
+    erscheint nie als Platzierung und degradiert nie in das 15-Minuten-Raster.
+\end{description}
+
+Trassen tragen bewusst \emph{keine} Messung --- Leitungsströme und Rohrverluste
+bleiben unbekannt, solange die Wahrheit ausgeblendet ist. Gerade das
+höchstbelastete Rohr ist also unsichtbar, wenn dort niemand misst.
+
+\begin{beispiel}[Die Summe lügt nicht --- sie ist nur unvollständig]
+Die Sicht \ui{Gemessen} zeigt in der Übersicht die \glqq gemessene
+Nachfrage~($\Sigma$)\grqq: die Summe nur der Zähler, die \emph{gerade einen
+Wert liefern}. Ein unbemessener Abnehmer trägt nichts bei, ein
+Standard-Zähler im Kaltstart-Fenster trägt nichts bei. Diese Zahl ist also
+ehrlich \emph{kleiner} als die wahre Nachfrage, sobald die Abdeckung
+lückenhaft ist. Die SCADA-Kennzahlen der Zentrale (Einspeisung, Vorlauf,
+Rücklauf, Pumpenstrom) sind dagegen belastbar, weil durch die Zentrale
+\emph{alles} fließt. Diese Asymmetrie --- Summenmessung an der Zentrale
+belastbar, Ortsauflösung im Netz null --- ist der Kern des
+Beobachtbarkeitsproblems.
+\end{beispiel}
+
+\subsection*{Vorlagen (Presets)}
+
+Der Abschnitt \ui{Messstellen} bietet vier Vorlagen, die die Platzierung
+jeweils \emph{komplett ersetzen} (Sammelaktionen, keine additiven Änderungen):
+
+\begin{description}[nosep]
+  \item[\ui{Alle Abnehmer}] ein Zähler an jeder Übergabestation --- volle
+    Abdeckung, die Vorgabe.
+  \item[\ui{Nur Erzeuger}] nur das T/p-Paar an der Zentrale (SCADA ist ohnehin
+    immer an).
+  \item[\ui{Schlüsselstellen}] Zentrale + T/p an den Netzenden + ein Zähler am
+    \emph{aktuell bekannten} Schlechtpunkt (aus dem letzten konvergierten
+    Frame; vor dem ersten Rechenschritt ist keiner bekannt und keiner wird
+    gesetzt --- ehrlich).
+  \item[\ui{Alles entfernen}] keine Geräte --- Blindflug auf reiner
+    Erzeuger-SCADA.
+\end{description}
+
+\subsection*{Zähler-Modus: voll oder 15 Minuten}
+\label{sec:fidelity}
+
+Ein einziger Modus-Schalter (\api{POST /measurements/mode}) gilt für alle
+platzierten Geräte:
+
+\begin{description}[nosep]
+  \item[\ui{Voll}] jeder Kanal, jeder Simulationsschritt.
+  \item[\ui{Standard (15 min)}] 15-Minuten-Fenstermittelwerte, ausgerichtet an
+    der \emph{Simulationszeit} (Fenster $w = \text{Tick} // \text{Fensterschritte}$,
+    tagesübergreifend stabil) --- das Verhalten eines deutschen
+    Lastgangzählers. Der Kanal liest den Mittelwert des zuletzt
+    \emph{abgeschlossenen} Fensters und liefert bis zur ersten Fenstergrenze
+    nach dem Platzieren ehrlich \textbf{gar nichts} (\texttt{null}).
+\end{description}
+
+Der \textbf{ehrliche Kaltstart} ist die Pointe: Ein frisch gesetzter
+Standard-Zähler zeigt \texttt{null} --- nicht null~kW, nicht den Momentanwert
+--- bis sein erstes 15-Minuten-Fenster schließt. Ein Umschalten des Modus setzt
+den Fensterzustand zurück (nie ein gefälschter Momentanwert aus einem alten
+Akkumulator), ein entferntes Gerät verliert seinen Fensterzustand, ein
+neu gesetztes startet wieder kalt.
+
+\begin{beispiel}[Warum das 15-Minuten-Raster Spitzen verschluckt]
+Zieht ein Abnehmer zwischen 07:02 und 07:12~Uhr zehn Minuten lang eine
+Warmwasser-Spitze, zeigt ein \ui{Voll}-Zähler diese Spitze minutengenau. Ein
+\ui{Standard}-Zähler liefert für das Fenster 07:00--07:15 nur den Mittelwert
+--- rund $\tfrac{10}{15}$ der Spitze, ein Drittel ist \emph{in den Messdaten}
+verschwunden (im Rohr floss es natürlich). Der Modus-Schalter macht den
+Unterschied unmittelbar sichtbar --- und mit ihm die Frage, ob die
+Schlechtpunktregelung dieser Spitze überhaupt folgen kann
+(Abschnitt~\ref{sec:blindflug}).
+\end{beispiel}
+
+\section{Strikter Modus}
+\label{sec:strikt}
+
+Ist der Server im strikten Modus konfiguriert
+(\api{RTHEATFLOW\_EXPOSE\_GROUND\_TRUTH=false}), verlässt die Wahrheit den
+Server gar nicht erst. Der Strip passiert an genau \emph{einer} Stelle
+(\texttt{StateStore.\_project}): Die vier Wahrheits-Schlüssel
+(\texttt{junctions}, \texttt{pipes}, \texttt{consumers}, \texttt{summary})
+werden entfernt und das Freitext-Feld \texttt{error} geleert. \api{/state},
+\api{/history}, jeder WebSocket-Frame und (seit der Aufzeichnung) auch die
+CSV-Pakete gehen durch diesen einen Pfad --- der strikte Modus lässt sich also
+nicht durch einen vergessenen Endpunkt umgehen. Der Sicht-Umschalter fällt in
+der Oberfläche automatisch von \ui{Realität} auf \ui{Gemessen} zurück und zeigt
+den Hinweis \glqq Wahrheit ausgeblendet\grqq. Was bleibt: \texttt{measurements},
+\texttt{observed\_summary}, die Betreiber-Konfiguration
+(\texttt{producers}/\texttt{storages}/\texttt{controls}) --- und die
+\texttt{estimated}-Ebene, denn sie ist aus Messwerten rekonstruiert und
+gehört legitim dem Betreiber (Abschnitt~\ref{sec:schaetzung}). Damit lassen sich
+Übungen abnahmesicher stellen (\glqq Schätzen Sie den Rücklauf am Netzende\grqq),
+ohne dass die Lösung per API abgreifbar wäre.
+
+\section{Der Vorwärts-Beobachter (die Schätzung)}
+\label{sec:schaetzung}
+
+pandapipes hat \emph{keinen} Zustandsschätzer --- nichts wie die
+gewichtete Kleinste-Quadrate-Schätzung (WLS) von pandapower. Die Sicht
+\ui{Schätzung} ist deshalb keine WLS-Rekonstruktion, sondern ein
+\textbf{Vorwärts-Beobachter} (ein \glqq digitaler Zwilling\grqq): ein zweites,
+tief kopiertes pandapipes-Netz, das mit derselben Physik (und derselben
+Retry-Ladder) gelöst wird, aber \emph{nur mit Betreiberwissen} gefüttert:
+
+\begin{itemize}[nosep]
+  \item die SCADA-Vorlauftemperatur der Zentrale und der vom Betreiber gesetzte
+    Pumpen-Sollwert (\texttt{plift});
+  \item die Messwerte der platzierten Zähler, \emph{modus-treu} (ein
+    Standard-Zähler im Kaltstart liefert \texttt{null} $\rightarrow$ der Prior
+    übernimmt diesen Kanal);
+  \item für alle \textbf{unbemessenen} Abnehmer ein \textbf{Erwartungsprofil}
+    (Prior): das deterministische Archetyp-Profil, wettergestützt am Tag
+    gewählt (eine Gradstunden-Lastprognose: erwartete Tagesenergie
+    $\rightarrow$ nächster Archetyp-Tag), mit dem Mittel des Warmwassers über
+    die stochastischen Varianten;
+  \item die Anlagen-Sollwerte des Betreibers (Erzeuger, Speicher --- das ist
+    Konfiguration, immer sichtbar);
+  \item die wahre Außentemperatur inklusive Override (die Zentrale hat eine
+    Wetterstation, und der Override ist der eigene Regler des Betreibers).
+\end{itemize}
+
+Entscheidend: Die Prioren lesen den \emph{unveränderlichen Planungsvertrag}
+(\texttt{sim.inputs}), den Archetyp-Cache und die Platzierungs-Rezepte ---
+\textbf{niemals} die veränderlichen Laufzeit-Arrays (\texttt{sim.profiles}), die
+die stochastische Minutenwahrheit tragen. Eine zur Laufzeit injizierte Anomalie
+kann deshalb prinzipiell nicht in den Prior lecken. Genau diese Disziplin
+prüfen die Stolperdrähte (Abschnitt~\ref{sec:stolperdraehte}). Der Prior-Modus
+ist über \api{POST /estimation/config} wählbar: \texttt{archetype} (Vorgabe, das
+treuere Erwartungsprofil) oder das bewusst grobe \texttt{design}
+(Auslegungslast~$\times$~Gradstundenfaktor, ohne Warmwasser).
+
+\subsection*{Schätzgüte: die Innovation}
+\label{sec:schaetzguete}
+
+Die Übersicht zeigt in der Schätzsicht ein \textbf{Güte-Abzeichen}. Der
+Fehler \texttt{estimated.error} ist die \emph{Innovation} des Beobachters:
+$|\text{Zwilling} - \text{Messung}|$ an jeder \emph{bemessenen} Stelle ---
+Rücklauftemperatur, Massenstrom und $\Delta p$ an Zählern; Rücklauf und
+Paar-$\Delta p$ an T/p-Sensoren; Rücklauf und Massenstrom an der SCADA. Er wird
+also gegen \emph{Messwerte} berechnet, nicht gegen die Wahrheit --- deshalb ist
+er auch im strikten Modus gültig und sichtbar. Aggregiert erscheinen
+$\max/\text{mean}$ von $|\Delta T_\text{Rücklauf}|$, $|\Delta\dot m|$ und
+$|\Delta\Delta p|$, dazu das Alter der Schätzung (in Simulationsminuten, mit
+Sequenznummer \texttt{\#seq}) und die Rechenzeit des Beobachters.
+
+\begin{beispiel}[Volle Abdeckung kauft Gewissheit]
+Mit der Vorlage \ui{Alle Abnehmer} im Modus \ui{Voll} ist der Zwilling an
+jedem Abnehmer durch die gemessenen Randbedingungen (Leistung + Rücklauf) und
+an der Zentrale durch die gemessene Vorlauftemperatur festgenagelt --- die
+gesamte gekoppelte Lösung ist bestimmt. Die Schätzung trifft die Wahrheit dann
+praktisch exakt (Einspeisung auf 0{,}1~kW, Massenstrom auf $10^{-3}$~kg/s), die
+Innovation geht gegen null. Entfernt man Zähler, treten Prioren an die Stelle
+von Sensoren, und die Innovation wächst --- diese monotone Beziehung ist das
+quantitative Gesicht von \glqq Abdeckung kauft Gewissheit\grqq.
+\end{beispiel}
+
+\subsection*{Was eine Schätzung kostet (Drosselung)}
+
+Der Beobachter ist ein zweites volles Netz --- wenn er rechnet, verdoppelt er
+grob die Physikkosten des Schritts. Er rechnet deshalb \emph{nicht} jeden Tick.
+Zwei Tore werden UND-verknüpft: das \textbf{Messraster} (im Standard-Modus mit
+platzierten Geräten nur an den 15-Minuten-Fenstergrenzen --- dazwischen gibt es
+keine neue Information) und eine \textbf{Wanduhr-Selbstdrosselung} (eine neue
+Schätzung erst, nachdem \texttt{throttle\_factor}~$\times$~ihre eigene letzte
+Rechenzeit verstrichen ist, Vorgabe 2{,}0). Zwischen den Aktualisierungen reitet
+die letzte Schätzung auf jedem Frame mit, ehrlich mit \texttt{step}/\texttt{day}/\texttt{seq}
+gestempelt, sodass die Oberfläche ihr Alter zeigen kann.
+
+\begin{beispiel}[Sichtbare Rechenzeit auf dem vermaschten Netz]
+Auf einem kleinen Lehrnetz kostet der Zwilling nur wenige zehn Millisekunden.
+Auf dem vermaschten Verbier-Netz (1352~Knoten, Tier-2-Solver, $\approx$5~s je
+Lösung) hält die Selbstdrosselung ihn davon ab, überhaupt jeden Tick zu
+laufen: Die Schätzsicht zieht in größeren Sprüngen nach. Das ist kein Fehler,
+sondern sichtbare Rechenzeit --- Beobachtbarkeit hat neben den Gerätekosten
+auch Rechenkosten, und beide wachsen mit der Netzgröße.
+\end{beispiel}
+
+\section{Ehrlichkeits-Stolperdrähte}
+\label{sec:stolperdraehte}
+
+Die Stolperdrähte sind die Tests, die den Beobachtbarkeitsvertrag
+\emph{falsifizierbar} machen. Jeder injiziert eine Lage, in der ein naiver
+Schätzer schummeln würde, und prüft, dass er es nicht tut.
+
+\begin{beispiel}[Eine unbemessene Anomalie bleibt unsichtbar]
+Man bemisst nur Abnehmer~B und injiziert an Abnehmer~A (unbemessen) eine
+Störung direkt in die Laufzeitwahrheit: verdoppelte Nachfrage und $+15$~K
+Rücklauf. Die \ui{Realität} zeigt A prompt mit über 155~kW und über 68\gC{}
+Rücklauf --- die Anomalie \emph{ist} in der Wahrheit. Die \ui{Schätzung} bleibt
+beim Prior (rund 80~kW Plan, unter 57\gC), denn kein Sensor deckt A ab und die
+Prioren lesen den unveränderlichen Vertrag, nicht die Laufzeit-Arrays.
+Verschiebt man denselben Zähler auf A, \emph{propagiert} dieselbe Anomalie
+sofort (die Schätzung zeigt über 155~kW). Zusammen beweisen beide Fälle: Die
+Schätzung trägt exakt die Information, die die Sensorik liefert --- nicht mehr
+und nicht weniger. \emph{So viele Wärmemengenzähler braucht die Schätzung, um
+eine Rücklauf-Anomalie zu sehen: mindestens einen --- an genau dieser Station.}
+\end{beispiel}
+
+\begin{beispiel}[Ohne Zähler ist die Schätzung der Prior]
+Unter der Vorlage \ui{Alles entfernen} (nur SCADA) ist jeder geschätzte
+Abnehmerwert exakt gleich seinem Prior --- der Zwilling wird von nichts anderem
+getrieben. Die Schätzgüte (z.\,B.\ die Innovation des Erzeuger-Massenstroms)
+zeigt dann ehrlich, wie weit die Erwartung von der Wahrheit abweicht: Am
+Demo-Dorf um 08:00~Uhr steigt die Massenstrom-Innovation von 0{,}000
+(\ui{Alle Abnehmer}) über halbe Abdeckung bis 0{,}189~kg/s (\ui{Alles
+entfernen}) --- die Degradation ist in genau der Zahl sichtbar, die die
+Oberfläche anzeigt.
+\end{beispiel}
+
+\section{Der Blindflug der Schlechtpunktregelung}
+\label{sec:blindflug}
+
+Hier treffen sich Beobachtbarkeit und Regelung. Die Schlechtpunktregelung
+(Kapitel~\ref{ch:physik}) liest \textbf{ausschließlich}
+\texttt{observed\_summary.dp\_worst\_bar} --- das Minimum des $\Delta p$ über
+die \emph{bemessenen} Abnehmer --- niemals die Wahrheit. Daraus folgt eine
+Degradationsleiter:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Kein verwertbarer $\Delta p$-Messwert} (Vorlagen \ui{Nur
+    Erzeuger}/\ui{Alles entfernen}, oder alle Zähler noch im Standard-Kaltstart)
+    $\rightarrow$ der Wert ist \texttt{null} $\rightarrow$ die Regelung
+    \textbf{hält} die Förderhöhe. Halten \emph{ist} \glqq auf den Zentralen-$\Delta p$
+    regeln\grqq: eine Konstant-$\Delta p$-Pumpe ohne Fernfühler.
+  \item \textbf{Bemessen, aber der wahre Schlechtpunkt trägt keinen Zähler}
+    $\rightarrow$ die Regelung regelt den besten \emph{gemessenen} Punkt (was
+    ein realer Schlechtpunktregler auch tut) und der Frame setzt
+    \texttt{controls.dp\_control.blind\_spot~=~true}.
+\end{enumerate}
+
+Das \texttt{blind\_spot}-Flag ist bewusste Meta-Information über die
+\emph{Eignung der Sensorplatzierung}: Es benennt keinen Physikwert, nur einen
+Booleschen Zustand darüber, ob die Sensorik den wahren Schlechtpunkt abdeckt ---
+und bleibt deshalb auch im strikten Modus sichtbar (es teacht den Betreiber,
+einen Zähler zu \emph{versetzen}, nicht der Zahl zu misstrauen). Der Abschnitt
+\ui{Schlechtpunkt} zeigt zwei verschiedene Hinweistexte für die beiden Fälle.
+
+\begin{beispiel}[Der wandernde Schlechtpunkt]
+Mit der Vorlage \ui{Schlüsselstellen} liegt der Zähler dort, wo der
+Schlechtpunkt beim letzten Rechenschritt \emph{bekannt} war --- nicht
+notwendig dort, wo er \emph{jetzt} ist. Am Demo-Dorf pendelt der wahre
+Schlechtpunkt unter der Warmwasser-Streuung zwischen zwei Abnehmern (C9~$\leftrightarrow$~C5).
+Das \texttt{blind\_spot}-Flag geht genau dann auf \texttt{true}, wenn der
+unbemessene C9 kritisch wird --- die Gemessen-Ebene meldet dann ehrlich den
+bemessenen C5 bei einem \emph{höheren} $\Delta p$. Man sieht die Flagge kommen
+und gehen: die Lektion vom wandernden Schlechtpunkt, live auf dem Bildschirm.
+Das ganze Drei-Sichten-Modell existiert, um genau das sichtbar zu machen.
+\end{beispiel}
+
+% ===================================================================
+\chapter{Physik und Regelungen}
+\label{ch:physik}
+
+Dieses Kapitel erklärt, was der Solver rechnet und was jeder Regler-Knopf tut.
+Alle Formeln und Zahlen sind das, was der Code an \texttt{master} und seine
+bekannte Antwort-Referenz tatsächlich produzieren.
+
+\section{Das Vor-/Rücklaufmodell}
+
+pandapipes ist ein stationärer Rohrströmungslöser. rtheatflow modelliert ein
+Zweileiternetz --- heißer Vorlauf, kühler Rücklauf ---, indem der Netzbauer
+\emph{jeden} Trassenknoten und \emph{jede} Trasse in ein \textbf{Paar} von
+pandapipes-Elementen entfaltet, und zwar \emph{einmal} pro Konfiguration:
+
+\begin{itemize}[nosep]
+  \item ein Trassenknoten $\rightarrow$ zwei \texttt{junction}s
+    (\texttt{<name>\_s} Vorlauf, \texttt{<name>\_r} Rücklauf), beide
+    initialisiert auf die Vorlauftemperatur der Zentrale;
+  \item eine Trasse $\rightarrow$ zwei \texttt{pipe}s (Vorlauf
+    \texttt{from}$\rightarrow$\texttt{to}, Rücklauf
+    \texttt{to}$\rightarrow$\texttt{from}, zur Zentrale hin umgekehrt);
+  \item ein Abnehmer $\rightarrow$ ein \texttt{heat\_consumer}
+    (Vorlauf-$\rightarrow$Rücklauf-Knoten), zieht \texttt{qext\_w};
+  \item die Zentrale $\rightarrow$ genau eine \texttt{circ\_pump\_const\_pressure}
+    (der Druck-Slack, Rücklauf$\rightarrow$Vorlauf).
+\end{itemize}
+
+Jeder Tick überschreibt nur die Elementwerte aus dichten
+\texttt{[Elemente, Ticks]}-Arrays und löst neu --- das Netz wird nie neu gebaut.
+
+\paragraph{Zwei Bau-Invarianten.} Erstens: Temperaturen sind \emph{Kelvin im
+Solver, Grad Celsius auf dem Draht} (Rundung auf 6~Stellen, NaN/$\pm$Inf
+$\rightarrow$ \texttt{null}). Zweitens: \texttt{text\_k} (die Erdreich-Temperatur
+am Rohr) wird auf \emph{jedem} Rohr explizit gesetzt --- der Signatur-Standard
+$0$ hieße 0~K Umgebung und würde die Verluste etwa vervierfachen. Jeder Tick
+frischt \texttt{text\_k} aus der Erdreich-Zeitreihe auf.
+
+\section{Die bidirektionale Lösung und die Retry-Ladder}
+
+Temperaturgeregelte Abnehmer machen den Massenstrom von der \emph{ankommenden}
+Temperatur abhängig (ein Abnehmer mit Rücklaufvorgabe muss bei kühlerem Vorlauf
+mehr Massenstrom ziehen, um dieselbe Leistung zu liefern). Das koppelt
+Hydraulik und Wärme, deshalb ist \texttt{mode="bidirectional"} die Vorgabe.
+Konvergiert ein Schritt nicht sofort, geht der Löser eine vierstufige
+\textbf{Retry-Ladder} von oben nach unten durch:
+
+{\small
+\begin{center}
+\begin{tabular}{@{}clll@{}}
+\toprule
+Stufe & Aufruf & Zweck & Status \\
+\midrule
+1 & \texttt{bidirectional, iter=N}            & Normallösung        & \texttt{ok} \\
+2 & \texttt{bidirectional, iter=N, alpha=0.5} & Halbschritt-Dämpfung & \texttt{ok} \\
+3 & \texttt{bidirectional, iter=2N, alpha=0.2}& starke Dämpfung      & \texttt{ok} \\
+4 & \texttt{sequential, iter=N}               & entkoppelt (Sollwerte nicht gehalten) & \texttt{degraded} \\
+\bottomrule
+\end{tabular}
+\end{center}}
+
+$N$ ist \api{RTHEATFLOW\_SOLVER\_ITER} (Vorgabe 100). \texttt{nonlinear\_method="automatic"}
+wird bewusst \emph{nie} verwendet (es löst unter \texttt{bidirectional} in
+0.14.0 einen Broadcast-Fehler aus). \textbf{Nichtkonvergenz ist Daten, kein
+Absturz:} Scheitern alle Stufen, wird der letzte konvergierte Zustand
+weiterverwendet und ein Frame mit \texttt{converged=false} /
+\texttt{solver\_status="failed"} veröffentlicht --- die asyncio-Schleife lebt
+weiter, ein Solverproblem erscheint als Feld und UI-Abzeichen, nie als
+HTTP~500. Nach jedem konvergierten Schritt wird der gelöste Knotenzustand zur
+nächsten Initialisierung (\emph{Warmstart}) --- das hält warme Lösungen bei
+$\approx$20--35~ms.
+
+\section{Abgeleitete Größen: Verluste und Einspeisung}
+
+pandapipes liefert rohe Ergebnistabellen; die Plattform rechnet jede berichtete
+Kennzahl selbst (in \texttt{collect\_physics}, geteilt von Wahrheit \emph{und}
+Zwilling --- ein Formelsatz, nie zwei).
+
+\begin{beispiel}[Warum die Verlustformel richtungsabhängig ist]
+Der Verlust eines Rohres ist $q_\text{loss} = |\dot m| \cdot \bar c_p \cdot
+(T_\text{ein} - T_\text{aus})$. Der Kniff: \emph{welches Ende ist der
+Einlass?} Auf einem vermaschten Netz (Verbiers sechs Schleifen) kann ein Rohr
+in beide Richtungen fließen, und die Rücklaufrohre fließen ohnehin
+\glqq rückwärts\grqq{} zu ihrer \texttt{from}$\rightarrow$\texttt{to}-Definition.
+Die Formel liest den Einlass aus dem Vorzeichen des Massenstroms
+($T_\text{ein}=t_\text{from}$ falls $\dot m\geq0$, sonst $t_\text{to}$). Eine
+naive Formel, die immer \texttt{t\_from} als Einlass nimmt, bekommt auf jedem
+rückwärts fließenden Ast das Vorzeichen falsch und \textbf{überzählt den
+Gesamtverlust um $\approx$20~\%} auf vermaschten Netzen.
+\end{beispiel}
+
+\begin{beispiel}[Einspeisung: $\dot m \cdot \bar c_p \cdot \Delta T$, nicht die Enthalpiespalte]
+Die Einspeisung der Zentrale wird aus dem Ergebnis der Slack-Pumpe als
+$\dot m \cdot \bar c_p \cdot \Delta T$ berechnet --- \emph{nicht} aus der Spalte
+\texttt{res\_circ\_pump\_pressure.qext\_w}. Jene ist eine Enthalpieform, die
+etwa $+4{,}7~\%$ zu hoch liest und die Energiebilanz nicht schließt: Auf der
+bekannten Antwort-Referenz sind es \textbf{187{,}182~kW} ($\dot m\bar c_p\Delta T$)
+gegen 195{,}965~kW (Rohspalte). Die Plattform berichtet den bilanzschließenden
+Wert; \texttt{summary.balance\_err\_kw} ist der Ehrlichkeits-Stolperdraht pro
+Schritt (auf der Referenz $-0{,}04~\%$).
+\end{beispiel}
+
+\section{Die Heizkurve}
+\label{sec:heizkurve}
+
+Die Heizkurve ist die Vorlauf-Temperaturregelung der Zentrale: kälter draußen
+$\rightarrow$ heißerer Vorlauf (gleitender Betrieb). Sie folgt einer gleitenden
+Kurve mit Formexponent $n$:
+\begin{align*}
+t_\text{flow}(t_\text{amb}) &= \text{clamp}\!\left(t_\text{flow,min} +
+(t_\text{flow,design}-t_\text{flow,min})\cdot r^{1/n},\ t_\text{flow,min},\
+t_\text{flow,design}\right), \\
+r &= \max\!\left(0,\ \frac{t_\text{room}-t_\text{amb}}{t_\text{room}-t_\text{amb,design}}\right)
+\end{align*}
+mit den Vorgaben $t_\text{amb,design}=-12\gC$, $t_\text{flow,design}=110\gC$,
+$t_\text{flow,min}=70\gC$, $t_\text{room}=20\gC$, $n=1$ (linear; $\approx$1{,}3
+entspricht der Heizkörper-Charakteristik). Zwei \textbf{Presets} machen die
+Temperaturabsenkungs-Geschichte mit einem Klick sichtbar:
+
+\begin{itemize}[nosep]
+  \item \ui{3G} --- \texttt{t\_flow\_design=110}, \texttt{t\_flow\_min=70}
+    (ein klassisches 110/60-System);
+  \item \ui{4G} --- \texttt{t\_flow\_design=70}, \texttt{t\_flow\_min=65}
+    (ein Niedertemperatur-70/40-System).
+\end{itemize}
+
+Ein Netz ohne Heizkurven-Block läuft bei konstanter Vorlauftemperatur (die
+Heizkurve ist dann \texttt{null} im Frame --- mehrere Referenznetze wie DESTEST
+tun das). Dieselben Auslegungspunkte $t_\text{room}$/$t_\text{amb,design}$
+verankern auch den Gradstunden-Faktor der Nachfrageskalierung
+(Kapitel~\ref{ch:wetter}) --- die Physik bleibt konsistent, wenn der Betreiber
+am Wetterregler zieht.
+
+\begin{beispiel}[Wie sich die Verlustquote zwischen 3G und 4G ändert]
+Auf dem Appendix-A-Netz bei $t_\text{amb}=0\gC$ macht ein Umschalten von 3G auf
+4G beide gegenläufigen Effekte quantitativ:
+
+{\small
+\begin{center}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Preset & $t_\text{flow}$ & Verluste & Massenstrom Zentrale & Pumpe $P_\text{el}$ \\
+\midrule
+3G (110/70) & 95{,}0\gC & 31{,}10~kW (16{,}3~\%) & 1{,}152~kg/s & 0{,}34~kW \\
+4G (70/65)  & 68{,}1\gC & 21{,}35~kW (11{,}8~\%) & 2{,}199~kg/s & 0{,}64~kW \\
+\bottomrule
+\end{tabular}
+\end{center}}
+
+Die Verluste sinken um 31~\%, weil ein kühleres Vorlaufrohr weniger an das
+Erdreich verliert. Aber: Für eine feste Nachfrage $Q=\dot m\,c_p\,\Delta T$
+schrumpft bei kühlerem Vorlauf (und nicht mitsinkendem Rücklauf) das $\Delta T$,
+also muss der Massenstrom steigen --- hier $\times 1{,}91$ --- und der
+Pumpenstrom (mit $P_\text{hyd}=\dot V\cdot\Delta p$, quadratisch im Fluss)
+nahezu verdoppelt sich. Das ist das \emph{Low-$\Delta T$-Syndrom}
+(Niedertemperatur-Syndrom), direkt sichtbar in der Geschwindigkeits-Ebene der
+Karte und in den Übersichts-Kennzahlen.
+\end{beispiel}
+
+\section{Die Schlechtpunktregelung}
+\label{sec:schlechtpunkt}
+
+Die Förderhöhe der Zentralen-Pumpe (\texttt{plift\_bar}) wird geregelt, um den
+\emph{kritischen} Abnehmer versorgt zu halten. Der Regler macht \textbf{einen
+begrenzten Proportionalschritt pro Tick, nach der Lösung} --- bewusst keine
+innere Iterationsschleife:
+\[
+\texttt{plift} \mathrel{+}= \text{clamp}\big(K\cdot(\Delta p_\text{Soll}-\Delta p_\text{worst}),\ \pm\text{max\_step}\big)
+\]
+mit $K=0{,}5$, $\text{max\_step}=0{,}05$~bar/Tick, Sollwert-Band 0{,}3--2{,}0~bar
+(Vorgabe 0{,}7~bar) und absoluter Förderhöhen-Grenze 0{,}1--10~bar. Die
+aktualisierte Förderhöhe wirkt erst auf die Lösung des \emph{nächsten} Ticks ---
+die Pumpe reagiert also \emph{über Minuten} wie eine echte drehzahlgeregelte
+Pumpe, und die Engine bleibt bei einer Lösung pro Tick ($O(1)$, keine
+Fixpunkt-Schleife). Der Modus \ui{fest} (\glqq ungeregelte Pumpe\grqq) hält die
+Förderhöhe, wo der Nutzer sie gesetzt hat --- der Lehr-Kontrast, der die
+Überdimensionierung einer Konstant-Förderhöhen-Pumpe zeigt. Dass der Regler
+\emph{nur} die Gemessen-Ebene liest, ist der Kern der Blindflug-Semantik
+(Abschnitt~\ref{sec:blindflug}).
+
+\begin{beispiel}[Was passiert mit dem Schlechtpunkt-$\Delta p$, wenn morgens alle Stationen aufheizen?]
+Fährt die morgendliche Nachfrage hoch, steigen die Massenströme und damit die
+Druckverluste im Netz; der $\Delta p$ am ungünstigsten Abnehmer fällt. Der
+Regler sieht das (über den bemessenen Schlechtpunkt) und hebt die Förderhöhe ---
+aber nur um 0{,}05~bar je Tick. In der M4-Abnahme trieb er den beobachteten
+Schlechtpunkt von 1{,}953~bar streng monoton auf den Sollwert 0{,}7~bar,
+Setzung nach $\approx$26~Ticks bei 0{,}703~bar, dabei fiel der Pumpenstrom von
+0{,}39 auf 0{,}14~kW. Mit der Vorlage \ui{Schlüsselstellen} lässt sich zusehen,
+wie der Regler die Morgenrampe über Minuten nachfährt --- und wie das
+\texttt{blind\_spot}-Flag flackert, wenn der wahre Schlechtpunkt wandert
+(Abschnitt~\ref{sec:blindflug}). Ein überhöhter Sollwert kostet messbar
+Pumpenstrom; der Modus \ui{fest} zeigt den Unterschied.
+\end{beispiel}
+
+% ===================================================================
+\chapter{Anlagen}
+\label{ch:anlagen}
+
+Alle Anlagen lassen sich zur Laufzeit über das Element-Kontextmenü
+(Rechtsklick $\rightarrow$ \glqq Hier platzieren\grqq) setzen und über den
+angehefteten Abschnitt (Strg-Klick) konfigurieren. Sie wirken sofort im
+laufenden Netz; ein einzelner nicht konvergierter Schritt heilt sich im nächsten
+Takt selbst.
+
+\section{Erzeuger}
+\label{sec:erzeuger}
+
+pandapipes weiß nichts von Kesseln oder Wärmepumpen --- der Slack ist nur eine
+Druck-/Temperaturquelle. Die \emph{Erzeugerart} ist ein Dispatch-Modell
+\emph{über} dem Slack, das aus der gelösten Einspeisung und den Live-Temperaturen
+pro Tick die Strom-/Brennstoffseite berechnet:
+
+{\small
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Art & Formel & Anmerkung \\
+\midrule
+Kessel (boiler) & $p_\text{fuel}=q/\eta$ & $\eta$ Vorgabe 0{,}95 \\
+BHKW (chp)      & $p_\text{el}=\text{pq}\cdot q$ & wärmegeführt, pq Vorgabe 0{,}5 \\
+Wärmepumpe (heat\_pump) & $\text{COP}=\eta_g\cdot T_\text{hot}/(T_\text{hot}-T_\text{cold})$ & $p_\text{el}=q/\text{COP}$ \\
+\bottomrule
+\end{tabular}
+\end{center}}
+
+$T_\text{hot}$ ist die \emph{live} Vorlauftemperatur der Zentrale, $T_\text{cold}$
+die live Quelltemperatur ($t_\text{amb}$ für eine Luft-, $t_\text{ground}$ für
+eine Erdreich-Wärmepumpe); der Gütegrad $\eta_g$ (Vorgabe 0{,}5) skaliert den
+idealen Carnot-COP, der Temperaturhub ist bei 1~K abgefangen. Die Kennzahlen
+werden jeden Tick neu gerechnet und erscheinen im \texttt{producers[]}-Block
+neben \texttt{q\_kw}, \texttt{t\_flow\_c}, \texttt{plift\_bar} und
+\texttt{pump\_el\_kw}.
+
+\begin{beispiel}[Die Wärmepumpe belohnt niedrige Netztemperaturen]
+$T_\text{hot}$ ist die live Vorlauftemperatur --- senkt die Heizkurve den
+Vorlauf, steigt der COP und die berichtete elektrische Leistung sinkt. Das ist
+die Temperaturabsenkungs-Geschichte, quantitativ: Das Absenken der
+Netztemperaturen hebt den COP um grob 2--3~\% je Kelvin. Ein 4G-Netz mit einer
+Erdreich-Wärmepumpe fährt deshalb sichtbar sparsamer als dasselbe Netz auf 3G ---
+genau das vergleicht das mitgelieferte Szenario \glqq Demo-Dorf 4G Vergleich\grqq
+(Kapitel~\ref{ch:szenarien}), das eine Erdreich-Wärmepumpe fährt.
+\end{beispiel}
+
+\section{Pufferspeicher}
+\label{sec:speicher}
+
+Ein Pufferspeicher (Vorgabe 100~kWh / 50~kW) überbrückt das Vor-/Rücklaufpaar
+eines Knotens mit \emph{zwei} Zweigen, von denen pro Tick genau einer aktiv ist:
+
+\begin{description}[nosep]
+  \item[Laden] ein \texttt{heat\_consumer} mit \texttt{qext\_w} +
+    \texttt{treturn\_k}~=~Speicher-Untertemperatur (Vorgabe 45\gC): zieht
+    Ladeleistung aus dem Netz.
+  \item[Entladen] eine \texttt{circ\_pump\_const\_mass\_flow} (druckfrei,
+    \texttt{type="t"}) drückt einen festen Massenstrom bei der
+    Speicher-Obertemperatur (Vorgabe 80\gC) in den Vorlauf. Die druckfreie
+    Variante ist zwingend --- eine druckfixierende Pumpe würde gegen das
+    Druckfeld des Slacks kämpfen und alle Retry-Stufen zum Divergieren bringen.
+  \item[Bereitschaft] der Ladezweig fällt auf das Nullfluss-Bodenpaar
+    (0{,}02~kg/s + 100~W), die Entladepumpe geht außer Betrieb --- die
+    Stummelrohre erreichen nie Nullfluss.
+\end{description}
+
+Der Ladestand (SoC) wird aus den \emph{gelösten} Ergebnissen integriert (Laden
+über die realisierte \texttt{qext\_w}, Entladen über $\dot m\,c_p\,\Delta T$),
+mit Einweg-Wirkungsgrad $\eta=0{,}95$ (Umlauf $\eta^2\approx0{,}90$); die
+Bereitschaft ist ein stehender Verlust, der SoC bewegt sich dann nicht.
+
+\begin{beispiel}[Warum ein voller Speicher von selbst aufhört zu laden]
+\texttt{desired\_state} wendet Leistungs- \emph{und} Kapazitätsgrenzen an,
+bevor der aktive Zweig feststeht: Eine Ladeanforderung wird durch den
+verbleibenden Raum gedeckelt, eine Entladeanforderung durch die verfügbare
+Ladung; unter 1~W idlet der Speicher von selbst. Ein voller Speicher stellt das
+Laden also selbsttätig ein, ein fast leerer klingt beim Entladen geometrisch ab
+und geht dann in Bereitschaft. Zum Kappen der morgendlichen Wärmespitze lädt man
+den Speicher nachts (niedrige Last, günstige Erzeugung) und entlädt ihn zur
+Morgenrampe --- der SoC-Balken im angehefteten Abschnitt zeigt das live.
+\end{beispiel}
+
+\section{Einspeiser und Bypass}
+
+\paragraph{Einspeiser} (Solarthermie/Abwärme, Vorgabe 20~kW) sind
+Wärmetauscher: eine feste Einspeisung als negatives \texttt{qext\_w}. Setzt man
+einen 20-kW-Einspeiser, fährt die Zentrale entsprechend zurück (verifiziert:
+187{,}2~$\rightarrow$~173{,}8~kW, Bilanz 0{,}07~\%). Die Plattform bleibt ein
+Zweileiternetz mit \emph{einem} Druckhalter --- weitere Erzeuger speisen als
+Wärmetauscher oder Massenstrompumpen ein, nie als zweiter Druck-Slack (der
+zweite Slack quittiert mit HTTP~409).
+
+\paragraph{Bypass} (Netzschluss) ist das kanonische Massenstrom-Paar: ein
+winziger fester Massenstrom (0{,}02~kg/s) plus eine kleine Bereitschaftswärme
+(100~W), gesetzt, um ein Endstrang durchströmt und warm zu halten.
+
+\begin{beispiel}[Der Bypass hält den Endstrang warm]
+Ein Trassenknoten mit Grad~1 (ein Endstrang ohne Abnehmer) trägt ohne Anschluss
+Nullfluss --- und ein Nullfluss-Ast ist in der Wärme-Matrix von pandapipes
+singulär. Der Bypass löst das: sein fester Massenstrom trägt keine
+Singularität. Seine Bereitschaftswärme parkt im Warmwasser-Slot, damit der
+Wetter-Override sie nie umskaliert --- die Aufgabe eines Bypasses ist
+Temperaturhaltung, nicht wetterfolgende Nachfrage. Das reale Ortsnetz
+Schutterwald setzt genau diesen kanonischen Bypass an seine abnehmerlosen
+Zweige.
+\end{beispiel}
+
+\section{Die Nullfluss-Schwelle}
+\label{sec:nullfluss}
+
+Ein \texttt{heat\_consumer} mit null \texttt{qext\_w} trägt null Massenstrom,
+und die Nahe-Null-Last ist genau das Regime, in dem die
+\texttt{qext\_w}+\texttt{treturn\_k}-Regelung divergiert (es gibt keinen Fluss,
+dessen Rücklauftemperatur man regeln könnte). Die Schwelle
+\api{RTHEATFLOW\_MIN\_QEXT\_W} (Vorgabe 500~W) hebt die Gesamtnachfrage jedes
+\emph{temperaturgeregelten} Abnehmers auf diesen Boden. Entscheidend: Die
+Schwelle ist \emph{zeilenweise und maskengerecht} --- Massenstrom-Paar-Zeilen
+(Bypässe, festfließende Abnehmer) sind ausgenommen, ein 100-W-Bypass bleibt
+100~W. Der Vorgabewert 500~W ist ein bewusst großzügiger Löser-Schutz für den
+interaktiven Betrieb; die Validierungsläufe senken ihn unter das reale Minimum
+des jeweiligen Netzes (DESTEST 62~W).
+
+% ===================================================================
+\chapter{Der Wetter-Regler}
+\label{ch:wetter}
+
+Eine Wetter-Zeitreihe treibt alles: Die Außentemperatur speist die
+Raumheizlast und die Heizkurve, die Erdreich-Temperatur speist \texttt{text\_k}
+jedes Rohres. Der Abschnitt \ui{Wetter} in der Seitenleiste zieht die
+Außentemperatur live ($-30$ bis $+45\gC$, per \api{PUT /weather/override},
+150-ms-entprellt); Loslassen kehrt zum Wetterprofil zurück.
+
+\section{Die Gradstunden-Skalierung}
+
+Der Mechanismus ist der Gradstunden-Faktor
+$f(T)=\max(0,T_\text{room}-T)/(T_\text{room}-T_\text{design})$, angewandt
+\emph{nur} auf die Raumheizung --- das Warmwasser (DHW) bleibt \textbf{unberührt},
+weil die Warmwassernachfrage dem Wetter nicht folgt. Zwei Regime, abgesichert
+durch $\varepsilon=0{,}05$:
+
+\begin{itemize}[nosep]
+  \item \textbf{Normal:} Das Profil hat nennenswerte Raumheizung
+    ($f_\text{Profil}\geq\varepsilon$) $\rightarrow$ skaliere es mit dem
+    Verhältnis $f(T_\text{override})/f(T_\text{Profil})$ (die Tagesform bleibt
+    erhalten).
+  \item \textbf{Sommer:} Die Raumheizung des Profils ist $\approx$0
+    ($f_\text{Profil}<\varepsilon$) $\rightarrow$ es gibt kein Verhältnis zum
+    Skalieren, also baue die Nachfrage aus der Auslegungslast neu auf,
+    $q_\text{design}\cdot f(T_\text{override})$.
+\end{itemize}
+
+Der Override setzt nur die effektive Außentemperatur; die Erdreich-Temperatur
+wird nie überschrieben (eine langsame, saisonale Größe). Weil dieselben
+Auslegungspunkte auch die Heizkurve verankern, reagieren Vorlauftemperatur
+\emph{und} Nachfrage konsistent auf den Regler.
+
+\begin{beispiel}[Einen Sommertag in den Winter ziehen]
+Startet man an einem Sommertag (Raumheizung nahe null) und zieht den
+Wetterregler auf $-10\gC$, greift das Sommer-Regime: Es gibt keine Tagesform
+zum Skalieren, also rekonstruiert die Plattform die Heizlast aus der
+Auslegungslast mal Gradstundenfaktor --- man bekommt eine physikalisch
+plausible Winterlast aus einem Nahe-Null-Profil. So lassen sich Kälteeinbruch
+und Sommerbetrieb im Zeitraffer durchspielen, ohne das Netz zu wechseln.
+\end{beispiel}
+
+\begin{beispiel}[Warum die \emph{relative} Verlustquote im Sommer hochspringt]
+Die Wärmeverluste eines Netzes sind fast nachfrageunabhängig (die stehenden
+Verluste des Rohrs bleiben, ob viel oder wenig Wärme fließt). Zieht man den
+Wetterregler in den Sommer, bricht die Nachfrage ein --- die \emph{absoluten}
+Verluste sinken kaum, die \emph{relative} Verlustquote (Verlust/Einspeisung)
+springt sichtbar hoch. Am realen Schutterwald reicht dieselbe Physik von
+$\approx$7{,}5~\% im tiefen Winter bis $\approx$45~\% im Sommer. Das ist derselbe
+Effekt wie die Abhängigkeit von der Wärmedichte --- nur in der Zeit statt im
+Raum.
+\end{beispiel}
+
+% ===================================================================
+\chapter{Referenznetze und validierte Physik}
+\label{ch:referenznetze}
+
+Neben den Lehrnetzen enthält der Katalog vier Netze aus realen bzw.\
+publizierten Quellen. Jedes Netzverzeichnis unter \api{data/networks/<id>/}
+trägt eine \texttt{DATASET.md} mit Herkunft, Lizenz,
+Konvertierungsentscheidungen und dem vollständigen Validierungsprotokoll ---
+und alle hier genannten Zahlen sind \emph{live nachgerechnete} Werte, gegen
+\emph{externe} Wahrheit geprüft, mit vorab (nicht nachträglich) begründeten
+Toleranzbändern.
+
+\section{Der Katalog}
+
+{\small
+\begin{center}
+\begin{tabular}{@{}llrrl@{}}
+\toprule
+id & Charakter & Knoten & Trasse km & Rolle \\
+\midrule
+\texttt{demo\_dorf}   & rural     & 15  & 0{,}953 & Karten-Demo (Standardnetz) \\
+\texttt{appendix\_a}  & abstract  & 4   & 1{,}0   & bekannte Antwort-Referenz \\
+\texttt{schutterwald} & rural     & 208 & 2{,}626 & reales Ortsnetz (Vorzeigenetz) \\
+\texttt{destest\_16}  & benchmark & 25  & 0{,}39  & \textbf{validiert} (Tabelle 6) \\
+\texttt{destest\_8}   & benchmark & 13  & 0{,}216 & Katalogbeispiel \\
+\texttt{destest\_32}  & benchmark & 49  & 0{,}792 & Katalogbeispiel \\
+\texttt{verbier}      & meshed    & 676 & 12{,}05 & vermascht, Messdaten \\
+\bottomrule
+\end{tabular}
+\end{center}}
+
+\paragraph{Die Lehrnetze.} \texttt{demo\_dorf} ist ein handgefertigtes Straßendorf
+auf realer Geographie (nördlich von Karlsruhe): eine \glqq Heizzentrale\grqq,
+11~Abnehmer (6$\times$EFH\_ALT, 3$\times$EFH\_SAN, 2$\times$MFH), 182~kW
+Auslegung, 3G-Heizkurve --- es existiert, damit die Karte etwas Reales zeichnen
+kann (lineare Wärmedichte bewusst unter der Faustregel, siehe
+Abschnitt~\ref{sec:netzstudio}). \texttt{appendix\_a} ist die abstrakte
+Vier-Knoten-Referenzschleife, deren Abnehmer A/B/C \emph{alle drei}
+Partnertypen ausüben (Rücklauf/$\Delta T$/Massenstrom); ihr Slack trägt
+\emph{keine} Heizkurve, damit die Antwort deterministisch ist --- die Testsuite
+pinnt an ihr die bekannten Zahlen (A~$\dot m$~0{,}674357, C~$\dot m$~0{,}25,
+Verluste 27{,}258~kW, Einspeisung 187{,}182~kW, Bilanz $-0{,}04~\%$).
+
+\section{DESTEST --- der validierte Cross-Tool-Benchmark}
+
+Die IBPSA-\glqq DESTEST\grqq-Übungen sind ein Cross-Tool-Benchmark: mehrere
+unabhängige Werkzeuge modellieren dasselbe kleine Fernwärmenetz und
+veröffentlichen ihre Ergebnisse, sodass die Streuung zwischen den Werkzeugen die
+Toleranz ist. \texttt{destest\_16} (16~Gebäude, Netz CE\_1, aus der
+Fallbeschreibung Tabelle~6 gebaut) wird gegen zwei Übungen validiert. Der
+Solver läuft mit \texttt{min\_qext\_w~=~62}~W --- bei $\Delta T$~30~K ist das die
+1{,}77-kg/h-Mindestumgehung von DESTEST, der Nullfluss-Boden \emph{ist} die
+Bypass-Regel des Falls.
+
+\paragraph{CE 0 --- eingeschwungener Zustand} (alle 16~Stationen exakt auf
+Spitzenlast, gegen 6~Werkzeuge):
+
+{\small
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Kennzahl & rtheatflow & publiziert (6 Tools) & Urteil \\
+\midrule
+Massenstrom Zentrale & 8876{,}5~kg/h & 8847{,}9--8870{,}4 & $+0{,}07~\%$ über Max \\
+Rücklauftemperatur   & 39{,}48\gC    & 39{,}46--39{,}85   & \textbf{im Band} \\
+Wärme gesamt         & 314{,}8~kW    & 308{,}2--314{,}3   & $+0{,}16~\%$ über Max \\
+Vorlauf an SD1       & 69{,}454\gC   & 69{,}43--69{,}48   & \textbf{im Band} \\
+\bottomrule
+\end{tabular}
+\end{center}}
+
+Die beiden Kennzahlen knapp über dem publizierten Maximum (Massenstrom und
+Wärme) sind genau die, die der Fluid-Eigenschaftsunterschied bewegen soll:
+pandapipes' temperaturabhängiges Wasser läuft mit $c_p\approx4179$--$4187$~J/(kg$\cdot$K)
+gegen DESTESTs feste 4180, und ein $\Delta T$-geregelter Massenstrom skaliert
+invers mit $c_p$. Die Vorlauftemperatur an SD1 --- reine Verlustphysik, vom
+Fluid-Konstanten unabhängig --- landet \emph{im} Band: der eigentliche
+Prüfstein, dass das mehrschichtige Wandverlustmodell die publizierten
+Rohrverluste reproduziert.
+
+\paragraph{CE 1 --- die Sieben-Tage-Woche} (1008~Lösungen auf dem 10-min-Raster,
+gegen 3~dynamische Werkzeuge):
+
+{\small
+\begin{center}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Kennzahl & rtheatflow & AixLib & Buildings & IBPSA \\
+\midrule
+Wärme-Einspeisung & 14{,}506~MWh & 14{,}452 & 14{,}324 & 14{,}357 \\
+Netzverluste      & 606{,}6~kWh  & 535{,}2  & 543{,}8  & 535{,}7 \\
+\bottomrule
+\end{tabular}
+\end{center}}
+
+\begin{beispiel}[Die ehrliche Nacht-Zuordnung der Verluste]
+Der Verlust-Gesamtwert liegt $\approx$12~\% über dem publizierten Maximum ---
+und das ist die lehrreichste ehrliche Zuordnung der Plattform. Die Woche
+zerfällt sauber: Die \emph{belasteten} Ticks (Nachfrage $>$5~kW) tragen
+\textbf{534~kWh} Verlust --- \emph{innerhalb} des publizierten Bandes
+535--544~kWh. Unter Last stimmt die Verlustphysik mit den dynamischen
+Rohrwerkzeugen überein. Der \textbf{Überschuss von $+72{,}5$~kWh} sitzt komplett
+in den \textbf{401 Nahe-Null-Nachtticks}: Dort kühlen die publizierten
+dynamischen Rohre \emph{ab}, während ein quasistatischer eingeschwungener
+Zustand die Rohreintritts-Region auf Vorlauftemperatur hält und deshalb den
+stehenden Verlust überzählt. Der Überschuss ist nicht frei --- er ist \emph{vor}
+der Messung durch die Enthalpie der DESTEST-Mindestumgehung nach oben begrenzt
+($16\times1{,}77$~kg/h$\times c_p\times60$~K $\approx$~2~kW über 401~Ticks
+$\Rightarrow\leq$~134~kWh). Das Band ist also asymmetrisch und \emph{hergeleitet},
+nicht getunt.
+\end{beispiel}
+
+\section{Schutterwald --- Plausibilität am realen Ort}
+
+Schutterwald ist ein realer Ort (Baden) ohne publizierte Cross-Tool-Antwort,
+deshalb wird es auf \emph{Plausibilität} geprüft: geschlossene Energiebilanz,
+Geschwindigkeiten im Band, Jahres-Verlustquote im Literaturbereich. 208~Trassenknoten,
+207~Trassen, 44~Übergabestationen aus dem realen Gasnetz abgeleitet
+(50-m-Anschlussradius), 2{,}626~km reale WGS84-Trasse, 1904~kW Auslegung, LHD
+1{,}34~MWh/(m$\cdot$a), 3G-Kurve. Das Karten-Vorzeigenetz.
+
+{\small
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Metrik & Wert & Prüfung \\
+\midrule
+Konvergenz            & alle 96 Schritte Tier 1 & \texttt{solver\_status="ok"} \\
+worst-case Bilanzfehler & 0{,}075~\% der Einspeisung & $\leq$1~\% \\
+Spitzengeschwindigkeit & 0{,}98~m/s & $<$1{,}3~m/s \\
+Wintertag-Verlustquote & \textbf{7{,}5~\%} der Einspeisung & $0{,}04<r<0{,}12$ \\
+\bottomrule
+\end{tabular}
+\end{center}}
+
+Die Verluste sind nahezu nachfrageunabhängig ($\approx$61~kW etwa konstant), also
+annualisiert die instantane Winterquote von 7{,}5~\% höher: 61~kW$\times$8760~h
+$\approx$537~MWh Verlust gegen $\approx$3{,}52~GWh Nachfrage $\Rightarrow$
+$\approx$\textbf{13~\%} Jahresverlustquote --- im 8--20-\%-Plausibilitätsband für
+ein 3G-Netz dieser Dichte. Die Unterscheidung instantan/annualisiert ist der
+Punkt: Ein einzelner kalter Tag unterschätzt die Jahresverluste.
+
+\section{Verbier --- gegen reale Messdaten}
+
+Verbier (OpenDHN, Zenodo DOI 10.5281/zenodo.10793816, CC~BY~4.0) ist das einzige
+Referenznetz, das gegen \emph{reale eingeschwungene Messdaten} validiert wird ---
+ein reales vermaschtes Alpennetz: 676~Trassenknoten, 681~Trassen je Seite
+(12{,}05~km, \textbf{6~unabhängige Schleifen}), zwei Heizzentralen, 150~Übergabestationen
+mit gemessener Leistung und gemessenem Rücklauf. Die gemessenen
+\emph{Vorlauf}temperaturen sind \emph{nie} Eingabe --- sie sind das
+Validierungsziel. Der vermaschte 1352-Knoten-Netz mit druckfreier zweiter Pumpe
+scheitert an Tier~1 und konvergiert erst auf \textbf{Tier~2} ($\alpha=0{,}5$);
+kalt $\approx$28~s, warm $\approx$5~s je Lösung --- deshalb ist Verbier als
+Batch-/Analysenetz dokumentiert, nicht als Echtzeitnetz.
+
+{\small
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Kennzahl & rtheatflow & gemessen & Delta \\
+\midrule
+Einspeisung HS0+HS1 & 3567~kW    & 3590~kW    & $-0{,}6~\%$ \\
+HS0 Massenstrom     & 17{,}83~kg/s & 17{,}76~kg/s & $+0{,}4~\%$ \\
+HS0 Rücklauf        & 44{,}10\gC  & 43{,}52\gC  & $+0{,}58$~K \\
+Netzverluste        & 297~kW     & $\approx$317~kW & $-6~\%$ \\
+\bottomrule
+\end{tabular}
+\end{center}}
+
+\begin{beispiel}[Median 0{,}83~K über 150 Stationen]
+Der Kern der Validierung sind die 150~Übergabestations-Vorlauftemperaturen ---
+aus den Eingaben \emph{herausgehalten}: Median $|\Delta T|$~\textbf{0{,}83~K}
+(Toleranz $\leq$2~K), Mittel 1{,}29~K, p90 2{,}68~K (Toleranz $\leq$5~K), Max
+12{,}6~K (Toleranz $\leq$20~K). Ein medianer Absolutfehler von 0{,}83~K über
+150~unabhängig gemessene Stationen, mit den Vorlauftemperaturen aus den
+Eingaben gehalten, ist das stärkste Validierungsergebnis der Plattform: Die
+gekoppelte hydraulisch-thermische Lösung rekonstruiert das reale Temperaturfeld
+im Median bis auf Messrauschen. Fünf Stationen dominieren die Ausreißerspitze
+(z.\,B.\ S96 mit $+12{,}6$~K) --- in der \texttt{DATASET.md} als
+Sensor-Mittelung, uniforme 5\gC-Randtemperatur und lokale Fluss-Aufteilung im
+Netz benannt und analysiert. Der \emph{Median}, nicht das Maximum, ist die
+Aussage, weil dies reale Messdaten sind.
+\end{beispiel}
+
+\section{Akzeptierte Modellunterschiede}
+
+Jedes Band oben ist durch dieselbe kurze Liste bewusster, dokumentierter
+Entscheidungen geweitet --- keine ist ein Fehler, jede ist in der jeweiligen
+\texttt{DATASET.md} begründet: temperaturabhängiges Wasser vs.\ feste
+Eigenschaften ($\pm0{,}3$--$0{,}5~\%$ auf $\Delta T$-geregelte Größen);
+quasistatisches Wärmemodell vs.\ dynamische Rohre (der CE-1-Nachtüberschuss,
+oben hergeleitet begrenzt); angenommene Randtemperatur, wo die Quelle schweigt
+(Verbier 5\gC, $\pm$5~K~$\Rightarrow$~$\mp$7~\% Verluste --- größer als das
+$-6~\%$-Delta, das damit \emph{kein} Modellfehler ist); reale Messdaten
+$\Rightarrow$ bewusst großzügige Toleranzen (der Median zählt, nicht das Maximum).
+
+% ===================================================================
+\chapter{Szenarien}
+\label{ch:szenarien}
+
+Das Menü \ui{Datei $\rightarrow$ Szenario speichern…} legt den kompletten
+Aufbau als \textbf{Rezept} ab --- nicht als Schnappschuss: die Netz-id, die
+deterministische Lastpolitik, die zur Laufzeit platzierten Anlagen (als
+Konfiguration, nicht als Zustand), das Op-Protokoll der Abnehmer/Bypässe, die
+Heizkurven-/$\Delta p$-/Erzeuger-Konfiguration, der Wetter-Override und die
+Engine-Uhr. Weil jede Zutat deterministisch ist (geseedete Profile,
+protokollierte Ops), reproduziert das Nachspielen den Aufbau exakt, und die
+Datei bleibt lesbar --- bewusst handeditierbares JSON unter
+\api{data/scenarios/}. Das Laden ist \emph{tolerant je Eintrag}: Passt eine Op
+nach einem Netzwechsel nicht mehr, wird sie mit einer Warnung übersprungen statt
+mit einem halben 500.
+
+Mitgeliefert sind zwei Szenarien mit \textbf{gleichem Seed 42}:
+\texttt{demo-dorf-3g-winter} und \texttt{demo-dorf-4g-vergleich}.
+
+\begin{beispiel}[Direkter Vergleich der Temperaturniveaus]
+Weil beide Szenarien denselben Seed tragen, sind ihre Lastprofile identisch ---
+der einzige Unterschied ist das Temperaturniveau (und die 4G-Variante fährt eine
+Erdreich-Wärmepumpe). Lädt man abwechselnd beide, sieht man am selben Netz und
+denselben Lasten direkt, wie die Verlustquote fällt, der Massenstrom (und
+Pumpenstrom) steigt und der Wärmepumpen-COP im 4G-Fall besser wird ---
+Kapitel~\ref{sec:heizkurve} und~\ref{sec:erzeuger}, aber als greifbarer
+Seite-an-Seite-Vergleich statt als Tabelle.
+\end{beispiel}
+
+% ===================================================================
+\chapter{Daten exportieren}
+\label{ch:export}
+
+\section{Aufzeichnung}
+
+\ui{Datei $\rightarrow$ Aufzeichnung starten}: Jeder veröffentlichte Schritt
+wandert über eine nicht-blockierende Senke (eigener Schreib-Thread + Queue, die
+Engine blockiert nie) in ein CSV-Paket unter \api{data/recordings/<id>/}. Das
+Paket enthält je eine CSV für \texttt{summary}, \texttt{junctions},
+\texttt{pipes}, \texttt{consumers}, \texttt{producers}, \texttt{storages},
+\texttt{controls} und die Messwerte, dazu eine \texttt{metadata.json} als
+Reproduktions-Rezept. Weil die Senke den \emph{projizierten} Frame konsumiert,
+gilt der strikte Modus auch für die CSVs: Was nie auf den Draht kommt, kommt nie
+in die Dateien. Beenden, dann als ZIP herunterladen (\ui{Aufzeichnungen}-Flyout).
+
+\section{Tage-Export (Bulk)}
+
+\ui{Datei $\rightarrow$ Tage exportieren…} simuliert ganze Tage des aktuellen
+Aufbaus offline so schnell wie möglich: Die Engine wird kurz geparkt, der
+Simulator tief kopiert, auf einen deterministischen Mitternacht-Start
+normalisiert (\texttt{prepare\_replay}: Kaltstart, SoC~0, frische
+Messfenster, geregelte Pumpe auf die Datei-Förderhöhe gelöst) und dann die Tage
+zurück in ein privates Paket abgespielt. Das Paket ist \textbf{byte-kompatibel}
+zu einer Live-Aufzeichnung.
+
+\begin{beispiel}[Was \glqq byte-kompatibel\grqq{} bedeutet]
+Ein verkürzter Tag wird einmal live über den Veröffentlichungspfad
+aufgezeichnet, dann aus einer tiefen Kopie des \emph{driftenden} Simulators
+(Warmstart fortgeschritten, $\Delta p$-Pumpe bewegt, Fenster gefüllt) exportiert
+--- und jede CSV ist \emph{byte-identisch}, nachdem genau zwei dokumentierte
+volatile Spalten maskiert sind: \texttt{timestamp} (Wanduhr) und
+\texttt{solve\_ms} (Maschinen-Timing). Das ist der Beweis, dass der Offline-Export
+dieselbe Physik rechnet wie der Live-Betrieb --- nur schneller. Die
+Schätz-Ebene wird bewusst \emph{nicht} aufgezeichnet (ihre Kadenz ist
+Maschinen-Timing, kein Physik-Takt; sie ist aus den aufgezeichneten Messwerten
+neu berechenbar).
+\end{beispiel}
+
+\section{Der experimentelle Transient-Modus}
+\label{sec:transient}
+
+\api{RTHEATFLOW\_TRANSIENT=true} rechnet \emph{nur den Export} mit thermischer
+Trägheit der Wassersäule (nicht Rohrwand oder Erdreich): Der Solver stellt zwei
+transiente Stufen (mit explizitem \texttt{dt} und monotonem
+\texttt{simulation\_time\_step}) vor die quasistatische Ladder. Das Verketten
+pro Schritt ist genau das, was \texttt{run\_timeseries} intern tut, und wurde
+\emph{bit-identisch} nachgewiesen, bevor darauf gebaut wird. Scheitert eine
+transiente Stufe, fällt der Schritt automatisch auf quasistatisch zurück und das
+Paket wird markiert (\texttt{transient\_fallback}). Der \emph{Live}-Betrieb
+bleibt dagegen \emph{immer} quasistatisch --- der Transient-Modus ist
+ausschließlich der Offline-Export, nie die Echtzeitschleife.
+
+\begin{beispiel}[Trägheit sichtbar machen]
+Hebt man im Transient-Export die Vorlauftemperatur der Zentrale an, sieht das
+ferne Netzende die neue Temperatur \emph{nicht} sofort: Sie zerfällt über
+Schritte ($358{,}05\rightarrow357{,}57$~K) statt des quasistatischen sofortigen
+Sprungs ($351{,}8$~K) --- die Transportverzögerung, über 1~K, per Test gepinnt.
+Für sinnvolle Ergebnisse wählt man die Rohr-\texttt{sections} so, dass ein
+Abschnitt etwa $v\cdot dt$ lang ist.
+\end{beispiel}
+
+% ===================================================================
+\chapter{Langzeit-Visualisierung mit Grafana}
+\label{ch:grafana}
+
+\texttt{docker compose up} startet den vollen Visualisierungsstack:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Collector} --- pollt \api{GET /state} alle 0{,}5~s, entdoppelt
+    auf \texttt{(day, step)} und schreibt wanduhr-gestempelte Punkte nach
+    InfluxDB: \texttt{summary} (alle Kennzahlen + \texttt{converged} +
+    Solverstatus + $\Delta p$-Soll/Ist + Wetter), \texttt{junction},
+    \texttt{pipe}, \texttt{consumer}, \texttt{producer}, \texttt{storage}.
+  \item \textbf{InfluxDB 2.7} --- Bucket \texttt{heatflow}, Organisation
+    \texttt{rtheatflow}, 7~Tage Aufbewahrung (Port~8087).
+  \item \textbf{Grafana 11} --- vollständig aus dem Repository provisioniert
+    (Datenquelle + Dashboard-JSON), Port~3001, Zugang admin/admin.
+\end{enumerate}
+
+Die mitgelieferten Panels des Fernwärme-Dashboards: Vorlauf/Rücklauf der
+Zentrale gegen den Heizkurven-Sollwert; Schlechtpunkt-$\Delta p$ gegen Sollwert
+und Förderhöhe (mit 0{,}5-bar-Schwellenlinie); Erzeuger-Dispatch als Stapel;
+Speicher-SoC; Verlustquote als Anzeige; Rechenzeit als Statwert; und der
+Solverstatus als OK/DEGRADED/FAILED-Abbildung. Sieht Grafana nichts, wartet der
+Collector, bis rtheatflow und InfluxDB gesund sind und der erste Schritt gelöst
+ist --- Zeitbereich auf \glqq letzte 5~Minuten\grqq{} stellen.
+
+% ===================================================================
+\chapter{Konfiguration}
+\label{ch:konfiguration}
+
+Alle Einstellungen erfolgen über Umgebungsvariablen mit dem Präfix
+\texttt{RTHEATFLOW\_} (eine \texttt{.env}-Datei wird gelesen; Vorlage:
+\texttt{.env.example}). In der Tabelle ist das Präfix weggelassen.
+
+{\small
+\begin{longtable}{@{}p{0.33\textwidth}p{0.16\textwidth}p{0.42\textwidth}@{}}
+\toprule
+Variable & Vorgabe & Bedeutung \\
+\midrule
+\endhead
+\texttt{DATA\_DIR}              & \texttt{./data}     & Datenverzeichnis \\
+\texttt{DEFAULT\_NETWORK}       & \texttt{demo\_dorf} & Netz beim Start \\
+\texttt{STEP\_INTERVAL\_SECONDS}& \texttt{1.0}        & echte Sekunden je Simulationsminute (0{,}01\,…) \\
+\texttt{STEPS\_PER\_DAY}        & \texttt{1440}       & Schritte pro Tag \\
+\texttt{AUTOSTART}              & \texttt{true}       & Simulation beim Start anlaufen lassen \\
+\texttt{HISTORY\_SIZE}          & \texttt{1440}       & Größe des Verlaufspuffers \\
+\texttt{SOLVER\_ITER}           & \texttt{100}        & Basis-Iterationen der Retry-Ladder \\
+\texttt{PUMP\_ETA}              & \texttt{0.7}        & elektr.\ Pumpenwirkungsgrad ($P_\text{el}=P_\text{hyd}/\eta$) \\
+\texttt{DP\_MIN\_BAR}           & \texttt{0.5}        & Mindest-$\Delta p$ am kritischen Abnehmer [bar] \\
+\texttt{RETURN\_TEMP\_MARGIN\_K}& \texttt{5}          & Bernstein-Schwelle Rücklaufverletzung [K] \\
+\texttt{MIN\_QEXT\_W}           & \texttt{500}        & Nullfluss-Schutz: Abnehmer-Lastuntergrenze [W] \\
+\texttt{EXPOSE\_GROUND\_TRUTH}  & \texttt{true}       & \texttt{false} = strikter Modus (Realität verlässt den Server nicht) \\
+\texttt{TRANSIENT}              & \texttt{false}      & \texttt{true} = Offline-Export mit thermischer Trägheit (experimentell) \\
+\texttt{RECORD}                 & \texttt{false}      & \texttt{true} = Daueraufzeichnung, ein Paket je Konfiguration \\
+\texttt{HOST} / \texttt{PORT}   & \texttt{127.0.0.1} / \texttt{8001} & API-Bindung (Docker/LAN: \texttt{0.0.0.0}); Geschwisterschema \\
+\texttt{CORS\_ORIGINS}          & \texttt{*}          & erlaubte Browser-Origins \\
+\texttt{LOG\_LEVEL}             & \texttt{info}       & Log-Ausführlichkeit \\
+\bottomrule
+\end{longtable}}
+
+\begin{beispiel}[.env für eine Prüfungsumgebung]
+Doppeltes Tempo, strikte Beobachtbarkeit (Studierende können die Wahrheit auch
+per API nicht abfragen), Zugriff aus dem Kursnetz:
+\begin{lstlisting}
+RTHEATFLOW_STEP_INTERVAL_SECONDS=0.5
+RTHEATFLOW_EXPOSE_GROUND_TRUTH=false
+RTHEATFLOW_HOST=0.0.0.0
+\end{lstlisting}
+\end{beispiel}
+
+% ===================================================================
+\appendix
+
+\chapter{REST-/WebSocket-Schnittstelle}
+\label{app:api}
+
+Für Skripte, eigene Frontends oder Übungsaufgaben ist die komplette
+Funktionalität auch per HTTP erreichbar (Standard:
+\url{http://127.0.0.1:8001}, ohne Authentifizierung --- Lehrwerkzeug). Die
+Plattform hat \textbf{61 Routen}; die \emph{vollständige} Referenz steht in
+\api{docs/API.md} (aus dem Code generiert) und interaktiv in Swagger unter
+\api{/docs}. Auswahl der wichtigsten Kategorien:
+
+{\small
+\begin{longtable}{@{}p{0.17\textwidth}p{0.34\textwidth}p{0.40\textwidth}@{}}
+\toprule
+Methode & Pfad & Beschreibung \\
+\midrule
+\endhead
+GET & \api{/health}, \api{/status} & Diagnose, Engine-Zustand \\
+GET & \api{/network}               & statische Topologie (inkl.\ Geokoordinaten) \\
+GET & \api{/state}                 & letzter gelöster Schritt (404 vor der ersten Lösung) \\
+GET & \api{/history?limit=N}       & Verlaufspuffer \\
+WS  & \api{/ws}                     & ein projizierter \texttt{StepResult} je Schritt \\
+GET & \api{/manual}                & dieses Handbuch (HTML; \texttt{?format=md} roh) \\
+POST& \api{/control/start|pause|resume} & Simulation steuern \\
+POST& \api{/control/seek|seekday|interval} & Zeit/Tag/Schrittdauer setzen \\
+GET/PUT/DEL & \api{/weather\ldots}  & Wetter + Außentemperatur-Override \\
+GET/POST & \api{/heatingcurve}, \api{/dpcontrol} & Heizkurve, Schlechtpunktregelung \\
+GET/POST/DEL & \api{/producer\ldots}, \api{/storage\ldots} & Erzeuger, Speicher \\
+POST/DEL & \api{/consumer\ldots}, \api{/bypass} & Abnehmer, Bypass \\
+GET/POST/DEL & \api{/measurements\ldots} & Messstellen, Presets, Modus \\
+GET/POST & \api{/estimation/config} & Beobachter-Richtlinie \\
+GET/POST & \api{/networks\ldots}, \api{/config/apply} & Katalog, Import, Netz laden \\
+POST & \api{/loadgen/assign}        & Lastpolitik-Vorschau \\
+GET/POST/DEL & \api{/scenarios\ldots} & Szenarien speichern/laden/löschen \\
+GET/POST & \api{/recording\ldots}, \api{/export\ldots} & Aufzeichnung, Bulk-Export \\
+\bottomrule
+\end{longtable}}
+
+Fehlercode-Konventionen: \texttt{400} Validierung/Import, \texttt{404} fehlende
+Ressource (oder \api{/state} vor der ersten Lösung), \texttt{409} Konflikte
+(zweiter Druck-Slack, laufender Export), \texttt{422} semantische Grenzen
+(Wetter-Override außerhalb $-30\dots45\gC$), \texttt{500} nur interne Fehler ---
+\textbf{Solver-Nichtkonvergenz ist Daten (\texttt{converged=false}-Frames), nie
+ein 500.}
+
+\section{Das StepResult-Wireformat}
+
+Das einzige Wireformat ist der projizierte \texttt{StepResult}: \api{/state},
+die \api{/history}-Einträge und jede \api{/ws}-Nachricht teilen einen
+\texttt{asdict()}+Projektions-Pfad. Im strikten Modus fehlen die vier
+Wahrheits-Schlüssel (\texttt{junctions}, \texttt{pipes}, \texttt{consumers},
+\texttt{summary}), \texttt{measurements}/\texttt{observed\_summary} und
+\texttt{estimated} bleiben.
+
+\begin{lstlisting}
+$ curl http://127.0.0.1:8001/state
+{
+  "step": 440, "day": 0, "time_of_day": "07:20",
+  "converged": true, "solver_status": "ok", "solve_ms": 24.1,
+  "junctions": [...], "pipes": [...], "consumers": [...],
+  "summary": { "q_feed_kw": ..., "q_loss_kw": ..., "loss_pct": ...,
+               "dp_worst_bar": ..., "worst_consumer": "...",
+               "t_flow_plant_c": ..., "balance_err_kw": ... },
+  "producers": [...], "storages": [...],
+  "weather": {...}, "controls": { "dp_control": { "blind_spot": false, ... } },
+  "measurements": { "consumers": [...], "nodes": [...], "plant": {...} },
+  "observed_summary": { "dp_worst_bar": ..., "n_metered": ... },
+  "estimated": { "summary": {...}, "error": { "max_dt_return_k": ... } }
+}
+\end{lstlisting}
+
+\begin{beispiel}[Drei typische Aufrufe]
+Ein Netz mit Lastpolitik laden (entspricht \ui{Anwenden}):
+\begin{lstlisting}
+curl -X POST http://127.0.0.1:8001/config/apply \
+  -H "Content-Type: application/json" \
+  -d '{"network_id": "schutterwald",
+       "loadgen": {"temperature_preset": "3G", "seed": 42}}'
+\end{lstlisting}
+Einen Wärmemengenzähler an Abnehmer 5 setzen und den Rücklauf abfragen:
+\begin{lstlisting}
+curl -X POST http://127.0.0.1:8001/measurements/consumer/5
+\end{lstlisting}
+Den Live-Stream anzapfen --- jede Nachricht ist ein JSON-\texttt{StepResult}:
+\begin{lstlisting}
+async with websockets.connect("ws://127.0.0.1:8001/ws") as ws:
+    result = json.loads(await ws.recv())
+\end{lstlisting}
+\end{beispiel}
+
+\chapter{Eingabedateiformat}
+\label{app:eingabe}
+
+Ein Netz besteht aus \textbf{fünf} DH-nahen JSON-Dateien. Der Vertrag ist
+\emph{einseitig}: Die Topologie-Dateien beschreiben \emph{Trassenknoten}, nicht
+das Vor-/Rücklauf-Paar, das der Solver simuliert --- der Netzbauer entfaltet das
+Paar (Kapitel~\ref{ch:physik}), handgeschriebene Dateien bleiben halb so groß.
+Jedes Modell verbietet unbekannte Schlüssel (\texttt{extra="forbid"}), Tippfehler
+fallen also hart durch.
+
+\begin{description}[nosep]
+  \item[\texttt{network\_structure.json}] Trassenknoten (\texttt{name},
+    \texttt{kind}, \texttt{geo} als \texttt{[lat, lon]}, \texttt{pn\_bar}). Der
+    Bauer erzeugt aus jedem Eintrag das \texttt{\_s}/\texttt{\_r}-Junction-Paar.
+  \item[\texttt{pipes.json}] Trassen (\texttt{from\_node}, \texttt{to\_node},
+    \texttt{length\_km}, ISOPLUS-\texttt{std\_type} \emph{oder} explizite
+    \texttt{inner\_diameter\_mm}/\texttt{u\_w\_per\_m2k}, optional
+    \texttt{geometry}). Std-Typ und Einzelparameter schließen sich aus.
+  \item[\texttt{consumers.json}] die Profil-Zeilen \emph{sind} die
+    Übergabestationen: \texttt{q\_sh\_w}/\texttt{q\_dhw\_w} (Raum/Warmwasser)
+    plus genau ein Partner: \texttt{treturn\_k} \emph{oder} \texttt{deltat\_k}
+    \emph{oder} \texttt{controlled\_mdot\_kg\_per\_s}.
+  \item[\texttt{producers.json}] genau ein Druck-Slack
+    (\texttt{circ\_pump\_const\_pressure}, mit optionaler \texttt{heating\_curve}
+    und \texttt{dp\_control}); Sekundäre als \texttt{heat\_exchanger} oder
+    \texttt{pump\_mass}.
+  \item[\texttt{weather.json}] \texttt{t\_amb\_c} + \texttt{t\_ground\_c}, je
+    Länge \texttt{steps}.
+\end{description}
+
+Beim Laden akkumulieren alle Kreuz-Prüfungen (Knotenverweise, Array-Längen,
+Horizont-Ausrichtung, genau-ein-Slack, Erreichbarkeit vom Slack,
+Nullfluss/Sackgassen) in \emph{eine} Fehlermeldung. Die vollständige
+Vertragsbeschreibung und die Konvertierungsentscheidungen der Referenznetze
+stehen in \api{docs/REFERENCE\_NETWORKS.md}.
+
+\begin{beispiel}[Minimalnetz: Zentrale, eine Trasse, ein Haus]
+\begin{lstlisting}
+// network_structure.json
+{ "name": "Minimal",
+  "junctions": [
+    { "name": "Zentrale", "kind": "plant",    "geo": [48.0, 7.8], "pn_bar": 6.0 },
+    { "name": "Haus",     "kind": "consumer", "geo": [48.0, 7.81], "pn_bar": 6.0 } ] }
+
+// pipes.json
+{ "pipes": [ { "from_node": "Zentrale", "to_node": "Haus",
+               "length_km": 0.2, "std_type": "ISOPLUS_DRE50_STD" } ] }
+
+// consumers.json  (steps Werte je Profil; hier angedeutet)
+{ "resolution_minutes": 1, "steps": 1440,
+  "consumers": [ { "node": "Haus", "q_sh_w": [8000, ...],
+                   "q_dhw_w": [1000, ...], "treturn_k": [328.15, ...],
+                   "q_design_w": 12000 } ] }
+
+// producers.json  (der Druck-Slack)
+{ "producers": [ { "kind": "slack", "node": "Zentrale",
+                   "p_flow_bar": 6.0, "plift_bar": 2.0, "t_flow_k": 358.15 } ] }
+
+// weather.json
+{ "resolution_minutes": 1, "steps": 1440,
+  "t_amb_c": [2.0, ...], "t_ground_c": [8.0, ...] }
+\end{lstlisting}
+\end{beispiel}
+
+\chapter{Fehlerbehebung}
+\label{app:fehler}
+\label{sec:fehler}
+
+\begin{description}
+  \item[Port 8001 oder 5174 belegt] Der Starter erkennt einen bereits laufenden
+    rtheatflow und startet ihn nicht doppelt. Eine fremde Anwendung auf dem Port
+    lässt sich mit \texttt{stop\_rtheatflow.bat} räumen --- es beendet die
+    Serverfenster, die Besitzer der Ports 8001/5174 und verwaiste
+    node-/esbuild-/python-Prozesse dieses Repos (erkannt über die
+    \emph{Kommandozeile}, nicht den Exe-Pfad). Ein parallel laufendes
+    netzsim/rtpowerflow (8000/5173) bleibt unberührt --- das ist der Sinn des
+    Geschwister-Portschemas.
+  \item[Der Start hängt vor dem Binden] Meist der numba-Kaltstart
+    (Abschnitt~\ref{sec:kaltstart}): pandapipes/numba importieren und der erste
+    JIT-Lauf dauern zusammen mehrere Sekunden bis knapp eine Minute. Ein echter
+    Portkonflikt ist dagegen ein \emph{schneller} \texttt{WinError 10048} mit
+    sofortigem Prozessende, kein Hängen.
+  \item[\api{/state} liefert 404] Normal direkt nach dem Start --- der erste
+    Schritt ist noch nicht gelöst. Nach spätestens einer Schrittdauer (plus
+    Kaltstart) verschwindet der Fehler von selbst.
+  \item[Solver \glqq degradiert\grqq{} oder \glqq gescheitert\grqq] Die Kopfzeile
+    vermerkt den Status; die Simulation heilt sich im nächsten Schritt selbst
+    (Nichtkonvergenz \emph{ist} Daten, kein Absturz). \glqq degradiert\grqq{}
+    heißt: Stufe~4 der Retry-Ladder (sequentiell) hat gelöst, aber die Sollwerte
+    sind nicht gehalten. Häufigste Ursache für \glqq gescheitert\grqq: eine
+    extreme Lastpolitik oder ein stark vermaschtes Netz --- didaktisch oft genau
+    der Punkt, an dem das Netz physikalisch am Ende ist. Verbier braucht
+    regulär Tier~2.
+  \item[Die Karte liegt im Wasser] War ein Anker-Bug und ist behoben:
+    DESTEST und Verbier tragen nur lokale Meter ohne CRS, ihre Geokoordinaten
+    sind synthetische Anker. Frühere Versionen ankerten über offenem Wasser
+    (Bodensee/Lac Léman); jetzt liegen die Anker an Land. Wer eigene Netze aus
+    quellenlosen Metern konvertiert, ankert sie ebenfalls an Land.
+  \item[Skriptzugriff auf den Vite-Dev-Server scheitert] Der Vite-Server bindet
+    unter Windows nur IPv6 (\texttt{::1}). Browser sind fein (localhost löst
+    zuerst nach \texttt{::1} auf), aber ein IPv4-\texttt{127.0.0.1}-curl gegen
+    die Dev-UI wird abgewiesen --- für Skripte \texttt{http://[::1]:5174}
+    verwenden. (Das \emph{Backend} auf 8001 ist über IPv4 erreichbar.)
+  \item[Grafana zeigt nichts] Der Collector wartet, bis rtheatflow und InfluxDB
+    gesund sind und der erste Schritt gelöst ist; Zeitbereich auf \glqq letzte
+    5~Minuten\grqq{} stellen.
+  \item[Die Schätzung erscheint nicht oder springt] Ist der Beobachter
+    deaktiviert (\api{POST /estimation/config} mit \texttt{enabled=false}), fehlt
+    die \texttt{estimated}-Ebene; die Sicht fällt dann auf Realität (bzw.\ im
+    strikten Modus auf Gemessen) zurück. Auf großen Netzen zieht die Schätzung
+    wegen der Selbstdrosselung in Sprüngen nach --- sichtbare Rechenzeit, kein
+    Fehler (Abschnitt~\ref{sec:schaetzguete}).
+\end{description}
+
+\vfill
+\begin{center}\small
+\textit{rtheatflow --- MIT-Lizenz für Quellcode und Handbuch. Simulationskern:
+pandapipes 0.14.0 (Fraunhofer IEE / Universität Kassel, BSD-3).
+Schwesterprojekt für Stromnetze:} \url{https://github.com/markisbell/rtpowerflow}\textit{.}
+\end{center}
+
+\end{document}
