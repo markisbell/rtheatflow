@@ -197,6 +197,22 @@ deterministic: `python scripts/convert_destest.py` / `convert_schutterwald.py`
 | `schutterwald` | pandapipes example nets (BSD-3) | Real-town plausibility — 2.6 km real WGS84 trenches, 44 substations with gas-demand-derived loads (LHD 1.34 MWh/(m·a)); 96/96 winter steps at ladder tier 1, balance ≤ 0.075 %, ≈ 13 % annualized losses |
 | `verbier` | OpenDHN, **CC BY 4.0** (Boghetti & Kämpf, Idiap/EPFL, DOI 10.5281/zenodo.10793816) | **Real monitoring data** on a meshed net (676 nodes, 6 loops, 150 substations, 2 plants): total feed −0.6 %, plant flow +0.4 %, substation supply temperatures median \|ΔT\| 0.83 K / p90 2.68 K; converges at ladder tier 2 |
 
+Full numbers and reproduction commands: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+
+## Documentation
+
+Deep-dive documentation lives in [`docs/`](docs/README.md) — start there for the
+map. The technical docs are written against the code at `master` and cite real
+module names and `file:line` anchors:
+
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) — Engine/Simulator/Store, wire format, solver policy, observability layers, the honest quasi-static limitation.
+- [PHYSICS_AND_CONTROLS.md](docs/PHYSICS_AND_CONTROLS.md) — pandapipes model, retry ladder, direction-aware losses, heating curve, worst-point Δp, equipment.
+- [OBSERVABILITY.md](docs/OBSERVABILITY.md) — the three-layer view, the `MeasurementSet`, the `ForwardObserver` digital twin, the honesty tripwires.
+- [REFERENCE_NETWORKS.md](docs/REFERENCE_NETWORKS.md) — the five-file contract, the profile toolbox, every shipped network with provenance.
+- [BENCHMARKS.md](docs/BENCHMARKS.md) — solve-time benchmarks + the reference-network validation record.
+- [UI_ARCHITECTURE.md](docs/UI_ARCHITECTURE.md) — the React + raw-Leaflet frontend.
+- [Benutzerhandbuch.md](docs/Benutzerhandbuch.md) — German user manual (served at `GET /manual`).
+
 ## License
 
 MIT for source code and documentation — see [LICENSE](LICENSE). All runtime
