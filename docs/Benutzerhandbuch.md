@@ -11,6 +11,12 @@ messen kann — und was er aus seinen Messwerten berechnen kann.
 > Dieses Handbuch wird unter `GET /manual` direkt aus dem Repository
 > ausgeliefert (`docs/Benutzerhandbuch.md`; `?format=md` liefert die
 > Markdown-Quelle).
+>
+> **Das ausführliche, druckfertige Handbuch ist die PDF-Fassung**
+> (`docs/Benutzerhandbuch.pdf`, erzeugt aus `docs/Benutzerhandbuch.tex`): ~46
+> Seiten, 16 Kapitel mit tiefergehender Physik, Validierungszahlen und
+> 27 durchgerechneten Beispiel-Kästen — das Pendant zum rtpowerflow-Handbuch.
+> Diese Markdown-Datei ist die knappe, live ausgelieferte Kurzfassung.
 
 ## 1. Schnellstart
 

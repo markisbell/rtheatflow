@@ -17,6 +17,7 @@ the entry point; [SPEC.md](../SPEC.md) is the binding build specification and
 | [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) | The React 18 + raw-Leaflet frontend: topbar shell, lifted state model, the WebSocket hook, the wire-type mirror, domain-anchored color ramps, the build-once/restyle-per-frame map, and the three-layer view splice. |
 | [API.md](API.md) | Generated REST + WebSocket reference (`scripts/gen_api_doc.py`, pinned by a test). |
 | [Benutzerhandbuch.md](Benutzerhandbuch.md) | German user manual, served live at `GET /manual`. |
+| [Benutzerhandbuch.tex](Benutzerhandbuch.tex) / [Benutzerhandbuch.pdf](Benutzerhandbuch.pdf) | The **comprehensive printable German user manual** (LaTeX/KOMA `scrreprt`, ~46 pages, 16 chapters, 27 worked "Beispiel" boxes) — the counterpart to the rtpowerflow manual. Build with `latexmk -pdf Benutzerhandbuch.tex` in this directory. |
 
 ## Reading paths
 
