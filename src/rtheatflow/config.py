@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     steps_per_day: int = 1440           # one-minute steps
     autostart: bool = True
     history_size: int = 1440
+    # Puppet mode (gamebridge): an external application owns the clock. The
+    # internal tick loop never starts (autostart is ignored); steps advance
+    # ONLY via POST /gb/step. See api/gamebridge.py.
+    external_clock: bool = False
 
     # --- solver (SPEC §3.3) ---
     solver_iter: int = 100   # base iter for retry-ladder tiers 1/2/4; tier 3 uses 2x

@@ -30,6 +30,7 @@ from . import (
     consumers,
     control,
     core,
+    gamebridge,
     measurements,
     networks,
     plant,
@@ -101,7 +102,11 @@ def create_app(settings: Settings | None = None,
             # started here, finished/rotated on every network apply/scenario
             # load and on shutdown
             recorder.start(runtime.recording_meta())
-        if app_settings.autostart:
+        if app_settings.external_clock:
+            # Puppet mode (gamebridge): the game owns the clock — the
+            # internal loop never starts; steps advance only via POST /gb/step.
+            log.info("external clock (puppet mode): internal tick loop disabled")
+        elif app_settings.autostart:
             await engine.start()
             log.info("engine autostarted (interval %.3fs)", engine.interval)
         try:
@@ -131,6 +136,7 @@ def create_app(settings: Settings | None = None,
 
     fastapi_app.include_router(core.router)
     fastapi_app.include_router(control.router)
+    fastapi_app.include_router(gamebridge.router)
     fastapi_app.include_router(weather.router)
     fastapi_app.include_router(plant.router)
     fastapi_app.include_router(producers.router)

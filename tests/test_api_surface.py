@@ -52,6 +52,8 @@ EXPECTED = {
     ("GET", "/storages"),
     ("GET", "/weather"),
     ("POST", "/bypass"),
+    ("GET", "/gb/version"),
+    ("POST", "/gb/step"),
     ("POST", "/config/apply"),
     ("POST", "/consumer"),
     ("POST", "/control/interval"),

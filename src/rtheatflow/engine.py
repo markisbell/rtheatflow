@@ -45,6 +45,7 @@ class RealtimeEngine:
         self._running = asyncio.Event()
         self._stopped = False
         self._task: asyncio.Task | None = None
+        self._ext_lock = asyncio.Lock()  # serializes external (puppet-mode) steps
         # estimation policy (M7): held here so it survives grid swaps —
         # blueprint semantics (the policy is an operator setting, the
         # observer instance is per-Simulator run-state)
@@ -120,24 +121,54 @@ class RealtimeEngine:
         if was_running:
             await self.start()
 
+    # -- external clock (puppet mode / gamebridge) ------------------------------
+
+    async def external_step(self):
+        """Advance exactly one step under an EXTERNAL clock.
+
+        The gamebridge (api/gamebridge.py) calls this once per game sim-step.
+        It runs the identical per-tick body as the internal loop (solve →
+        publish → advance/wrap), so an externally clocked run produces the
+        same result sequence as the accelerated tick would. Refused while the
+        internal loop is ticking — two clocks must never race; concurrent
+        external calls are serialized by the lock. Returns the StepResult
+        (``None`` if the tick body dropped the frame, mirroring the loop's
+        never-crash policy).
+        """
+        if self.running:
+            raise RuntimeError("internal clock is running — pause it first")
+        async with self._ext_lock:
+            return await self._advance_once()
+
     # -- the loop --------------------------------------------------------------
+
+    async def _advance_once(self):
+        """One tick: solve the current step, publish, advance/wrap the clock.
+
+        The single shared per-step body of the internal loop and
+        ``external_step`` — keep every behavioral change in here so the two
+        clock modes cannot drift apart.
+        """
+        result = None
+        try:
+            result = await asyncio.to_thread(
+                self.sim.run_step, self.step, self.day)
+            await self.store.publish(result)
+        except Exception:
+            # run_step never raises for non-convergence by design; this
+            # guards the loop against anything else. Frame dropped,
+            # loop alive — never crash (SPEC §3.3).
+            log.exception("engine tick failed — frame dropped, loop alive")
+        self.step += 1
+        if self.step >= self.steps_per_day:
+            self.step = 0
+            self.day += 1
+        return result
 
     async def _loop(self) -> None:
         while not self._stopped:
             await self._running.wait()
             if self._stopped:
                 break
-            try:
-                result = await asyncio.to_thread(
-                    self.sim.run_step, self.step, self.day)
-                await self.store.publish(result)
-            except Exception:
-                # run_step never raises for non-convergence by design; this
-                # guards the loop against anything else. Frame dropped,
-                # loop alive — never crash (SPEC §3.3).
-                log.exception("engine tick failed — frame dropped, loop alive")
-            self.step += 1
-            if self.step >= self.steps_per_day:
-                self.step = 0
-                self.day += 1
+            await self._advance_once()
             await asyncio.sleep(self.interval)

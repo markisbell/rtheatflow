@@ -51,6 +51,16 @@ limits (weather override out of range) · `500` internal failures only —
 | `POST` | `/control/seekday` | Jump to a day |
 | `POST` | `/control/start` | Start (or un-pause) the tick loop |
 
+## gamebridge
+
+| Method | Path | Summary |
+|---|---|---|
+| `POST` | `/gb/step` | Advance one step under the external clock |
+| `GET` | `/gb/version` | Co-simulation contract handshake |
+
+- **`POST /gb/step`** — Advance exactly one simulation step and return the published wire frame (same projection as ``/state`` — strict-observability stripping included). 409 while the internal clock is running.
+- **`GET /gb/version`** — The game refuses to run on a contract mismatch.
+
 ## weather
 
 | Method | Path | Summary |
