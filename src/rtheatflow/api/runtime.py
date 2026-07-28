@@ -25,7 +25,7 @@ from ..state import StateStore
 
 #: API contract version, reported by /health and /status and stamped into the
 #: generated docs/API.md. Bump with every milestone that changes the surface.
-API_VERSION = "0.7.0"
+API_VERSION = "0.8.0"
 
 # The network loaded at startup is ``settings.default_network``
 # (``RTHEATFLOW_DEFAULT_NETWORK``, default ``demo_dorf``); the M4 catalog
@@ -48,6 +48,10 @@ class App:
     active: dict = field(default_factory=dict)     # /config/active metadata
     recorder: Recorder | None = None               # M6 session recorder
     exporter: BulkExporter | None = None           # M6 bulk exporter
+    # gamebridge contract-session state (simgames contract v1); an instance
+    # of api.gamebridge.GbState after POST /gb/net/reset (typed loosely to
+    # avoid the runtime<->gamebridge import cycle)
+    gb: object | None = None
 
     @property
     def sim(self) -> Simulator:

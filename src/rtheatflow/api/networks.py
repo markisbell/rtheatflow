@@ -204,6 +204,13 @@ async def apply_network(app, network_id: str,
     # (M6; stop drains the writer queue off the event loop)
     if app.recorder is not None:
         await asyncio.to_thread(app.recorder.stop)
+    # a native swap ends any gamebridge session (contract v1): its zone/
+    # device maps point at the old net, and the engine returns to the
+    # configured tick raster (a gb reset moved it to the game's steps_per_day)
+    if app.gb is not None:
+        app.gb = None
+        app.engine.settings = app.settings
+        app.engine.steps_per_day = int(app.settings.steps_per_day)
     await app.engine.reconfigure(inputs)
     app.network_id = network_id
     entry = app.catalog.entry(network_id)

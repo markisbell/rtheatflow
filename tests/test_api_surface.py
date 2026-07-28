@@ -15,9 +15,10 @@ from rtheatflow.api import create_app
 from rtheatflow.api.runtime import API_VERSION
 
 # ---------------------------------------------------------------------------
-# THE M7 SURFACE. Deliberately exhaustive and alphabetical — change the API,
-# change this list, consciously. (SPEC §7; per-element /profiles sweeps are
-# the one §7 row deliberately not shipped — documented in CLAUDE.md M7.)
+# THE M7 SURFACE + the simgames contract v1 gamebridge (/gb/*). Deliberately
+# exhaustive and alphabetical — change the API, change this list, consciously.
+# (SPEC §7; per-element /profiles sweeps are the one §7 row deliberately not
+# shipped — documented in CLAUDE.md M7.)
 # ---------------------------------------------------------------------------
 EXPECTED = {
     ("DELETE", "/consumer/{consumer_id}"),
@@ -53,7 +54,11 @@ EXPECTED = {
     ("GET", "/weather"),
     ("POST", "/bypass"),
     ("GET", "/gb/version"),
+    ("GET", "/gb/result/latest"),
+    ("POST", "/gb/net/patch"),
+    ("POST", "/gb/net/reset"),
     ("POST", "/gb/step"),
+    ("WS", "/gb/ws"),
     ("POST", "/config/apply"),
     ("POST", "/consumer"),
     ("POST", "/control/interval"),
@@ -118,7 +123,7 @@ def test_route_inventory_is_pinned():
 
 
 def test_api_version_reported():
-    assert API_VERSION == "0.7.0"
+    assert API_VERSION == "0.8.0"
     app = create_app(make_settings())
     assert app.version == API_VERSION
 

@@ -1,7 +1,7 @@
 # rtheatflow API reference
 
 > **Generated** by `scripts/gen_api_doc.py` — do not edit by hand.
-> API version **0.7.0** · interactive docs at `/docs` (Swagger) when the
+> API version **0.8.0** · interactive docs at `/docs` (Swagger) when the
 > backend runs · default bind `127.0.0.1:8001` (sibling scheme: netzsim owns 8000), no auth (teaching tool).
 
 The single wire format is the projected `StepResult` (SPEC §6): `/state`,
@@ -23,6 +23,7 @@ limits (weather override out of range) · `500` internal failures only —
 | Method | Path | Summary |
 |---|---|---|
 | `GET` | `/` | Built-in HTML live monitor |
+| `WS` | `/gb/ws` | Step channel (contract §1): one text frame in = one §4 step request, |
 | `GET` | `/health` | Liveness probe |
 | `GET` | `/history` | Recent frames |
 | `GET` | `/manual` | Benutzerhandbuch (German user manual) |
@@ -32,6 +33,7 @@ limits (weather override out of range) · `500` internal failures only —
 | `WS` | `/ws` | One message type: the full projected StepResult per solved step. |
 
 - **`GET /`** — Minimal self-contained live monitor fed by ``WS /ws`` (blueprint style).
+- **`WS /gb/ws`** — one text frame out = the step result. Strictly sequential; out-of-order ``t`` yields a ``status: "error"`` frame, other rejections a ``bad_request`` error frame — the socket stays open.
 - **`GET /health`** — Cheap liveness check for launchers/containers (no engine access).
 - **`GET /history`** — The most recent frames (oldest first), through the same projection path as ``/state``. Bounded by ``RTHEATFLOW_HISTORY_SIZE``.
 - **`GET /manual`** — The German user manual, rendered as HTML (``?format=md`` for the raw Markdown source). Authored in ``docs/Benutzerhandbuch.md``.
@@ -55,11 +57,17 @@ limits (weather override out of range) · `500` internal failures only —
 
 | Method | Path | Summary |
 |---|---|---|
+| `POST` | `/gb/net/patch` | Device ops (contract §3.2, tolerant per entry) |
+| `POST` | `/gb/net/reset` | Load a topology document (contract §3.1) |
+| `GET` | `/gb/result/latest` | Last step result (crash recovery) |
 | `POST` | `/gb/step` | Advance one step under the external clock |
 | `GET` | `/gb/version` | Co-simulation contract handshake |
 
-- **`POST /gb/step`** — Advance exactly one simulation step and return the published wire frame (same projection as ``/state`` — strict-observability stripping included). 409 while the internal clock is running.
-- **`GET /gb/version`** — The game refuses to run on a contract mismatch.
+- **`POST /gb/net/patch`** — ``add_device`` / ``remove_device`` / ``set_device`` mapped onto the M4 producer/storage CRUD. Tolerant per entry: applied ops stay applied even if later ops fail (contract §3.2).
+- **`POST /gb/net/reset`** — Swap the engine onto the game's network: ``native`` five-file bundle → ``NetInputs`` → ``engine.reconfigure`` at the document's ``steps_per_day`` tick raster (contract ticks are engine ticks 1:1), then one throwaway warmup solve so numba JIT never lands on a live step (contract §0.5). Clears ``last_t`` — the next step may carry any ``t`` (contract §3.1).
+- **`GET /gb/result/latest`** — The last contract step result; 404 before the first step. Together with idempotent re-send this is the crash-recovery path (contract §4).
+- **`POST /gb/step`** — One §4 step request → one contract step result. Idempotent re-send of ``last_t`` returns the cached result; any other ``t`` ≠ ``last_t + 1`` is the one 4xx in the step path (409, contract §0.3). Debug fallback for the WebSocket step channel — identical behavior.
+- **`GET /gb/version`** — The game refuses to run on a contract MAJOR mismatch (contract §2).
 
 ## weather
 
