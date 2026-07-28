@@ -134,7 +134,7 @@ def _minus_solve_ms(result: dict) -> dict:
 def test_gb_version_contract():
     with make_api_client(external_clock=True) as client:
         v = client.get("/gb/version").json()
-        assert v["contract"] == "1.0"
+        assert v["contract"] == "1.1"  # 1.1: signed storage_heat dispatch
         assert v["backend"] == "rtheatflow"
         assert "pandapipes" in v["solver"]
         assert v["external_clock"] is True
@@ -391,3 +391,36 @@ def test_gb_reset_clears_last_t():
         assert client.post("/gb/step",
                            json={"t": 4711, "dt_s": 900}).status_code == 200
         assert client.get("/gb/result/latest").json()["t"] == 4711
+
+
+def test_gb_storage_dispatch_signed_setpoints():
+    """Contract 1.1: storage_heat q_kw setpoints — − charges (SoC rises),
+    + discharges (SoC falls, heat feeds the net), 0 idles."""
+    with make_api_client(external_clock=True) as client:
+        assert client.post("/gb/net/reset", json=_topology()).status_code == 200
+        base = {"dt_s": 900, "weather": {"temp_c": 0.0},
+                "zone_demand": {"z0": {"value": 40.0}, "z1": {"value": 30.0}}}
+
+        def step(t, q):
+            req = dict(base)
+            req["t"] = t
+            req["device_setpoints"] = {"buf": {"q_kw": q}}
+            r = client.post("/gb/step", json=req)
+            assert r.status_code == 200
+            return r.json()["devices"]["buf"]
+
+        # charge for 4 steps at −40 kW: SoC strictly rises, output negative
+        socs = [step(t, -40.0)["soc"] for t in range(4)]
+        assert all(b > a for a, b in zip(socs, socs[1:])), socs
+        charged = step(4, -40.0)
+        assert charged["output_kw"] < -20.0  # drawing from the net
+
+        # discharge at +30 kW: SoC falls, output positive (feeds the net)
+        discharged = step(5, 30.0)
+        assert discharged["output_kw"] > 5.0
+        soc_after = step(6, 30.0)["soc"]
+        assert soc_after < charged["soc"]
+
+        # idle: SoC ~holds (standby loss only), output near zero
+        idle = step(7, 0.0)
+        assert abs(idle["output_kw"]) < 1.0

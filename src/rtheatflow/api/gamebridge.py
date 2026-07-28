@@ -80,7 +80,7 @@ log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/gb", tags=["gamebridge"])
 
-CONTRACT_VERSION = "1.0"
+CONTRACT_VERSION = "1.1"  # 1.1: signed storage_heat q_kw dispatch (contract §3.1)
 
 #: contract device kinds this (heat) backend accepts (contract §3.1 table)
 PLANT_KINDS = ("chp", "heat_pump", "boiler")
@@ -540,6 +540,24 @@ def _apply_op(app: App, gb: GbState, op: Any) -> str:
     raise ValueError(f"unknown op {name!r}")
 
 
+def _dispatch_storage(sim, sid: int, q_kw: float, p_max_kw: float) -> None:
+    """Contract 1.1 storage dispatch: signed q_kw → M4 storage mode.
+
+    + discharges into the net, − charges, 0 idles. The magnitude modulates
+    the storage's active power (capped at the configured p_max_kw); the M4
+    machinery still applies its own SoC/capacity limits per tick. power_kw
+    is re-baselined from params on every set_device."""
+    s = sim.get_storage(sid)
+    if q_kw > 0.0:
+        s.mode = "discharge"
+        s.power_kw = min(q_kw, p_max_kw) if p_max_kw > 0 else q_kw
+    elif q_kw < 0.0:
+        s.mode = "charge"
+        s.power_kw = min(-q_kw, p_max_kw) if p_max_kw > 0 else -q_kw
+    else:
+        s.mode = "idle"
+
+
 # ------------------------------------------------------------------ stepping
 
 async def _gb_step(app: App, req: Any) -> tuple[int, dict]:
@@ -605,6 +623,14 @@ async def _gb_step(app: App, req: Any) -> tuple[int, dict]:
         if dev is None or not isinstance(sp, dict) or not _is_num(sp.get("q_kw")):
             continue
         q_kw = float(sp["q_kw"])
+        if dev.target == "storage":
+            # contract 1.1 (battery sign convention): + discharges into the
+            # net, − charges; 0 idles. The M4 storage machinery clamps to
+            # p_max_kw and the SoC bounds.
+            dev.q_set_kw = q_kw
+            _dispatch_storage(sim, dev.sid, q_kw,
+                              float(dev.params.get("p_max_kw", 0.0)))
+            continue
         if q_kw < 0:
             violations.append({"element": f"device:{did}", "kind": "clamped",
                                "severity": "info", "value": q_kw})
