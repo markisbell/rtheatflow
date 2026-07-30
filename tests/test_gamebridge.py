@@ -131,6 +131,21 @@ def _minus_solve_ms(result: dict) -> dict:
     return stripped
 
 
+def test_gb_storage_initial_soc_param():
+    """Optional `soc` param (0..1, clamped) sets the buffer's initial charge
+    — the game replays saved SoC across resets (Phase 8)."""
+    topo = _topology()
+    for dev in topo["devices"]:
+        if dev["kind"] == "storage_heat":
+            dev["params"]["soc"] = 0.4
+    with make_api_client(external_clock=True) as client:
+        assert client.post("/gb/net/reset", json=topo).status_code == 200
+        res = client.post("/gb/step", json={"t": 0, "dt_s": 900,
+            "zone_demand": {"z0": {"value": 20.0}}}).json()
+        # 0.4 x 500 kWh = 200 kWh; one idle tick loses at most standby noise
+        assert abs(res["devices"]["buf"]["soc"] - 0.4) < 0.02
+
+
 def test_gb_version_contract():
     with make_api_client(external_clock=True) as client:
         v = client.get("/gb/version").json()

@@ -326,6 +326,11 @@ def _place_device(app: App, dev: dict, bind_slack: bool) -> GbDevice:
                 name=f"gb_{dev['id']}")
         except KeyError as exc:
             raise ValueError(f"unknown node {node!r}") from exc
+        # optional SoC replay (0..1 fraction, clamped): the game restores a
+        # save / rebuilds topology without silently draining the tank
+        frac = params.get("soc")
+        if _is_num(frac):
+            s.soc_kwh = min(max(float(frac), 0.0), 1.0) * float(params["e_kwh"])
         return GbDevice(id=dev["id"], kind=kind, node=node, params=params,
                         target="storage", sid=s.sid)
     # additional plant-kind device -> heat_exchanger feed-in at its node,
