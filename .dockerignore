@@ -19,5 +19,7 @@ data/user_networks
 # the UI and visualization build in their own contexts
 ui/node_modules
 ui/dist
-docs
 tests
+# docs/ stays IN the context: the backend serves docs/Benutzerhandbuch.md
+# at GET /manual and the Dockerfile COPYs it (excluding it broke the image
+# build: "/docs": not found)
