@@ -40,10 +40,15 @@ def test_automatic_nonlinear_method_raises_in_bidirectional():
     """The 0.14.0 damping-adaptation branch is broken for bidirectional
     (source TODO in pipeflow.finalize_iteration): once errors increase
     mid-iteration it hits a shape-mismatch ValueError. Only hard cases
-    trigger the branch — pin it on the validated one. This is why the
-    retry ladder must never use nonlinear_method="automatic"."""
+    trigger the branch — pin it on the validated one. Platform numerics
+    decide HOW it fails (verified on both, same pandapipes/pandapower):
+    Windows BLAS enters the broken branch (broadcast ValueError), Linux
+    never converges (PipeflowNotConverged). Either way it is unusable —
+    the retry ladder must never use nonlinear_method="automatic"."""
+    from pandapipes.pf.pipeflow_setup import PipeflowNotConverged
+
     net = schutterwald_heat(tflow_degC=70, treturn_degC=45)
-    with pytest.raises(ValueError, match="broadcast"):
+    with pytest.raises((ValueError, PipeflowNotConverged)):
         pp.pipeflow(net, mode="bidirectional", iter=200, alpha=0.2,
                     nonlinear_method="automatic")
 
