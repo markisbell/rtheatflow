@@ -80,7 +80,8 @@ log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/gb", tags=["gamebridge"])
 
-CONTRACT_VERSION = "1.1"  # 1.1: signed storage_heat q_kw dispatch (contract §3.1)
+CONTRACT_VERSION = "1.2"  # 1.2: doc-level only (grid_forming is power);
+                          # 1.1: signed storage_heat q_kw dispatch (contract §3.1)
 
 #: contract device kinds this (heat) backend accepts (contract §3.1 table)
 PLANT_KINDS = ("chp", "heat_pump", "boiler")

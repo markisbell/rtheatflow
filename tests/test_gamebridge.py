@@ -149,7 +149,7 @@ def test_gb_storage_initial_soc_param():
 def test_gb_version_contract():
     with make_api_client(external_clock=True) as client:
         v = client.get("/gb/version").json()
-        assert v["contract"] == "1.1"  # 1.1: signed storage_heat dispatch
+        assert v["contract"] == "1.2"  # 1.2 doc-level; 1.1: signed storage dispatch
         assert v["backend"] == "rtheatflow"
         assert "pandapipes" in v["solver"]
         assert v["external_clock"] is True
