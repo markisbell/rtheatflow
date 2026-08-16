@@ -34,10 +34,23 @@ Mapping decisions (documented here, mirrored in the tests):
   ``boiler`` binds to the bundle's ONE slack producer and — for the plant
   kinds — configures the M4 platform dispatch model (``sim.plant``:
   pq_ratio/eta/eta_g/t_cold_source). Every further plant-kind device becomes
-  a ``heat_exchanger`` feed-in at its node; ``storage_heat`` becomes an M4
-  buffer storage. A ``q_kw`` setpoint dispatches hx devices; on the
+  a **pressure-free ``pump_mass`` producer** at its node — its own pump,
+  which is what a real peak-load boiler station is (and what Verbier's
+  measured second plant HS1 uses); ``storage_heat`` becomes an M4 buffer
+  storage. A ``q_kw`` setpoint dispatches secondary plants; on the
   slack-bound device it is advisory (the pressure slack balances the
   network — its realized feed is reported, never an error).
+
+  ⚠ Runtime-verified 2026-08-16 — secondary plants were ``heat_exchanger``
+  feed-ins until then, and that model only holds for ONE of them. An hx is a
+  branch bridging return→supply carrying a fixed ``qext_w``: with a single
+  one the slack forces flow through it, but a second one leaves the split
+  between three return→supply paths unpinned, so a branch lands at near-zero
+  or reversed flow and ΔT = Q/(ṁ·c_p) explodes. Measured on the appendix_a
+  bundle: 2 hx feed-ins returned ``converged`` with zone temperatures of
+  −438 °C and +505 °C, 3 raised outright. The same sweep with ``pump_mass``
+  producers solves sanely at 1, 2 and 3 secondary plants. A pump fixes ṁ
+  instead of Q, so no flow split can make it singular.
 * **coupling_out** sign convention (contract §3.1): CHP ``p_el_kw`` is
   **negative** (production feeds the grid, ``-pq_ratio·q``); heat pump
   ``p_el_kw`` is positive (draws ``q/COP``).
@@ -89,6 +102,19 @@ DEVICE_KINDS = ("slack",) + PLANT_KINDS + ("storage_heat",)
 #: default heat-exchanger bore for game-placed feed-in devices [mm]
 DEFAULT_HX_DIAMETER_MM = 80.0
 
+# Secondary-plant dispatch: a pump_mass producer is dispatched by MASS FLOW,
+# the contract speaks kW, so q_kw -> mdot needs the temperature spread the
+# station runs across. `delta_t_k` overrides it per device; 30 K is the
+# 85/55 spread of a classic 3G network. The conversion only has to be
+# *plausible* — the reported output is read back from the SOLVED flow, so
+# the game always sees the physics, not this estimate.
+CP_WATER_J_PER_KG_K = 4180.0
+DEFAULT_DELTA_T_K = 30.0
+# A pump at exactly zero flow is the singularity we are avoiding; an idle
+# station still circulates. THIS is where a standby trickle belongs — on the
+# FLOW. (Trickling qext_w into a zero-flow branch makes ΔT worse, not better.)
+MIN_PUMP_MDOT_KG_PER_S = 0.005
+
 _STATUS_MAP = {"ok": "converged", "degraded": "degraded", "failed": "failed"}
 
 _NATIVE_KEYS = ("network_structure", "pipes", "consumers", "producers", "weather")
@@ -104,7 +130,7 @@ class GbDevice:
     kind: str                    # contract kind (slack/chp/heat_pump/boiler/storage_heat)
     node: str | None
     params: dict
-    target: str                  # "slack" | "hx" | "storage"
+    target: str                  # "slack" | "pm" | "hx" | "storage"
     element: int | None = None   # hx: net.heat_exchanger element index
     pid: int | None = None       # hx: platform producer id (frame 'producers' id)
     sid: int | None = None       # storage: BufferStorage id
@@ -257,7 +283,7 @@ def _validate_topology(doc: Any) -> tuple[NetInputs, int, list[dict], list[dict]
                 slack_bound = True
             elif dev.get("node") is None:
                 _bad(f"devices[{i}] ({dev['id']!r}): additional heat devices "
-                     "become heat_exchanger feed-ins and need a 'node'")
+                     "become pump_mass producers and need a 'node'")
         elif kind == "storage_heat":
             if dev.get("node") is None:
                 _bad(f"devices[{i}] ({dev['id']!r}): storage_heat needs a 'node'")
@@ -334,19 +360,65 @@ def _place_device(app: App, dev: dict, bind_slack: bool) -> GbDevice:
             s.soc_kwh = min(max(float(frac), 0.0), 1.0) * float(params["e_kwh"])
         return GbDevice(id=dev["id"], kind=kind, node=node, params=params,
                         target="storage", sid=s.sid)
-    # additional plant-kind device -> heat_exchanger feed-in at its node,
-    # dispatched per step via q_kw setpoints (starts at 0 kW)
+    # additional plant-kind device -> pressure-free pump_mass producer at its
+    # node (see the module docstring: an hx feed-in only holds for ONE),
+    # dispatched per step via q_kw setpoints (starts at the standby trickle)
     try:
-        meta = sim.add_heat_exchanger(
-            node=node, qext_w=0.0,
-            inner_diameter_mm=float(params.get("inner_diameter_mm",
-                                               DEFAULT_HX_DIAMETER_MM)),
+        meta = sim.add_pump_mass(
+            node=node,
+            mdot_flow_kg_per_s=MIN_PUMP_MDOT_KG_PER_S,
+            t_flow_k=_plant_t_flow_k(sim, params),
+            p_flow_bar=None,  # pressure-free "t" — the slack holds pressure
             name=f"gb_{dev['id']}")
     except KeyError as exc:
         raise ValueError(f"unknown node {node!r}") from exc
     return GbDevice(id=dev["id"], kind=kind, node=node, params=params,
-                    target="hx", element=int(meta["element"]),
+                    target="pm", element=int(meta["element"]),
                     pid=int(meta["pid"]))
+
+
+def _plant_t_flow_k(sim, params: dict) -> float:
+    """Flow temperature a secondary station pushes into the supply line.
+
+    `t_flow_c` per device when the game states it, else the slack's own
+    supply temperature — a secondary plant feeding COLDER than the network
+    would drag the whole line down, which is precisely the failure the slack
+    is chosen by temperature to avoid.
+    """
+    if _is_num(params.get("t_flow_c")):
+        return float(params["t_flow_c"]) + KELVIN
+    for meta in sim.index.producer_meta:
+        if meta["kind"] == "slack":
+            return float(sim.net.circ_pump_pressure.at[meta["element"], "t_flow_k"])
+    return 358.15  # 85 °C
+
+
+def _pump_mdot(sim, dev: GbDevice, q_kw: float) -> float:
+    """Mass flow a secondary station needs to inject *q_kw* [kg/s].
+
+    A station can only draw heat across the spread it actually has: q =
+    ṁ·c_p·(t_flow − t_return). The return temperature at its node is a
+    network outcome, so the spread is read back from the last solved state
+    (the platform warm start writes ``res_junction`` into
+    ``junction.tfluid_k``) — a one-step-lagged feedback that lands the
+    delivered heat on the requested kW within a step or two. `delta_t_k` in
+    the device params pins it instead, for a station with a fixed spread.
+    """
+    if _is_num(dev.params.get("delta_t_k")):
+        delta_t = max(1.0, float(dev.params["delta_t_k"]))
+    else:
+        delta_t = DEFAULT_DELTA_T_K
+        try:
+            t_flow_k = float(sim.net.circ_pump_mass.at[dev.element, "t_flow_k"])
+            t_ret_k = float(sim.net.junction.at[
+                sim.index.junction_return[dev.node], "tfluid_k"])
+            if np.isfinite(t_flow_k) and np.isfinite(t_ret_k):
+                # a collapsed or inverted spread would ask for absurd flow
+                delta_t = min(90.0, max(5.0, t_flow_k - t_ret_k))
+        except (KeyError, ValueError):
+            pass  # pre-solve / unknown node -> the design spread stands
+    mdot = max(0.0, q_kw) * 1000.0 / (CP_WATER_J_PER_KG_K * delta_t)
+    return max(MIN_PUMP_MDOT_KG_PER_S, mdot)
 
 
 # ------------------------------------------------------------------- version
@@ -521,6 +593,8 @@ def _apply_op(app: App, gb: GbState, op: Any) -> str:
                 "slack producer (swap networks via /gb/net/reset instead)")
         if dev.target == "storage":
             sim.remove_storage(dev.sid)
+        elif dev.target == "pm":
+            sim.remove_pump_mass(dev.element)
         else:
             sim.remove_heat_exchanger(dev.element)
         del gb.devices[did]
@@ -644,6 +718,9 @@ async def _gb_step(app: App, req: Any) -> tuple[int, dict]:
         dev.q_set_kw = q_kw
         if dev.target == "hx":
             sim.config_heat_exchanger(dev.element, q_kw * 1000.0)
+        elif dev.target == "pm":
+            sim.config_pump_mass(dev.element,
+                                 mdot_flow_kg_per_s=_pump_mdot(sim, dev, q_kw))
     # coupling_in routes onto coupling_load devices — a power-network device
     # kind; the heat backend has none, the key is accepted and ignored.
 
@@ -726,7 +803,7 @@ def _build_result(app: App, gb: GbState, t: int, result,
                 p_el = slack_prod.get("p_el_kw") if slack_prod else None
                 coupling_out[did] = {"p_el_kw": float(p_el) if p_el is not None
                                      else 0.0}
-        elif dev.target == "hx":
+        elif dev.target in ("hx", "pm"):
             prod = prod_by_pid.get(dev.pid)
             q_kw = prod.get("q_kw") if prod is not None else dev.q_set_kw
             q = float(q_kw or 0.0)

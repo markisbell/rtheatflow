@@ -200,8 +200,7 @@ def collect_physics(net, idx, fluid, pipe_trench: dict,
     for s in storages:
         q_charge_w += float(net.heat_consumer.at[
             s.charge_element, "qext_w"])
-        if s.active == "discharge" and bool(net.circ_pump_mass.at[
-                s.discharge_element, "in_service"]):
+        if s.active == "discharge" and s.discharge_element >= 0:
             rm = net.res_circ_pump_mass.loc[s.discharge_element]
             t_mean = (float(rm.t_outlet_k) + float(rm.t_from_k)) / 2
             cp_s = float(fluid.get_heat_capacity(np.array([t_mean]))[0])
@@ -501,22 +500,23 @@ class Simulator:
                 hc.at[s.charge_element, "controlled_mdot_kg_per_s"] = np.nan
                 hc.at[s.charge_element, "treturn_k"] = s.t_bottom_c + KELVIN
                 hc.at[s.charge_element, "qext_w"] = p_kw * 1000.0
-                cm.at[s.discharge_element, "in_service"] = False
+                self._drop_discharge_pump(s)
             elif active == "discharge":
                 hc.at[s.charge_element, "treturn_k"] = np.nan
                 hc.at[s.charge_element, "controlled_mdot_kg_per_s"] = \
                     IDLE_MDOT_KG_PER_S
                 hc.at[s.charge_element, "qext_w"] = IDLE_QEXT_W
+                self._ensure_discharge_pump(s)
+                cm = net.circ_pump_mass  # index shifts when the pump is made
                 cm.at[s.discharge_element, "mdot_flow_kg_per_s"] = \
                     s.discharge_mdot(p_kw)
                 cm.at[s.discharge_element, "t_flow_k"] = s.t_top_c + KELVIN
-                cm.at[s.discharge_element, "in_service"] = True
             else:  # idle: charge branch at the §3.2 floor, pump off
                 hc.at[s.charge_element, "treturn_k"] = np.nan
                 hc.at[s.charge_element, "controlled_mdot_kg_per_s"] = \
                     IDLE_MDOT_KG_PER_S
                 hc.at[s.charge_element, "qext_w"] = IDLE_QEXT_W
-                cm.at[s.discharge_element, "in_service"] = False
+                self._drop_discharge_pump(s)
 
     # -- the step ------------------------------------------------------------
 
@@ -667,7 +667,7 @@ class Simulator:
                 q_kw = float(self.net.heat_consumer.at[
                     s.charge_element, "qext_w"]) / 1000.0
                 s.integrate(q_kw, dt_h)
-            elif s.active == "discharge":
+            elif s.active == "discharge" and s.discharge_element >= 0:
                 rm = self.net.res_circ_pump_mass.loc[s.discharge_element]
                 t_mean = (float(rm.t_outlet_k) + float(rm.t_from_k)) / 2
                 cp = float(self._fluid.get_heat_capacity(
@@ -954,11 +954,18 @@ class Simulator:
             self.net, from_junction=js, to_junction=jr,
             qext_w=IDLE_QEXT_W, controlled_mdot_kg_per_s=IDLE_MDOT_KG_PER_S,
             name=f"{name}_charge")
-        dis = pp.create_circ_pump_const_mass_flow(
-            self.net, return_junction=jr, flow_junction=js,
-            p_flow_bar=None, t_flow_k=float(t_top_c) + KELVIN,
-            mdot_flow_kg_per_s=s_tmp.discharge_mdot(float(power_kw)),
-            type="t", in_service=False, name=f"{name}_discharge")
+        # NO discharge pump yet — it exists only while it actually
+        # discharges (`_ensure_discharge_pump`). ⚠ pandapipes 0.14.0 cannot
+        # build the pit when net.circ_pump_mass MIXES in-service and
+        # out-of-service rows: `create_pit_branch_entries` filters the TABLE
+        # to active rows but sizes the pit slice from ALL of them, so
+        # `circ_pump_pit[mask_t]` raises IndexError (circulation_pump.py:117)
+        # and every retry tier fails. Parking this pump out of service was
+        # invisible while it was the only circ_pump_mass row; the moment a
+        # second plant became a pump_mass producer it took the whole heat
+        # network down. Never leaving an out-of-service row in the table
+        # sidesteps the upstream bug and keeps the physics identical.
+        dis = -1
         s = BufferStorage(
             sid=self._next_sid, node=node, name=name,
             capacity_kwh=float(capacity_kwh), power_kw=float(power_kw),
@@ -976,16 +983,47 @@ class Simulator:
                 return s
         raise KeyError(f"no storage with id {sid}")
 
+    def _ensure_discharge_pump(self, s: BufferStorage) -> None:
+        """Give *s* a live discharge pump (return → store-top → supply).
+
+        ``type="t"`` with **no** ``p_flow_bar``: the default "pt" type fixes
+        the junction pressure against the slack field and the solve diverges
+        (runtime-verified 2026-07-16). The element is created on the
+        transition into discharge and dropped on the way out, so the table
+        never holds an out-of-service row — see `add_storage` for why that
+        matters to pandapipes 0.14.0.
+        """
+        if s.discharge_element >= 0:
+            return
+        idx = self.index
+        s.discharge_element = int(pp.create_circ_pump_const_mass_flow(
+            self.net,
+            return_junction=idx.junction_return[s.node],
+            flow_junction=idx.junction_supply[s.node],
+            p_flow_bar=None, t_flow_k=float(s.t_top_c) + KELVIN,
+            mdot_flow_kg_per_s=s.discharge_mdot(float(s.power_kw)),
+            type="t", name=f"{s.name}_discharge"))
+        self._reset_initialization()  # topology CRUD → cold init (SPEC §3.4)
+
+    def _drop_discharge_pump(self, s: BufferStorage) -> None:
+        """Remove *s*'s discharge pump if it has one (idempotent)."""
+        if s.discharge_element < 0:
+            return
+        element = int(s.discharge_element)
+        s.discharge_element = -1
+        self.net.circ_pump_mass.drop(index=element, inplace=True)
+        if "res_circ_pump_mass" in self.net and len(self.net.res_circ_pump_mass):
+            self.net.res_circ_pump_mass.drop(
+                index=element, inplace=True, errors="ignore")
+        self._reset_initialization()
+
     def remove_storage(self, sid: int) -> BufferStorage:
         s = self.get_storage(sid)
         self.net.heat_consumer.drop(index=s.charge_element, inplace=True)
         if "res_heat_consumer" in self.net and len(self.net.res_heat_consumer):
             self.net.res_heat_consumer.drop(
                 index=s.charge_element, inplace=True, errors="ignore")
-        self.net.circ_pump_mass.drop(index=s.discharge_element, inplace=True)
-        if "res_circ_pump_mass" in self.net and len(self.net.res_circ_pump_mass):
-            self.net.res_circ_pump_mass.drop(
-                index=s.discharge_element, inplace=True, errors="ignore")
+        self._drop_discharge_pump(s)
         self.storages.remove(s)
         self._reset_initialization()
         return s
