@@ -237,8 +237,8 @@ def _validate_topology(doc: Any) -> tuple[NetInputs, int, list[dict], list[dict]
     consumer_names = [c.name or f"consumer_{c.node}"
                       for c in inputs.consumers.consumers]
     node_names = {j.name for j in inputs.structure.junctions}
-    slack_node = next(p for p in inputs.producers.producers
-                      if p.kind == "slack").node
+    slack_nodes = [p.node for p in inputs.producers.producers
+                   if p.kind == "slack"]
 
     zones = doc["zones"]
     if not isinstance(zones, list):
@@ -261,7 +261,7 @@ def _validate_topology(doc: Any) -> tuple[NetInputs, int, list[dict], list[dict]
     if not isinstance(devices, list):
         _bad("'devices' must be an array")
     seen = set()
-    slack_bound = False
+    bound_slacks: set[str] = set()
     for i, dev in enumerate(devices):
         err = _device_error(dev, node_names)
         if err:
@@ -271,17 +271,19 @@ def _validate_topology(doc: Any) -> tuple[NetInputs, int, list[dict], list[dict]
         seen.add(dev["id"])
         kind = dev["kind"]
         if kind == "slack" or kind in PLANT_KINDS:
-            if kind == "slack" and slack_bound:
-                _bad(f"devices[{i}]: a heat network has exactly one slack "
-                     "producer and it is already bound to an earlier device")
-            if not slack_bound:
-                node = dev.get("node")
-                if node is not None and node != slack_node:
+            node = dev.get("node")
+            target = _slack_binding(slack_nodes, bound_slacks, node)
+            if target is not None:
+                if node is not None and node != target:
                     warnings.append(
                         f"device {dev['id']!r} binds to the bundle's slack "
-                        f"producer at node {slack_node!r} (device said {node!r})")
-                slack_bound = True
-            elif dev.get("node") is None:
+                        f"producer at node {target!r} (device said {node!r})")
+                bound_slacks.add(target)
+            elif kind == "slack":
+                _bad(f"devices[{i}] ({dev['id']!r}): no unbound pressure "
+                     f"reference at node {node!r} — the bundle declares "
+                     f"slacks at {slack_nodes}")
+            elif node is None:
                 _bad(f"devices[{i}] ({dev['id']!r}): additional heat devices "
                      "become pump_mass producers and need a 'node'")
         elif kind == "storage_heat":
@@ -314,9 +316,33 @@ def _device_error(dev: Any, node_names: set[str]) -> str | None:
 
 # ------------------------------------------------------------ device mapping
 
-def _configure_plant(sim, kind: str, params: dict) -> None:
-    """Bind a plant-kind device onto the M4 dispatch model of the slack."""
-    plant = sim.plant
+def _slack_binding(slack_nodes: list[str], bound: set[str],
+                   node: str | None) -> str | None:
+    """Which pressure reference a plant-kind device binds to, if any.
+
+    A bundle may declare SEVERAL slacks — one per independent system — so
+    binding goes by NODE rather than by being first in the list. A device
+    that names no node takes the next unbound reference, which is what the
+    single-system documents that predate this always meant.
+    """
+    if node is not None and node in slack_nodes and node not in bound:
+        return node
+    if node is None:
+        return next((n for n in slack_nodes if n not in bound), None)
+    return None
+
+
+def _slack_element(sim, node: str) -> int:
+    """circ_pump_pressure element of the pressure reference at *node*."""
+    for meta in sim.index.producer_meta:
+        if meta["kind"] == "slack" and meta["node"] == node:
+            return int(meta["element"])
+    return int(sim.index.slack)
+
+
+def _configure_plant(sim, kind: str, params: dict, element: int) -> None:
+    """Bind a plant-kind device onto the M4 dispatch model of ITS reference."""
+    plant = sim.plant_for(element)
     plant.kind = kind
     if _is_num(params.get("eta")):
         plant.eta = float(params["eta"])
@@ -328,7 +354,7 @@ def _configure_plant(sim, kind: str, params: dict) -> None:
         plant.t_cold_source = params["t_cold_source"]
 
 
-def _place_device(app: App, dev: dict, bind_slack: bool) -> GbDevice:
+def _place_device(app: App, dev: dict, bind_slack: str | None) -> GbDevice:
     """Map one contract device onto the platform (reset + patch add path).
 
     May raise ``ValueError`` (patch: tolerant per-entry error) — callers on
@@ -338,12 +364,12 @@ def _place_device(app: App, dev: dict, bind_slack: bool) -> GbDevice:
     kind = dev["kind"]
     params = dict(dev.get("params") or {})
     node = dev.get("node")
-    if bind_slack and (kind == "slack" or kind in PLANT_KINDS):
+    if bind_slack is not None and (kind == "slack" or kind in PLANT_KINDS):
+        element = _slack_element(sim, bind_slack)
         if kind in PLANT_KINDS:
-            _configure_plant(sim, kind, params)
-        return GbDevice(id=dev["id"], kind=kind,
-                        node=sim.index.slack_node, params=params,
-                        target="slack")
+            _configure_plant(sim, kind, params, element)
+        return GbDevice(id=dev["id"], kind=kind, node=bind_slack,
+                        params=params, target="slack", element=element)
     if kind == "storage_heat":
         try:
             s = sim.add_storage(
@@ -468,13 +494,15 @@ async def net_reset(request: Request) -> dict:
 
     # game-controlled devices (first slack/plant-kind device binds the slack)
     gb_devices: dict[str, GbDevice] = {}
-    slack_bound = False
+    slack_nodes = list(sim.index.slack_nodes)
+    bound_slacks: set[str] = set()
     for dev in devices:
-        bind = (not slack_bound) and (dev["kind"] == "slack"
-                                      or dev["kind"] in PLANT_KINDS)
+        bind: str | None = None
+        if dev["kind"] == "slack" or dev["kind"] in PLANT_KINDS:
+            bind = _slack_binding(slack_nodes, bound_slacks, dev.get("node"))
+            if bind is not None:
+                bound_slacks.add(bind)
         record = _place_device(app, dev, bind)
-        if record.target == "slack":
-            slack_bound = True
         gb_devices[record.id] = record
 
     # zones map by consumer NAME in native (contract §3.1)
@@ -579,7 +607,9 @@ def _apply_op(app: App, gb: GbState, op: Any) -> str:
                 raise ValueError(
                     f"device {dev['id']}: storage_heat needs numeric params "
                     "e_kwh and p_max_kw")
-        record = _place_device(app, dev, bind_slack=False)
+        # a patched-in device never takes over a pressure reference: the
+        # references are established by the bundle at reset
+        record = _place_device(app, dev, bind_slack=None)
         gb.devices[record.id] = record
         return record.id
     if name == "remove_device":
@@ -757,6 +787,7 @@ def _build_result(app: App, gb: GbState, t: int, result,
     cons_by_el = {c["id"]: c for c in consumers}
     prod_by_pid = {p["id"]: p for p in producers}
     stor_by_sid = {s["id"]: s for s in storages}
+    slack_by_node = {p["node"]: p for p in producers if p["kind"] == "slack"}
     slack_prod = next((p for p in producers if p["kind"] == "slack"), None)
     failed = status == "failed"
 
@@ -786,21 +817,24 @@ def _build_result(app: App, gb: GbState, t: int, result,
     t_hot_c = summary.get("t_flow_plant_c")
     for did, dev in gb.devices.items():
         if dev.target == "slack":
+            # ITS OWN reference: with several independent systems each plant
+            # reports the heat it feeds, not the network total
+            own = slack_by_node.get(dev.node, slack_prod)
             detail = {}
             q_kw = None
-            if slack_prod is not None:
-                q_kw = slack_prod.get("q_kw")
+            if own is not None:
+                q_kw = own.get("q_kw")
                 for key in ("t_flow_c", "plift_bar", "pump_el_kw",
                             "cop", "p_fuel_kw", "t_cold_c"):
-                    if key in slack_prod:
-                        detail[key] = slack_prod[key]
+                    if key in own:
+                        detail[key] = own[key]
             devices_out[did] = {"output_kw": q_kw, "soc": None, "detail": detail}
             if dev.kind == "chp":
-                p_el = slack_prod.get("p_el_kw") if slack_prod else None
+                p_el = own.get("p_el_kw") if own else None
                 coupling_out[did] = {"p_el_kw": -float(p_el) if p_el is not None
                                      else 0.0}
             elif dev.kind == "heat_pump":
-                p_el = slack_prod.get("p_el_kw") if slack_prod else None
+                p_el = own.get("p_el_kw") if own else None
                 coupling_out[did] = {"p_el_kw": float(p_el) if p_el is not None
                                      else 0.0}
         elif dev.target in ("hx", "pm"):

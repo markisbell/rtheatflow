@@ -11,7 +11,8 @@ The five DH-native input documents:
   (row order = element index). Demand is split into ``q_sh_w`` (space heating)
   and ``q_dhw_w`` (domestic hot water) per SPEC §4.5 — the split makes the live
   weather-override scaling well-defined.
-* ``producers.json`` — exactly one ``slack`` (``circ_pump_const_pressure``);
+* ``producers.json`` — at least one ``slack`` (``circ_pump_const_pressure``),
+  one per hydraulically connected component;
   secondary producers are ``heat_exchanger`` (fixed feed-in) or ``pump_mass``.
 * ``weather.json`` — ambient + ground temperature, the master input.
 
@@ -224,12 +225,22 @@ class ProducersFile(_StrictModel):
     producers: list[ProducerSpec] = Field(min_length=1)
 
     @model_validator(mode="after")
-    def _exactly_one_slack(self) -> "ProducersFile":
+    def _at_least_one_slack(self) -> "ProducersFile":
+        """A network needs a pressure reference; a network split into
+        independent systems needs one EACH.
+
+        This used to demand exactly one, which is the right rule for one
+        connected system and the wrong rule for a document describing
+        several — a city divided by a river is exactly that. pandapipes
+        solves them in a single net perfectly well (runtime-verified
+        2026-08-17). WHICH component each reference belongs to is a question
+        about the pipe graph, so the per-component check lives in
+        `data_loader.cross_validate`, where the graph is known.
+        """
         n_slack = sum(1 for p in self.producers if p.kind == "slack")
-        if n_slack != 1:
+        if n_slack < 1:
             raise ValueError(
-                f"exactly one slack (circ_pump_const_pressure) required, got {n_slack} "
-                "(single-pressure-slack rule, SPEC §3.1)"
+                "at least one slack (circ_pump_const_pressure) required, got 0"
             )
         return self
 

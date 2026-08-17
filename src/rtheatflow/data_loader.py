@@ -6,7 +6,7 @@ adds the **cross-document** checks:
 * node references valid (pipes, consumers, producers),
 * profile array lengths equal the declared ``steps``,
 * consumer/weather horizons cover the same whole number of days,
-* exactly one slack (already enforced per-file, re-checked here),
+* one slack per connected component (per-file: at least one),
 * every consumer node reachable from the slack node over the trench graph,
 * zero-flow guard (SPEC §3.2): no dead-end trench node without a consumer or
   producer — a live branch with nothing attached is hydraulically singular.
@@ -129,10 +129,10 @@ def cross_validate(inputs: NetInputs) -> None:
     if total_c % (24 * 60) != 0:
         errors.append(f"profile horizon {total_c} min is not a whole number of days")
 
-    # --- exactly one slack (belt and braces; ProducersFile enforces too) ---
+    # --- pressure references (ProducersFile enforces "at least one") ---
     slacks = [p for p in inputs.producers.producers if p.kind == "slack"]
-    if len(slacks) != 1:
-        errors.append(f"exactly one slack producer required, got {len(slacks)}")
+    if not slacks:
+        errors.append("at least one slack producer required, got 0")
 
     # --- reachability + zero-flow guard over the trench graph ---
     adjacency: dict[str, set[str]] = defaultdict(set)
@@ -143,18 +143,35 @@ def cross_validate(inputs: NetInputs) -> None:
         degree[p.from_node] += 1
         degree[p.to_node] += 1
 
+    # ONE PRESSURE REFERENCE PER CONNECTED COMPONENT. Two in the same
+    # component over-determine the hydraulics; a component with none has
+    # nothing holding its pressure and nothing to reach its consumers from.
+    # Several independent systems in ONE document are legitimate — a city
+    # split by a river is exactly that, and pandapipes solves them together.
     if slacks:
-        reachable = _bfs(adjacency, slacks[0].node)
+        reachable: set[str] = set()
+        for i, s in enumerate(slacks):
+            component = _bfs(adjacency, s.node)
+            for other in slacks[i + 1:]:
+                if other.node in component:
+                    errors.append(
+                        f"slack producers at {s.node!r} and {other.node!r} sit "
+                        "in the SAME connected component — a component holds "
+                        "exactly one pressure reference"
+                    )
+            reachable |= component
+        where = (f"the slack at {slacks[0].node!r}" if len(slacks) == 1
+                 else f"any of the {len(slacks)} slacks")
         for c in inputs.consumers.consumers:
             if c.node not in reachable:
                 errors.append(
                     f"consumer {c.name or c.node!r} at {c.node!r} not reachable "
-                    f"from the slack at {slacks[0].node!r}"
+                    f"from {where}"
                 )
         for pr in inputs.producers.producers:
             if pr.node not in reachable:
                 errors.append(
-                    f"producer at {pr.node!r} not reachable from the slack"
+                    f"producer at {pr.node!r} not reachable from {where}"
                 )
 
     # zero-flow guard (SPEC §3.2): dead-end nodes must host a consumer or

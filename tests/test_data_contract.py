@@ -76,15 +76,48 @@ def test_pipe_needs_type_or_parameters():
         PipeSpec.model_validate(dict(from_node="a", to_node="b", length_km=0.1))
 
 
-# --- exactly one slack (SPEC §3.1 single-pressure-slack rule) ---
+# --- pressure references: one per connected component ---
 
-def test_second_slack_rejected(appendix_a_docs):
+def test_second_slack_in_the_same_component_rejected(appendix_a_docs):
+    """Two pressure references on ONE connected system over-determine the
+    hydraulics. (A second reference on a SEPARATE system is legitimate —
+    see below.)"""
     docs = appendix_a_docs
     docs["producers"]["producers"].append({
         "node": "n3", "kind": "slack",
         "p_flow_bar": 6.0, "plift_bar": 2.0, "t_flow_k": 358.15})
-    with pytest.raises(ValidationError, match="exactly one slack"):
+    with pytest.raises(DataContractError, match="SAME connected component"):
         _rebuild(docs)
+
+
+def test_two_independent_systems_accepted(appendix_a_docs):
+    """A document may describe SEVERAL independent heat systems, each with
+    its own pressure reference — a city split by a river is exactly that,
+    and pandapipes solves them together in one net. This used to be
+    impossible to express: the contract demanded exactly one slack and that
+    every consumer be reachable from it, so the second system was rejected
+    outright and the game could only build one side of the water."""
+    docs = appendix_a_docs
+    # a second, disconnected system: its own nodes, pipe, consumer and plant
+    docs["network_structure"]["junctions"] += [
+        {"name": "m0", "kind": "plant", "geo": [48.1, 8.1], "pn_bar": 6.0},
+        {"name": "m1", "kind": "consumer", "geo": [48.1, 8.11], "pn_bar": 6.0},
+    ]
+    docs["pipes"]["pipes"].append({
+        "from_node": "m0", "to_node": "m1", "std_type": "ISOPLUS_DRE50_STD",
+        "length_km": 0.2, "sections": 2})
+    steps = len(docs["consumers"]["consumers"][0]["q_sh_w"])
+    docs["consumers"]["consumers"].append({
+        "node": "m1", "name": "island consumer",
+        "q_sh_w": [30_000.0] * steps, "q_dhw_w": [0.0] * steps,
+        "treturn_k": [328.15] * steps, "q_design_w": 40_000.0})
+    docs["producers"]["producers"].append({
+        "node": "m0", "kind": "slack", "name": "island plant",
+        "p_flow_bar": 6.0, "plift_bar": 2.0, "t_flow_k": 358.15})
+
+    inputs = _rebuild(docs)   # must NOT raise
+    slacks = [p for p in inputs.producers.producers if p.kind == "slack"]
+    assert len(slacks) == 2
 
 
 def test_no_slack_rejected(appendix_a_docs):

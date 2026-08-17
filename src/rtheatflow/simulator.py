@@ -175,12 +175,19 @@ def collect_physics(net, idx, fluid, pipe_trench: dict,
     q_loss_total_w = float(q_loss_w.sum())
 
     # --- plant feed-in [W] = mdot · cp̄ · ΔT (SPEC §3.6) — NOT the raw
-    # res_circ_pump_pressure.qext_w column (enthalpy form, ~+4.7 %) ---
-    mdot_plant = float(abs(rc.mdot_from_kg_per_s))
-    t_mean = (float(rc.t_outlet_k) + float(rc.t_from_k)) / 2
-    cp_plant = float(fluid.get_heat_capacity(np.array([t_mean]))[0])
-    q_feed_plant_w = mdot_plant * cp_plant * (
-        float(rc.t_outlet_k) - float(rc.t_from_k))
+    # res_circ_pump_pressure.qext_w column (enthalpy form, ~+4.7 %).
+    # SUMMED over every pressure reference: a river-split city runs several
+    # independent systems, one reference each, and the network total is
+    # their sum. With a single system this is the old expression exactly. ---
+    q_feed_plant_w = 0.0
+    mdot_plant = 0.0
+    for element in idx.slacks:
+        r = net.res_circ_pump_pressure.loc[int(element)]
+        t_mean = (float(r.t_outlet_k) + float(r.t_from_k)) / 2
+        cp_plant = float(fluid.get_heat_capacity(np.array([t_mean]))[0])
+        mdot_plant += float(abs(r.mdot_from_kg_per_s))
+        q_feed_plant_w += float(abs(r.mdot_from_kg_per_s)) * cp_plant * (
+            float(r.t_outlet_k) - float(r.t_from_k))
 
     # --- secondary feed-ins carry negative qext_w: negate, never sum raw.
     # NB: res_heat_exchanger has NO qext_w column at runtime (0.14.0 —
@@ -236,9 +243,11 @@ def collect_physics(net, idx, fluid, pipe_trench: dict,
     worst_consumer = idx.consumer_names[worst_pos]
 
     # --- pump electric power (SPEC §3.6): P_hyd = V̇·Δp, P_el = P_hyd/η ---
-    dp_pump_pa = (float(rc.p_to_bar) - float(rc.p_from_bar)) * 1e5
-    p_hyd_w = abs(float(rc.vdot_m3_per_s)) * abs(dp_pump_pa)
-    pump_el_w = p_hyd_w / pump_eta
+    pump_el_w = 0.0
+    for element in idx.slacks:
+        r = net.res_circ_pump_pressure.loc[int(element)]
+        dp_pump_pa = (float(r.p_to_bar) - float(r.p_from_bar)) * 1e5
+        pump_el_w += abs(float(r.vdot_m3_per_s)) * abs(dp_pump_pa) / pump_eta
 
     # --- wire payload: temperatures in °C, everything through _r() ---
     junctions = [
@@ -324,7 +333,12 @@ class Simulator:
         # SPEC §4.3 worst-point Δp controller (post-solve, once per tick;
         # consumes the OBSERVED layer only) + §4.4 plant dispatch model
         self.dp_control = DpController.from_config(slack_spec.dp_control)
-        self.plant = PlantModel()
+        # One dispatch model PER pressure reference: independent systems can
+        # be a CHP here and a boiler there, and each books its own fuel. The
+        # `plant` property below keeps the single-plant API (M2-M4 REST,
+        # every existing test) pointing at the primary.
+        self.plants: dict[int, PlantModel] = {
+            int(element): PlantModel() for element in self.index.slacks}
         # SPEC §4.4 buffer storages (charge/discharge branch pairs + SoC)
         self.storages: list[BufferStorage] = []
         self._next_sid = 0
@@ -383,6 +397,25 @@ class Simulator:
         self.last_transient: bool | None = None
 
     # -- estimation layer (SPEC §8a, M7) ---------------------------------------
+
+    @property
+    def plant(self) -> PlantModel:
+        """The PRIMARY pressure reference's dispatch model.
+
+        Every M2-M4 surface (`POST /producer/{id}/config`, the frame's
+        `plant_kind`, the scenario recipes) was written when a net had
+        exactly one plant, and for a single-system net this is still that
+        plant. Independent systems each get their own via `plant_for`.
+        """
+        return self.plant_for(int(self.index.slack))
+
+    @plant.setter
+    def plant(self, model: PlantModel) -> None:
+        self.plants[int(self.index.slack)] = model
+
+    def plant_for(self, element: int) -> PlantModel:
+        """Dispatch model of the pressure reference at *element*."""
+        return self.plants.setdefault(int(element), PlantModel())
 
     def set_est_config(self, cfg: EstimationConfig) -> None:
         """Install a new estimation policy; the observer (twin + priors +
@@ -473,7 +506,9 @@ class Simulator:
         # weather → heating curve → plant flow temperature
         t_amb = self.weather.t_amb(tick)
         if self.heating_curve is not None:
-            net.circ_pump_pressure.at[idx.slack, "t_flow_k"] = \
+            # every independent system follows the same curve — they share
+            # one operator and one outdoor temperature
+            net.circ_pump_pressure.loc[idx.slacks, "t_flow_k"] = \
                 self.heating_curve.t_flow_k(t_amb)
 
         # slow seasonal: ground temperature onto every pipe (explicit text_k)
@@ -572,6 +607,10 @@ class Simulator:
                     self.index.slack, "plift_bar"])
                 new_plift = self.dp_control.step(plift, obs.get("dp_worst_bar"))
                 if abs(new_plift - plift) > 1e-12:
+                    # ONE controller regulating on the network-wide worst
+                    # point moves every pump together. A second system with
+                    # its own worst point would want its own controller;
+                    # that is a deliberate simplification, not an oversight.
                     self.net.circ_pump_pressure.at[
                         self.index.slack, "plift_bar"] = new_plift
         else:
@@ -706,19 +745,32 @@ class Simulator:
             entry = {"id": int(meta["pid"]), "kind": meta["kind"],
                      "name": meta["name"], "node": meta["node"]}
             if meta["kind"] == "slack":
-                q_kw = q_feed_plant_w / 1000.0
+                # per REFERENCE, not per network: with independent systems
+                # each plant reports the heat IT feeds and books ITS fuel.
+                # For a single system these are the network totals as before.
+                element = int(meta["element"])
+                rs = net.res_circ_pump_pressure.loc[element]
+                t_mean_s = (float(rs.t_outlet_k) + float(rs.t_from_k)) / 2
+                cp_s = float(self._fluid.get_heat_capacity(
+                    np.array([t_mean_s]))[0])
+                q_kw = float(abs(rs.mdot_from_kg_per_s)) * cp_s * (
+                    float(rs.t_outlet_k) - float(rs.t_from_k)) / 1000.0
+                dp_pa = (float(rs.p_to_bar) - float(rs.p_from_bar)) * 1e5
+                plant = self.plant_for(element)
                 entry.update({
                     "q_kw": _r(q_kw),
-                    "t_flow_c": _r(rc.t_outlet_k - KELVIN),
+                    "t_flow_c": _r(rs.t_outlet_k - KELVIN),
                     "plift_bar": _r(net.circ_pump_pressure.at[
-                        idx.slack, "plift_bar"]),
-                    "pump_el_kw": _r(pump_el_w / 1000.0),
-                    "plant_kind": self.plant.kind,
+                        element, "plift_bar"]),
+                    "pump_el_kw": _r(abs(float(rs.vdot_m3_per_s))
+                                     * abs(dp_pa) / self.settings.pump_eta
+                                     / 1000.0),
+                    "plant_kind": plant.kind,
                 })
                 # §4.4 platform dispatch model: electric/fuel side per tick
                 # (HP COP from the LIVE flow temperature and weather)
-                entry.update({k: _r(v) for k, v in self.plant.metrics(
-                    q_kw, float(rc.t_outlet_k) - KELVIN,
+                entry.update({k: _r(v) for k, v in plant.metrics(
+                    q_kw, float(rs.t_outlet_k) - KELVIN,
                     t_amb_now, t_ground_now).items()})
             elif meta["kind"] == "heat_exchanger":
                 # input setpoint — res_heat_exchanger has no qext_w column

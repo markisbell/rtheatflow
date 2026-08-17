@@ -73,8 +73,16 @@ class NetIndex:
     # id — element indices live in per-component tables and collide across
     # kinds, e.g. slack 0 vs heat_exchanger 0; added M2) plus the pandapipes
     # "element" index within the kind's own table.
-    slack: int                 # circ_pump_pressure table index
+    slack: int                 # PRIMARY pressure reference (circ_pump_pressure)
     slack_node: str
+    #: EVERY pressure reference — ONE PER hydraulically connected component.
+    #: pandapipes solves several independent DH systems inside one net as long
+    #: as each component has exactly one (runtime-verified 2026-08-17: two
+    #: disconnected systems, a pump each, both converge with sane p and T).
+    #: `slack`/`slack_node` stay the first of these, so every single-system
+    #: code path reads exactly as before.
+    slacks: np.ndarray
+    slack_nodes: list[str]
     heat_exchangers: np.ndarray
     pump_mass: np.ndarray
     producer_meta: list[dict] = field(default_factory=list)
@@ -220,6 +228,8 @@ def build_network(
 
     # --- producers ---
     slack_idx = -1
+    slack_all: list[int] = []
+    slack_node_all: list[str] = []
     hx_idx: list[int] = []
     pm_idx: list[int] = []
     hx_qext_rows: list[np.ndarray] = []
@@ -233,6 +243,8 @@ def build_network(
                 flow_junction=junction_supply[p.node],
                 p_flow_bar=float(p.p_flow_bar), plift_bar=float(p.plift_bar),
                 t_flow_k=float(p.t_flow_k), name=name)
+            slack_all.append(slack_idx)
+            slack_node_all.append(p.node)
             producer_meta.append({"pid": len(producer_meta), "kind": "slack",
                                   "element": slack_idx,
                                   "node": p.node, "name": name})
@@ -288,8 +300,10 @@ def build_network(
         junction_names=junction_names,
         junction_sides=junction_sides,
         init_pn_bar=net.junction["pn_bar"].to_numpy(copy=True),
-        slack=slack_idx,
-        slack_node=slack.node,
+        slack=slack_all[0],
+        slack_node=slack_node_all[0],
+        slacks=np.asarray(slack_all, dtype=np.int64),
+        slack_nodes=slack_node_all,
         heat_exchangers=np.asarray(hx_idx, dtype=np.int64),
         pump_mass=np.asarray(pm_idx, dtype=np.int64),
         producer_meta=producer_meta,
